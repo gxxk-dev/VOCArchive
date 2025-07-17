@@ -16,6 +16,9 @@ build-cache.json
 .idea/
 .vscode/
 
+# uv-generated files
+uv.lock
+
 # temporary...
 testdata
 build-example

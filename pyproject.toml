@@ -1,7 +1,7 @@
 [project]
-name = "vocachieve"
+name = "VOCAchieve"
 version = "0.1.0"
-description = "Add your description here"
+description = "一个 VOCALOID 曲目备份工具 "
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
