@@ -484,15 +484,10 @@
             
             // 平台名称映射字典
             const platformNameMap = {
-                'netease': '网易云音乐',
+                'wy': '网易云音乐',
                 'qq': 'QQ音乐',
-                'spotify': 'Spotify',
                 'apple': 'Apple Music',
-                'youtube': 'YouTube',
-                'tidal': 'Tidal',
-                'deezer': 'Deezer',
-                'amazon': 'Amazon Music',
-                'joox': 'JOOX',
+                'ytb': 'YouTube',
                 'kugou': '酷狗音乐',
                 'kuwo': '酷我音乐',
                 'xiami': '虾米音乐'
@@ -531,14 +526,7 @@
                     videoBtn.disabled = true;
                     videoBtn.style.opacity = '0.5';
                 }
-                
-                if (downloadOptions.audioAvailable) {
-                    audioBtn.disabled = false;
-                    audioBtn.style.opacity = '1';
-                } else {
-                    audioBtn.disabled = true;
-                    audioBtn.style.opacity = '0.5';
-                }
+
             }
         }
 
