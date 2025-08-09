@@ -1,0 +1,553 @@
+/* General Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f4f7f9;
+    color: #333;
+}
+
+.hidden {
+    display: none;
+}
+
+.error-message {
+    color: #d93025;
+    font-size: 0.9em;
+    margin-top: 10px;
+}
+
+/* Login Container */
+#login-container {
+    max-width: 400px;
+    margin: 100px auto;
+    padding: 40px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+#login-container h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+#login-form input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+#login-form button {
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+#login-form button:hover {
+    background-color: #0056b3;
+}
+
+/* Admin Panel */
+#admin-panel {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+#admin-panel header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#logout-button {
+    padding: 8px 16px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#logout-button:hover {
+    background-color: #c82333;
+}
+
+/* Tabs */
+#tabs {
+    margin-bottom: 20px;
+    border-bottom: 1px solid #ccc;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    font-size: 1em;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+}
+
+.tab-button.active {
+    border-bottom-color: #007bff;
+    font-weight: bold;
+}
+
+/* Content & Table */
+#content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.controls {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.create-button {
+     padding: 8px 16px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.create-button:hover {
+    background-color: #218838;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    vertical-align: top;
+}
+
+th {
+    background-color: #f8f9fa;
+}
+
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+.delete-button {
+    padding: 5px 10px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.delete-button:hover {
+    background-color: #c82333;
+}
+
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    background-color: #eee;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 700px;
+    border-radius: 8px;
+    position: relative;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-height: 70vh;
+    overflow-y: auto;
+    padding-right: 15px;
+}
+
+#modal-form label {
+    font-weight: bold;
+}
+
+#modal-form input[type="text"],
+#modal-form input[type="url"],
+#modal-form select,
+#modal-form textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+#modal-form textarea {
+    min-height: 100px;
+    font-family: monospace;
+}
+
+#modal-form button {
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    align-self: flex-end;
+}
+
+#modal-form button:hover {
+    background-color: #0056b3;
+}
+
+/* Danger Zone */
+#danger-zone {
+    margin-top: 40px;
+    padding: 20px;
+    border: 1px solid #dc3545;
+    border-radius: 8px;
+    background-color: #f8d7da;
+}
+
+#danger-zone h2 {
+    color: #721c24;
+    margin-top: 0;
+}
+
+.danger-item {
+    margin-bottom: 15px;
+}
+
+.danger-button {
+    padding: 8px 16px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.danger-button:hover {
+    background-color: #c82333;
+}
+
+.danger-item small {
+    color: #721c24;
+}
+
+.actions {
+    display: flex;
+    gap: 5px;
+}
+
+.edit-button {
+    padding: 5px 10px;
+    background-color: #ffc107;
+    color: #212529;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.edit-button:hover {
+    background-color: #e0a800;
+}
+
+/* Visual Table Enhancements */
+.table-wrapper {
+    overflow-x: auto; /* Add horizontal scroll for very wide tables */
+}
+
+.null-value {
+    color: #999;
+    font-style: italic;
+}
+
+.bool-true {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.bool-false {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.string-value {
+    color: #333;
+}
+
+.number-value {
+    color: #007bff;
+}
+
+.external-link {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.external-link:hover {
+    text-decoration: underline;
+}
+
+td .string-value[title] {
+    cursor: help;
+}
+
+/* Works Grid */
+#works-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    padding-top: 20px;
+}
+
+.work-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.work-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+}
+
+.work-card-image {
+    width: 100%;
+    padding-top: 66.66%; /* 3:2 Aspect Ratio */
+    position: relative;
+    background-color: #eee;
+}
+
+.work-card-image img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.work-card-content {
+    padding: 15px;
+    flex-grow: 1;
+}
+
+.work-card-title {
+    margin: 0 0 5px 0;
+    font-size: 1.1em;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.work-card-uuid {
+    font-size: 0.8em;
+    color: #777;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.work-card-actions {
+    padding: 10px 15px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.work-card-actions .delete-button {
+    margin-left: 8px;
+}
+
+/* Styles for Visual Form Editor */
+.form-section {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 15px;
+    background-color: #fdfdfd;
+}
+
+.form-section h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 10px;
+    color: #333;
+}
+
+.dynamic-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dynamic-list-item {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
+
+/* Adjust grid for items with fewer inputs */
+.dynamic-list-item:has(input[name="creator_uuid"]) {
+    grid-template-columns: 1fr 1fr auto;
+}
+.dynamic-list-item:has(input[name="wiki_name"]) {
+    grid-template-columns: 1fr 1fr auto;
+}
+
+
+.dynamic-list-item input[type="text"],
+.dynamic-list-item input[type="url"] {
+    width: 100%;
+    margin: 0;
+}
+
+.dynamic-list-item label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.remove-row-button, .add-row-button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.remove-row-button {
+    background-color: #ef5350;
+    color: white;
+}
+
+.remove-row-button:hover {
+    background-color: #d32f2f;
+}
+
+.add-row-button {
+    background-color: #42a5f5;
+    color: white;
+    margin-top: 10px;
+    align-self: flex-start;
+}
+
+.add-row-button:hover {
+    background-color: #1e88e5;
+}
+
+/* Tool Zone */
+#tool-zone {
+    margin-top: 40px;
+    padding: 20px;
+    border: 1px solid #007bff;
+    border-radius: 8px;
+    background-color: #e7f3ff;
+}
+
+#tool-zone h2 {
+    color: #004085;
+    margin-top: 0;
+}
+
+.tool-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tool-item button {
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.tool-item button:hover {
+    background-color: #0056b3;
+}
+
+.tool-item input[readonly] {
+    flex-grow: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #e9ecef;
+    font-family: monospace;
+}

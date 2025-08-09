@@ -1,0 +1,42 @@
+<h1>VOCArchive PoC</h1>
+<h2>总管理</h2>
+<div id="output">这里 将显示输出...</div>
+<script>
+    const manage_output=document.getElementById("output");
+    function fetchURL(url) {
+        fetch(url)
+            .then(response => {
+                console.log(response,response.json());
+            })
+        }
+</script>
+<button onclick="fetchURL('/api/dbexport')">导出userTables</button>
+<button onclick="fetchURL('/api/dbclear')">删库</button>
+<button onclick="fetchURL('/api/dbinit')">初始化</button>
+<button onclick="fetchURL('/api/addfakedata')">添加假数据</button>
+<h2>查询-单歌曲-通过UUID-完整信息(引用仅包含UUID)</h2>
+<div id="errmsg">报错信息...</div>
+<input id="work_uuid" placeholder="UUID here...">
+<button onclick="queryWork()">查询</button>
+
+<script>
+    function queryWork() {
+        // 发送请求
+        const url=`/api/getwork?uuid=${document.getElementById("work_uuid").value}`;
+        console.log(url);
+        fetch(url)
+            .then(response => { //数据过滤
+                const data=response.text();
+                console.log(response,data);
+                const httpcode=response.status;
+                if (httpcode != 200) {
+                    document.getElementById("errmsg").innerHTML = `非预期http状态码${httpcode}`;
+                    return;
+                }
+                return data;
+            })
+            .then(data => {
+                console.log(data)
+            })
+    }
+</script>

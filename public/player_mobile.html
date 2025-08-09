@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>选歌 - 移动音乐播放器</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <style>
+        :root {
+            /* Material Design 3 移动端优化颜色 */
+            --md-sys-color-primary: #6750A4;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-primary-container: #EADDFF;
+            --md-sys-color-on-primary-container: #21005D;
+            
+            --md-sys-color-surface: #1C1B1F;
+            --md-sys-color-surface-container: #25232A;
+            --md-sys-color-surface-container-high: #2B2930;
+            --md-sys-color-surface-container-highest: #36343B;
+            --md-sys-color-on-surface: #FFFFFF;
+            --md-sys-color-on-surface-variant: #CAC4D0;
+            
+            --md-sys-color-outline: #49454F;
+            
+            /* 移动端优化尺寸 */
+            --header-height: 56px;
+            --search-height: 48px;
+            --album-cover-size: 64px;
+            --touch-target-min: 48px;
+            --section-padding: 16px;
+            --item-padding: 12px;
+            --font-size-title: 1.2rem;
+            --font-size-subtitle: 0.9rem;
+            --font-size-small: 0.8rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Roboto', 'Segoe UI', system-ui, sans-serif;
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.5;
+        }
+
+        /* 顶部导航 */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            background: var(--md-sys-color-surface-container-high);
+            display: flex;
+            align-items: center;
+            padding: 0 var(--section-padding);
+            z-index: 100;
+            border-bottom: 1px solid var(--md-sys-color-outline);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--md-sys-color-on-surface);
+            width: var(--touch-target-min);
+            height: var(--touch-target-min);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin-right: 12px;
+        }
+
+        .back-btn i {
+            font-size: 1.5rem;
+        }
+
+        .page-title {
+            font-size: 1.2rem;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .search-container {
+            padding: var(--section-padding);
+            padding-top: calc(var(--header-height) + var(--section-padding));
+            background: var(--md-sys-color-surface);
+            position: sticky;
+            top: 0;
+            z-index: 90;
+            border-bottom: 1px solid var(--md-sys-color-outline);
+        }
+
+        .search-box {
+            display: flex;
+            background: var(--md-sys-color-surface-container);
+            border-radius: 24px;
+            overflow: hidden;
+            height: var(--search-height);
+        }
+
+        .search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--md-sys-color-on-surface);
+            padding: 0 16px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .search-btn {
+            width: var(--touch-target-min);
+            height: var(--search-height);
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-btn i {
+            font-size: 1.2rem;
+        }
+
+        /* 歌曲列表 */
+        .song-list {
+            padding: var(--section-padding);
+            padding-bottom: calc(var(--header-height) + var(--section-padding));
+        }
+
+        .section-title {
+            font-size: var(--font-size-title);
+            font-weight: 500;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .song-item {
+            display: flex;
+            align-items: center;
+            padding: var(--item-padding);
+            background: var(--md-sys-color-surface-container);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            gap: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .song-item:active {
+            background: var(--md-sys-color-surface-container-highest);
+            transform: translateY(2px);
+        }
+
+        .album-cover {
+            width: var(--album-cover-size);
+            height: var(--album-cover-size);
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #7c77c6, #6366f1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .song-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .song-title {
+            font-size: var(--font-size-title);
+            font-weight: 500;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .song-artist {
+            font-size: var(--font-size-subtitle);
+            color: var(--md-sys-color-on-surface-variant);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .song-duration {
+            font-size: var(--font-size-subtitle);
+            color: var(--md-sys-color-on-surface-variant);
+            margin-top: 4px;
+        }
+
+        .play-btn {
+            width: var(--touch-target-min);
+            height: var(--touch-target-min);
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .play-btn i {
+            font-size: 1.2rem;
+            margin-left: 2px;
+        }
+
+        /* 底部播放栏 */
+        .now-playing {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: var(--md-sys-color-surface-container-high);
+            display: flex;
+            align-items: center;
+            padding: 8px var(--section-padding);
+            border-top: 1px solid var(--md-sys-color-outline);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+
+        .now-playing-cover {
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            margin-right: 12px;
+            background: linear-gradient(135deg, #7c77c6, #6366f1);
+        }
+
+        .now-playing-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .now-playing-title {
+            font-size: var(--font-size-subtitle);
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .now-playing-artist {
+            font-size: var(--font-size-small);
+            color: var(--md-sys-color-on-surface-variant);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: var(--md-sys-color-on-surface);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .play-pause-btn {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+
+        /* 分页 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 24px;
+            gap: 8px;
+        }
+
+        .pagination-btn {
+            padding: 8px 16px;
+            background: var(--md-sys-color-surface-container);
+            color: var(--md-sys-color-on-surface);
+            border: none;
+            border-radius: 20px;
+            font-size: var(--font-size-subtitle);
+            min-width: 36px;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pagination-btn.active {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            color: var(--md-sys-color-outline);
+        }
+
+        .empty-state p {
+            font-size: var(--font-size-subtitle);
+        }
+
+        /* 响应式调整 */
+        @media (min-width: 600px) {
+            :root {
+                --album-cover-size: 72px;
+                --section-padding: 20px;
+                --font-size-title: 1.3rem;
+                --font-size-subtitle: 1rem;
+            }
+            
+            .header {
+                padding: 0 20px;
+            }
+            
+            .search-container {
+                padding: 20px;
+                padding-top: calc(var(--header-height) + 20px);
+            }
+            
+            .song-list {
+                padding: 20px;
+                max-width: 600px;
+                margin: 0 auto;
+            }
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .song-item {
+            animation: fadeIn 0.3s ease-out;
+            animation-fill-mode: both;
+        }
+
+        .song-item:nth-child(1) { animation-delay: 0.1s; }
+        .song-item:nth-child(2) { animation-delay: 0.15s; }
+        .song-item:nth-child(3) { animation-delay: 0.2s; }
+        .song-item:nth-child(4) { animation-delay: 0.25s; }
+        .song-item:nth-child(5) { animation-delay: 0.3s; }
+        .song-item:nth-child(6) { animation-delay: 0.35s; }
+        .song-item:nth-child(7) { animation-delay: 0.4s; }
+        .song-item:nth-child(8) { animation-delay: 0.45s; }
+        .song-item:nth-child(9) { animation-delay: 0.5s; }
+        .song-item:nth-child(10) { animation-delay: 0.55s; }
+
+        /* 滚动条优化 */
+        body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        body::-webkit-scrollbar-thumb {
+            background: var(--md-sys-color-outline);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="header">
+        <button class="back-btn" onclick="goBack()">
+            <i class="material-icons">arrow_back</i>
+        </button>
+        <h1 class="page-title">选择歌曲</h1>
+    </header>
+
+    <!-- 搜索框 -->
+    <div class="search-container">
+        <div class="search-box">
+            <input type="text" class="search-input" placeholder="搜索歌曲、歌手..." id="searchInput">
+            <button class="search-btn" onclick="searchSongs()">
+                <i class="material-icons">search</i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 歌曲列表 -->
+    <main class="song-list">
+
+        <div id="songList">
+            <div class="song-item" data-song="1">
+                <div class="album-cover">
+                    <i class="material-icons">music_note</i>
+                </div>
+                <div class="song-info">
+                    <div class="song-title">月光奏鸣曲</div>
+                    <div class="song-artist">贝多芬</div>
+                </div>
+                <button class="play-btn" onclick="playSong(event, 1)">
+                    <i class="material-icons">play_arrow</i>
+                </button>
+            </div>
+            
+            <div class="song-item" data-song="2">
+                <div class="album-cover">
+                    <i class="material-icons">music_note</i>
+                </div>
+                <div class="song-info">
+                    <div class="song-title">蓝色多瑙河</div>
+                    <div class="song-artist">约翰·施特劳斯</div>
+                </div>
+                <button class="play-btn" onclick="playSong(event, 2)">
+                    <i class="material-icons">play_arrow</i>
+                </button>
+            </div>
+            
+            <div class="song-item" data-song="3">
+                <div class="album-cover">
+                    <i class="material-icons">music_note</i>
+                </div>
+                <div class="song-info">
+                    <div class="song-title">G弦上的咏叹调</div>
+                    <div class="song-artist">巴赫</div>
+                </div>
+                <button class="play-btn" onclick="playSong(event, 3)">
+                    <i class="material-icons">play_arrow</i>
+                </button>
+            </div>
+            
+            <div class="song-item" data-song="4">
+                <div class="album-cover">
+                    <i class="material-icons">music_note</i>
+                </div>
+                <div class="song-info">
+                    <div class="song-title">小星星变奏曲</div>
+                    <div class="song-artist">莫扎特</div>
+                </div>
+                <button class="play-btn" onclick="playSong(event, 4)">
+                    <i class="material-icons">play_arrow</i>
+                </button>
+            </div>
+            
+            <div class="song-item" data-song="5">
+                <div class="album-cover">
+                    <i class="material-icons">music_note</i>
+                </div>
+                <div class="song-info">
+                    <div class="song-title">卡农</div>
+                    <div class="song-artist">帕赫贝尔</div>
+                </div>
+                <button class="play-btn" onclick="playSong(event, 5)">
+                    <i class="material-icons">play_arrow</i>
+                </button>
+            </div>
+            
+            <div class="song-item" data-song="6">
+                <div class="album-cover">
+                    <i class="material-icons">music_note</i>
+                </div>
+                <div class="song-info">
+                    <div class="song-title">四季·春</div>
+                    <div class="song-artist">维瓦尔第</div>
+                </div>
+                <button class="play-btn" onclick="playSong(event, 6)">
+                    <i class="material-icons">play_arrow</i>
+                </button>
+            </div>
+            
+            <div class="song-item" data-song="7">
+                <div class="album-cover">
+                    <i class="material-icons">music_note</i>
+                </div>
+                <div class="song-info">
+                    <div class="song-title">献给爱丽丝</div>
+                    <div class="song-artist">贝多芬</div>
+                </div>
+                <button class="play-btn" onclick="playSong(event, 7)">
+                    <i class="material-icons">play_arrow</i>
+                </button>
+            </div>
+            
+            <div class="song-item" data-song="8">
+                <div class="album-cover">
+                    <i class="material-icons">music_note</i>
+                </div>
+                <div class="song-info">
+                    <div class="song-title">土耳其进行曲</div>
+                    <div class="song-artist">莫扎特</div>
+                </div>
+                <button class="play-btn" onclick="playSong(event, 8)">
+                    <i class="material-icons">play_arrow</i>
+                </button>
+            </div>
+            
+            <div class="song-item" data-song="9">
+                <div class="album-cover">
+                    <i class="material-icons">music_note</i>
+                </div>
+                <div class="song-info">
+                    <div class="song-title">欢乐颂</div>
+                    <div class="song-artist">贝多芬</div>
+                </div>
+                <button class="play-btn" onclick="playSong(event, 9)">
+                    <i class="material-icons">play_arrow</i>
+                </button>
+            </div>
+            
+            <div class="song-item" data-song="10">
+                <div class="album-cover">
+                    <i class="material-icons">music_note</i>
+                </div>
+                <div class="song-info">
+                    <div class="song-title">天鹅湖</div>
+                    <div class="song-artist">柴可夫斯基</div>
+                </div>
+                <button class="play-btn" onclick="playSong(event, 10)">
+                    <i class="material-icons">play_arrow</i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 分页 -->
+        <div class="pagination">
+            <button class="pagination-btn" disabled>
+                <i class="material-icons">chevron_left</i>
+            </button>
+            <button class="pagination-btn active">1</button>
+            <button class="pagination-btn">2</button>
+            <button class="pagination-btn">3</button>
+            <button class="pagination-btn">
+                <i class="material-icons">chevron_right</i>
+            </button>
+        </div>
+    </main>
+
+    <!-- 底部播放控制栏 -->
+    <div class="now-playing">
+        <div class="now-playing-cover"></div>
+        <div class="now-playing-info">
+            <div class="now-playing-title">月光奏鸣曲</div>
+            <div class="now-playing-artist">贝多芬</div>
+        </div>
+        <div class="player-controls">
+            <button class="control-btn">
+                <i class="material-icons">skip_previous</i>
+            </button>
+            <button class="control-btn play-pause-btn">
+                <i class="material-icons">play_arrow</i>
+            </button>
+            <button class="control-btn">
+                <i class="material-icons">skip_next</i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 当前播放状态
+        let currentSong = null;
+        let isPlaying = false;
+        
+        // 播放歌曲
+        function playSong(event, songId) {
+            event.stopPropagation();
+            
+            const songItem = event.target.closest('.song-item');
+            const title = songItem.querySelector('.song-title').textContent;
+            const artist = songItem.querySelector('.song-artist').textContent;
+            
+            // 更新底部播放栏
+            document.querySelector('.now-playing-title').textContent = title;
+            document.querySelector('.now-playing-artist').textContent = artist;
+            
+            // 更新播放按钮状态
+            const playBtns = document.querySelectorAll('.play-btn i');
+            playBtns.forEach(btn => {
+                btn.textContent = 'play_arrow';
+            });
+            
+            const currentBtn = event.target.closest('.play-btn').querySelector('i');
+            currentBtn.textContent = 'pause';
+            
+            // 添加播放状态样式
+            document.querySelectorAll('.song-item').forEach(item => {
+                item.classList.remove('playing');
+            });
+            songItem.classList.add('playing');
+            
+            currentSong = songId;
+            isPlaying = true;
+            
+            // 更新底部播放按钮
+            document.querySelector('.play-pause-btn i').textContent = 'pause';
+            
+            console.log(`播放歌曲: ${title} - ${artist}`);
+        }
+        
+        // 搜索歌曲
+        function searchSongs() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const songItems = document.querySelectorAll('.song-item');
+            let found = false;
+            
+            songItems.forEach(item => {
+                const title = item.querySelector('.song-title').textContent.toLowerCase();
+                const artist = item.querySelector('.song-artist').textContent.toLowerCase();
+                
+                if (title.includes(searchTerm) || artist.includes(searchTerm)) {
+                    item.style.display = 'flex';
+                    found = true;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // 如果没有结果，显示空状态
+            if (!found) {
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state';
+                emptyState.innerHTML = `
+                    <i class="material-icons">search_off</i>
+                    <p>没有找到匹配的歌曲</p>
+                    <p>尝试其他关键词</p>
+                `;
+                
+                document.getElementById('songList').innerHTML = '';
+                document.getElementById('songList').appendChild(emptyState);
+            }
+        }
+        
+        // 返回
+        function goBack() {
+            console.log('返回上一页');
+            alert('返回播放器主页');
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 搜索框事件监听
+            document.getElementById('searchInput').addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') {
+                    searchSongs();
+                }
+            });
+            
+            // 点击歌曲项播放
+            document.querySelectorAll('.song-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    if (!e.target.closest('.play-btn')) {
+                        const songId = this.getAttribute('data-song');
+                        playSong(e, parseInt(songId));
+                    }
+                });
+            });
+            
+            // 底部播放控制
+            document.querySelector('.play-pause-btn').addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                if (icon.textContent === 'play_arrow') {
+                    icon.textContent = 'pause';
+                    isPlaying = true;
+                } else {
+                    icon.textContent = 'play_arrow';
+                    isPlaying = false;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

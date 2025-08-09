@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创建作品</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="url"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .checkbox-group input {
+            width: auto;
+            margin-right: 10px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .btn-danger {
+            background-color: #e74c3c;
+        }
+        .dynamic-list {
+            margin-bottom: 15px;
+        }
+        .dynamic-item {
+            background-color: #f9f9f9;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            position: relative;
+        }
+        .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab.active {
+            background-color: white;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .notification {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>创建新作品</h1>
+    
+    <div id="notification" class="notification"></div>
+    
+    <form id="workForm">
+        <!-- 基本信息 -->
+        <div class="form-group">
+            <h2>基本信息</h2>
+            
+            <div class="form-group">
+                <label for="uuid">作品UUID</label>
+                <input type="text" id="uuid" name="uuid" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="copyright_basis">版权基础</label>
+                <select id="copyright_basis" name="copyright_basis" required>
+                    <option value="none">无版权</option>
+                    <option value="accept">接受版权</option>
+                    <option value="license">许可版权</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>标题信息</label>
+                <div id="titles-container"></div>
+                <button type="button" class="btn" onclick="addTitle()">添加标题</button>
+            </div>
+            
+            <div class="form-group" id="license-group" style="display: none;">
+                <label for="license">许可证</label>
+                <input type="text" id="license" name="license">
+            </div>
+        </div>
+        
+        <!-- 创作者信息 -->
+        <div class="form-group">
+            <h2>创作者信息</h2>
+            <div id="creators-container"></div>
+            <button type="button" class="btn" onclick="addCreator()">添加创作者</button>
+        </div>
+        
+        <!-- 媒体源 -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('media-tab')">媒体源</div>
+            <div class="tab" onclick="switchTab('assets-tab')">资产</div>
+            <div class="tab" onclick="switchTab('relations-tab')">作品关系</div>
+            <div class="tab" onclick="switchTab('wikis-tab')">百科信息</div>
+        </div>
+        
+        <div id="media-tab" class="tab-content active">
+            <div class="form-group">
+                <div id="media-sources-container"></div>
+                <button type="button" class="btn" onclick="addMediaSource()">添加媒体源</button>
+            </div>
+        </div>
+        
+        <div id="assets-tab" class="tab-content">
+            <div class="form-group">
+                <div id="assets-container"></div>
+                <button type="button" class="btn" onclick="addAsset()">添加资产</button>
+            </div>
+        </div>
+        
+        <div id="relations-tab" class="tab-content">
+            <div class="form-group">
+                <div id="relations-container"></div>
+                <button type="button" class="btn" onclick="addRelation()">添加关系</button>
+            </div>
+        </div>
+        
+        <div id="wikis-tab" class="tab-content">
+            <div class="form-group">
+                <div id="wikis-container"></div>
+                <button type="button" class="btn" onclick="addWiki()">添加百科</button>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <button type="submit" class="btn">提交作品</button>
+            <button type="button" class="btn btn-danger" onclick="resetForm()">重置表单</button>
+        </div>
+    </form>
+
+    <script>
+        // 全局变量
+        let workData = {
+            uuid: '',
+            copyright_basis: 'none',
+            titles: [],
+            license: '',
+            creators: [],
+            media_sources: [],
+            assets: [],
+            relations: [],
+            wikis: []
+        };
+
+        // 初始化表单
+        document.addEventListener('DOMContentLoaded', function() {
+            // 生成UUID
+            document.getElementById('uuid').value = generateUUID();
+            
+            // 监听版权基础选择变化
+            document.getElementById('copyright_basis').addEventListener('change', function() {
+                const licenseGroup = document.getElementById('license-group');
+                if (this.value === 'license') {
+                    licenseGroup.style.display = 'block';
+                } else {
+                    licenseGroup.style.display = 'none';
+                }
+            });
+            
+            // 监听表单提交
+            document.getElementById('workForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                submitForm();
+            });
+            
+            // 添加初始标题
+            addTitle();
+        });
+
+        // 生成UUID
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // 显示通知
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = 'notification ' + type;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 5000);
+        }
+
+        // 切换标签页
+        function switchTab(tabId) {
+            // 隐藏所有标签内容
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 移除所有标签的active类
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 显示选中的标签内容
+            document.getElementById(tabId).classList.add('active');
+            
+            // 添加active类到点击的标签
+            event.target.classList.add('active');
+        }
+
+        // 添加标题
+        function addTitle() {
+            const container = document.getElementById('titles-container');
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'dynamic-item';
+            
+            titleDiv.innerHTML = `
+                <button type="button" class="remove-btn" onclick="removeElement(this)">×</button>
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="is_official_${Date.now()}" name="is_official">
+                        <label for="is_official_${Date.now()}">官方标题</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="language_${Date.now()}">语言</label>
+                    <input type="text" id="language_${Date.now()}" name="language" placeholder="例如: zh-CN">
+                </div>
+                <div class="form-group">
+                    <label for="title_${Date.now()}">标题</label>
+                    <input type="text" id="title_${Date.now()}" name="title" required>
+                </div>
+            `;
+            
+            container.appendChild(titleDiv);
+        }
+
+        // 添加创作者
+        function addCreator() {
+            const container = document.getElementById('creators-container');
+            const creatorDiv = document.createElement('div');
+            creatorDiv.className = 'dynamic-item';
+            
+            creatorDiv.innerHTML = `
+                <button type="button" class="remove-btn" onclick="removeElement(this)">×</button>
+                <div class="form-group">
+                    <label for="creator_uuid_${Date.now()}">创作者UUID</label>
+                    <input type="text" id="creator_uuid_${Date.now()}" name="creator_uuid" required>
+                </div>
+                <div class="form-group">
+                    <label for="role_${Date.now()}">角色</label>
+                    <input type="text" id="role_${Date.now()}" name="role" required>
+                </div>
+            `;
+            
+            container.appendChild(creatorDiv);
+        }
+
+        // 添加媒体源
+        function addMediaSource() {
+            const container = document.getElementById('media-sources-container');
+            const mediaDiv = document.createElement('div');
+            mediaDiv.className = 'dynamic-item';
+            
+            mediaDiv.innerHTML = `
+                <button type="button" class="remove-btn" onclick="removeElement(this)">×</button>
+                <div class="form-group">
+                    <label for="media_uuid_${Date.now()}">媒体UUID</label>
+                    <input type="text" id="media_uuid_${Date.now()}" name="media_uuid" required>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="is_music_${Date.now()}" name="is_music">
+                    <label for="is_music_${Date.now()}">音乐</label>
+                </div>
+                <div class="form-group">
+                    <label for="file_name_${Date.now()}">文件名</label>
+                    <input type="text" id="file_name_${Date.now()}" name="file_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="url_${Date.now()}">URL</label>
+                    <input type="url" id="url_${Date.now()}" name="url" required>
+                </div>
+                <div class="form-group">
+                    <label for="mime_type_${Date.now()}">MIME类型</label>
+                    <input type="text" id="mime_type_${Date.now()}" name="mime_type" required>
+                </div>
+                <div class="form-group">
+                    <label for="info_${Date.now()}">信息</label>
+                    <textarea id="info_${Date.now()}" name="info"></textarea>
+                </div>
+            `;
+            
+            container.appendChild(mediaDiv);
+        }
+
+        // 添加资产
+        function addAsset() {
+            const container = document.getElementById('assets-container');
+            const assetDiv = document.createElement('div');
+            assetDiv.className = 'dynamic-item';
+            
+            assetDiv.innerHTML = `
+                <button type="button" class="remove-btn" onclick="removeElement(this)">×</button>
+                <div class="form-group">
+                    <label for="asset_uuid_${Date.now()}">资产UUID</label>
+                    <input type="text" id="asset_uuid_${Date.now()}" name="asset_uuid" required>
+                </div>
+                <div class="form-group">
+                    <label for="file_id_${Date.now()}">文件ID</label>
+                    <input type="text" id="file_id_${Date.now()}" name="file_id" required>
+                </div>
+                <div class="form-group">
+                    <label for="asset_type_${Date.now()}">资产类型</label>
+                    <select id="asset_type_${Date.now()}" name="asset_type" required>
+                        <option value="lyrics">歌词</option>
+                        <option value="picture">图片</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="asset_file_name_${Date.now()}">文件名</label>
+                    <input type="text" id="asset_file_name_${Date.now()}" name="asset_file_name" required>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="is_previewpic_${Date.now()}" name="is_previewpic">
+                    <label for="is_previewpic_${Date.now()}">预览图</label>
+                </div>
+                <div class="form-group">
+                    <label for="language_${Date.now()}>语言</label>
+                    <input type="text" id="language_${Date.now()}" name="language" placeholder="例如: zh-CN">
+                </div>
+                <div class="form-group">
+                    <label>资产创作者</label>
+                    <div id="asset_creators_${Date.now()}"></div>
+                    <button type="button" class="btn" onclick="addAssetCreator('asset_creators_${Date.now()}')">添加创作者</button>
+                </div>
+            `;
+            
+            container.appendChild(assetDiv);
+        }
+
+        // 添加资产创作者
+        function addAssetCreator(containerId) {
+            const container = document.getElementById(containerId);
+            const creatorDiv = document.createElement('div');
+            creatorDiv.className = 'dynamic-item';
+            
+            creatorDiv.innerHTML = `
+                <button type="button" class="remove-btn" onclick="removeElement(this)">×</button>
+                <div class="form-group">
+                    <label for="asset_creator_uuid_${Date.now()}">创作者UUID</label>
+                    <input type="text" id="asset_creator_uuid_${Date.now()}" name="asset_creator_uuid" required>
+                </div>
+                <div class="form-group">
+                    <label for="asset_role_${Date.now()}">角色</label>
+                    <input type="text" id="asset_role_${Date.now()}" name="asset_role" required>
+                </div>
+            `;
+            
+            container.appendChild(creatorDiv);
+        }
+
+        // 添加作品关系
+        function addRelation() {
+            const container = document.getElementById('relations-container');
+            const relationDiv = document.createElement('div');
+            relationDiv.className = 'dynamic-item';
+            
+            relationDiv.innerHTML = `
+                <button type="button" class="remove-btn" onclick="removeElement(this)">×</button>
+                <div class="form-group">
+                    <label for="relation_uuid_${Date.now()}">关系UUID</label>
+                    <input type="text" id="relation_uuid_${Date.now()}" name="relation_uuid" required>
+                </div>
+                <div class="form-group">
+                    <label for="to_work_uuid_${Date.now()}">目标作品UUID</label>
+                    <input type="text" id="to_work_uuid_${Date.now()}" name="to_work_uuid" required>
+                </div>
+                <div class="form-group">
+                    <label for="relation_type_${Date.now()}">关系类型</label>
+                    <select id="relation_type_${Date.now()}" name="relation_type" required>
+                        <option value="original">原创</option>
+                        <option value="remix">混音</option>
+                        <option value="cover">翻唱</option>
+                        <option value="remake">重制</option>
+                        <option value="picture">配图</option>
+                        <option value="lyrics">填词</option>
+                    </select>
+                </div>
+            `;
+            
+            container.appendChild(relationDiv);
+        }
+
+        // 添加百科信息
+        function addWiki() {
+            const container = document.getElementById('wikis-container');
+            const wikiDiv = document.createElement('div');
+            wikiDiv.className = 'dynamic-item';
+            
+            wikiDiv.innerHTML = `
+                <button type="button" class="remove-btn" onclick="removeElement(this)">×</button>
+                <div class="form-group">
+                    <label for="platform_${Date.now()}">平台</label>
+                    <input type="text" id="platform_${Date.now()}" name="platform" required>
+                </div>
+                <div class="form-group">
+                    <label for="identifier_${Date.now()}">ID</label>
+                    <input type="text" id="identifier_${Date.now()}" name="identifier" required>
+                </div>
+            `;
+            
+            container.appendChild(wikiDiv);
+        }
+
+        // 移除元素
+        function removeElement(button) {
+            button.parentElement.remove();
+        }
+
+        // 重置表单
+        function resetForm() {
+            if (confirm('确定要重置表单吗？所有输入的数据将丢失。')) {
+                document.getElementById('workForm').reset();
+                
+                // 清空所有动态添加的元素
+                const containers = ['titles-container', 'creators-container', 'media-sources-container', 
+                                 'assets-container', 'relations-container', 'wikis-container'];
+                
+                containers.forEach(containerId => {
+                    const container = document.getElementById(containerId);
+                    while (container.firstChild) {
+                        container.removeChild(container.firstChild);
+                    }
+                });
+                
+                // 重新添加一个标题
+                addTitle();
+                
+                // 重新生成UUID
+                document.getElementById('uuid').value = generateUUID();
+                
+                // 隐藏许可证字段
+                document.getElementById('license-group').style.display = 'none';
+                
+                showNotification('表单已重置', 'success');
+            }
+        }
+
+        // 提交表单
+        function submitForm() {
+            // 收集表单数据
+            workData.uuid = document.getElementById('uuid').value;
+            workData.copyright_basis = document.getElementById('copyright_basis').value;
+            workData.license = document.getElementById('license').value || undefined;
+            
+            // 收集标题数据
+            workData.titles = [];
+            const titleItems = document.querySelectorAll('#titles-container .dynamic-item');
+            titleItems.forEach(item => {
+                const isOfficial = item.querySelector('input[type="checkbox"]').checked;
+                const language = item.querySelector('input[name="language"]').value;
+                const title = item.querySelector('input[name="title"]').value;
+                
+                if (title) {
+                    workData.titles.push({
+                        is_official: isOfficial,
+                        language: language,
+                        title: title
+                    });
+                }
+            });
+            
+            // 收集创作者数据
+            workData.creators = [];
+            const creatorItems = document.querySelectorAll('#creators-container .dynamic-item');
+            creatorItems.forEach(item => {
+                const creatorUuid = item.querySelector('input[name="creator_uuid"]').value;
+                const role = item.querySelector('input[name="role"]').value;
+                
+                if (creatorUuid && role) {
+                    workData.creators.push({
+                        creator_uuid: creatorUuid,
+                        role: role
+                    });
+                }
+            });
+            
+            // 收集媒体源数据
+            workData.media_sources = [];
+            const mediaItems = document.querySelectorAll('#media-sources-container .dynamic-item');
+            mediaItems.forEach(item => {
+                const uuid = item.querySelector('input[name="media_uuid"]').value;
+                const isMusic = item.querySelector('input[name="is_music"]').checked;
+                const fileName = item.querySelector('input[name="file_name"]').value;
+                const url = item.querySelector('input[name="url"]').value;
+                const mimeType = item.querySelector('input[name="mime_type"]').value;
+                const info = item.querySelector('textarea[name="info"]').value;
+                
+                if (uuid && fileName && url && mimeType) {
+                    workData.media_sources.push({
+                        uuid: uuid,
+                        is_music: isMusic,
+                        file_name: fileName,
+                        url: url,
+                        mime_type: mimeType,
+                        info: info || undefined
+                    });
+                }
+            });
+            
+            // 收集资产数据
+            workData.assets = [];
+            const assetItems = document.querySelectorAll('#assets-container .dynamic-item');
+            assetItems.forEach(item => {
+                const uuid = item.querySelector('input[name="asset_uuid"]').value;
+                const fileId = item.querySelector('input[name="file_id"]').value;
+                const assetType = item.querySelector('select[name="asset_type"]').value;
+                const fileName = item.querySelector('input[name="asset_file_name"]').value;
+                const isPreviewPic = item.querySelector('input[name="is_previewpic"]').checked;
+                const language = item.querySelector('input[name="language"]').value;
+                
+                if (uuid && fileId && fileName) {
+                    const asset = {
+                        uuid: uuid,
+                        file_id: fileId,
+                        asset_type: assetType,
+                        file_name: fileName,
+                        is_previewpic: isPreviewPic,
+                        language: language || undefined,
+                        creators: []
+                    };
+                    
+                    // 收集资产创作者数据
+                    const creatorItems = item.querySelectorAll('#asset_creators_container .dynamic-item');
+                    creatorItems.forEach(creatorItem => {
+                        const creatorUuid = creatorItem.querySelector('input[name="asset_creator_uuid"]').value;
+                        const role = creatorItem.querySelector('input[name="asset_role"]').value;
+                        
+                        if (creatorUuid && role) {
+                            asset.creators.push({
+                                creator_uuid: creatorUuid,
+                                role: role
+                            });
+                        }
+                    });
+                    
+                    workData.assets.push(asset);
+                }
+            });
+            
+            // 收集关系数据
+            workData.relations = [];
+            const relationItems = document.querySelectorAll('#relations-container .dynamic-item');
+            relationItems.forEach(item => {
+                const uuid = item.querySelector('input[name="relation_uuid"]').value;
+                const toWorkUuid = item.querySelector('input[name="to_work_uuid"]').value;
+                const relationType = item.querySelector('select[name="relation_type"]').value;
+                
+                if (uuid && toWorkUuid) {
+                    workData.relations.push({
+                        uuid: uuid,
+                        to_work_uuid: toWorkUuid,
+                        relation_type: relationType
+                    });
+                }
+            });
+            
+            // 收集百科数据
+            workData.wikis = [];
+            const wikiItems = document.querySelectorAll('#wikis-container .dynamic-item');
+            wikiItems.forEach(item => {
+                const platform = item.querySelector('input[name="platform"]').value;
+                const identifier = item.querySelector('input[name="identifier"]').value;
+                
+                if (platform && identifier) {
+                    workData.wikis.push({
+                        platform: platform,
+                        identifier: identifier
+                    });
+                }
+            });
+            
+            // 验证必填字段
+            if (!workData.uuid || !workData.copyright_basis || workData.titles.length === 0 || workData.creators.length === 0) {
+                showNotification('请填写所有必填字段', 'error');
+                return;
+            }
+            
+            // 发送数据到后端
+            fetch('/api/work', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(workData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('作品创建成功', 'success');
+                    resetForm();
+                } else {
+                    showNotification('作品创建失败: ' + (data.message || '未知错误'), 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('网络错误: ' + error.message, 'error');
+            });
+        }
+    </script>
+</body>
+</html>
