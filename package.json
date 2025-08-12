@@ -3,22 +3,19 @@
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
-		"deploy": "wrangler deploy",
+		"deploy": "wrangler deploy --minify",
 		"dev": "wrangler dev",
-		"start": "wrangler dev",
-		"test": "vitest",
-		"cf-typegen": "wrangler types"
+		"cf-typegen": "wrangler types --env-interface CloudflareBindings"
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.8.19",
+		"@cloudflare/workers-types": "^4.20250812.0",
 		"@types/node": "^24.2.0",
 		"typescript": "^5.5.2",
-		"vitest": "~3.2.0",
 		"wrangler": "^4.25.1"
 	},
 	"dependencies": {
-		"@simplewebauthn/browser": "^13.1.2",
-		"@simplewebauthn/server": "^13.1.2",
+		"hono": "^4.9.0",
 		"jose": "^6.0.12",
 		"mimetext": "^3.0.27",
 		"otplib": "^12.0.1"
