@@ -232,6 +232,7 @@ interface Creator {
 interface CreatorWithRole {
     creator_uuid: string;
     creator_name?: string;
+    creator_type: 'human' | 'virtual';
     role: string;
 }
 
@@ -317,6 +318,7 @@ export async function GetWorkListWithPagination(DB: D1Database, page: number, pa
             wc.work_uuid,
             c.uuid as creator_uuid,
             c.name as creator_name,
+            c.type as creator_type,
             wc.role
         FROM work_creator wc
         JOIN creator c ON wc.creator_uuid = c.uuid
@@ -334,6 +336,7 @@ export async function GetWorkListWithPagination(DB: D1Database, page: number, pa
         creatorMap.get(row.work_uuid)!.push({
             creator_uuid: row.creator_uuid,
             creator_name: row.creator_name,
+            creator_type: row.creator_type,
             role: row.role
         });
     });
@@ -449,6 +452,7 @@ export async function GetWorkByUUID(DB: D1Database, workUUID: string): Promise<W
             assetMap.get(row.uuid)!.creators.push({
                 creator_uuid: row.creator_uuid,
                 creator_name: row.creator_name,
+                creator_type: row.creator_type,
                 role: row.creator_role
             });
         }
@@ -467,6 +471,7 @@ export async function GetWorkByUUID(DB: D1Database, workUUID: string): Promise<W
     const creators: CreatorWithRole[] = (creatorResult.results || []).map((row: any) => ({
         creator_uuid: row.creator_uuid,
         creator_name: row.creator_name,
+        creator_type: row.creator_type,
         role: row.role
     }));
 
@@ -575,6 +580,7 @@ export async function GetAssetByUUID(DB: D1Database, assetUUID: string): Promise
     const creators: CreatorWithRole[] = (creatorResult.results || []).map((row: any) => ({
         creator_uuid: row.creator_uuid,
         creator_name: row.creator_name,
+        creator_type: row.creator_type,
         role: row.role
     }));
 

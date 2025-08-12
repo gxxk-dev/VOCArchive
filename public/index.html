@@ -654,6 +654,7 @@
                 
                 // 处理数据
                 filteredMusic = data.map(item => {
+                    console.log("处理作品数据：", item);
                     // 获取主标题（优先官方标题）
                     let mainTitle = '';
                     if (item.titles && item.titles.length > 0) {
@@ -666,12 +667,12 @@
                     // 获取艺术家名（优先显示人类创作者）
                     let artistName = '未知艺术家';
                     if (item.creators && item.creators.length > 0) {
-                        const humanCreator = item.creators.find(c => c.creator.type === 'human');
+                        const humanCreator = item.creators.find(c => c.creator_type === 'human');
                         if (humanCreator) {
-                            artistName = humanCreator.creator.name;
+                            artistName = humanCreator.creator_name;
                         } else {
                             // 如果没有人类创作者，显示第一个虚拟歌姬
-                            artistName = item.creators[0].creator.name;
+                            artistName = item.creators[0].creator_name;
                         }
                     }
                     
