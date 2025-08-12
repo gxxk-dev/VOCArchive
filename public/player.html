@@ -858,7 +858,7 @@
             }
             
             // 设置创作者
-            const creatorNames = data.creators.map(c => c.creator.name).join(', ');
+            const creatorNames = data.creators.map(c => c.creator_name).join(', ');
             document.querySelector('.work-creators').textContent = creatorNames;
             
             // 2. 设置媒体源卡片
