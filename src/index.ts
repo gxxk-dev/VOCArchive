@@ -11,7 +11,8 @@ import {
     ListAssets, ListAuthors, ListMedia, ListRelations, ListWorks
 } from "./database";
 
-import { VerifyCode, generateJWT, verifyJWT } from "./auth";
+import { VerifyCode, generateJWT, verifyJWT, generateTotpSecret, generateTotpUri, setTotpSecret, resetJwtSecret } from "./auth";
+import { exportKey } from "otp-io";
 
 interface Env extends Cloudflare.Env { }
 
@@ -21,6 +22,18 @@ function validatePagination(page: number, pageSize: number): boolean {
     return Number.isInteger(page) && page > 0 &&
         Number.isInteger(pageSize) && pageSize > 0 && pageSize <= 100;
 }
+
+async function secretKeyToCryptoKey(secretKey: any): Promise<CryptoKey> {
+    const keyData = exportKey(secretKey);
+    return await crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode(keyData),
+        { name: 'HMAC', hash: 'SHA-1' },
+        false,
+        ['sign', 'verify']
+    );
+}
+
 
 function jsonResponse(data: any, status: number = 200): Response {
     return new Response(JSON.stringify(data), {
@@ -221,30 +234,72 @@ async function handleUpdate(request: Request, env: Env, params: URLSearchParams,
 
 
 // --- Auth Handler ---
-
 async function handleAuth(request: Request, env: Env, params: URLSearchParams, body: any, route: string): Promise<Response> {
-    if (route !== 'login') {
-        return notFound("Invalid auth route.");
+    if (route === 'login') {
+        const { code } = body;
+        if (!code) {
+            return badRequest("Missing 'code' in request body.");
+        }
+        
+        if (!(await VerifyCode(env.DB, code))) {
+            return unauthorized("Invalid code.");
+        }
+        // Code is valid, generate a JWT
+        try {
+            const token = await generateJWT(env.DB);
+            return jsonResponse({ token: token });
+        } catch (error: any) {
+            console.error("JWT generation failed:", error);
+            return new Response("Could not generate token.", { status: 500 });
+        }
+    } else if (route === 'reset-secrets') {
+        try {
+            // 使用D1存储TOTP密钥
+            const newTotpKey = generateTotpSecret();
+            const newTotpSecretString = exportKey(newTotpKey);
+            
+            // 存储新密钥到D1
+            await setTotpSecret(env.DB, newTotpSecretString);
+            // 生成OTP URI
+            const otpAuthUri = await generateTotpUri(newTotpKey, "Admin", "VOCArch1ve");
+            console.log(otpAuthUri,newTotpKey,newTotpSecretString)
+            return jsonResponse({ otpAuthUri: otpAuthUri });
+        } catch (error: any) {
+            console.error("Authorization secrets reset failed:", error);
+            return new Response("Could not reset authorization secrets.", { status: 500 });
+        }
+    } else if (route === 'reset-jwt-secret') {
+        try {
+            await resetJwtSecret(env.DB);
+            return new Response("JWT secret reset successfully.", { status: 200 });
+        } catch (error: any) {
+            console.error("JWT secret reset failed:", error);
+            return new Response("Could not reset JWT secret.", { status: 500 });
+        }
+    } else if (route === 'reset') {
+        const { current_code, new_code } = body;
+        if (!current_code || !new_code) {
+            return badRequest("Missing 'current_code' or 'new_code' in request body.");
+        }
+        // 从D1验证当前代码
+        if (!(await VerifyCode(env.DB, current_code))) {
+            return unauthorized("Invalid current code.");
+        }
+        try {
+            await DropUserTables(env.DB);
+            await InitDatabase(env.DB);
+            
+            // 存储新代码到D1
+            await setTotpSecret(env.DB, new_code);
+            
+            const qr_code = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(new_code)}&size=200x200`;
+            return jsonResponse({ qr_code: qr_code });
+        } catch (error: any) {
+            console.error("Database reset failed:", error);
+            return new Response("Could not reset database.", { status: 500 });
+        }
     }
-
-    const { code } = body;
-    if (!code) {
-        return badRequest("Missing 'code' in request body.");
-    }
-
-    const storedCode = await env.KV.get("code");
-    if (!storedCode || !(await VerifyCode(code, storedCode))) {
-        return unauthorized("Invalid code.");
-    }
-
-    // Code is valid, generate a JWT
-    try {
-        const token = await generateJWT(env);
-        return jsonResponse({ token: token });
-    } catch (error: any) {
-        console.error("JWT generation failed:", error);
-        return new Response("Could not generate token.", { status: 500 });
-    }
+    return notFound("Invalid auth route.");
 }
 
 
@@ -276,9 +331,8 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
     }
 
     if (method === "POST") {
-        // Auth route is public and doesn't need JWT verification
-        if (category === 'auth') {
-             if (pathSegments.length < 3) return notFound();
+        // Auth routes that do not require a token
+        if (category === 'auth' && (route === 'login' || route === 'reset-secrets')) {
             try {
                 const body = await request.json();
                 return handleAuth(request, env, url.searchParams, body, route);
@@ -291,11 +345,17 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
         const authHeader = request.headers.get("Authorization");
         const token = authHeader?.split(' ')[1];
 
-        if (!token || !(await verifyJWT(env, token))) {
+        if (!token || !(await verifyJWT(env.DB, token))) {
             return unauthorized("Invalid or missing token.");
         }
 
         try {
+            // Handle protected auth routes
+            if (category === 'auth') {
+                const body = request.headers.get('content-type')?.includes('application/json') ? await request.json() : {};
+                return handleAuth(request, env, url.searchParams, body, route);
+            }
+
             const body = await request.json();
             switch (category) {
                 case 'input':

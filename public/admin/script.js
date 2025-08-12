@@ -6,6 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const authCodeInput = document.getElementById('auth-code');
     const loginError = document.getElementById('login-error');
     const logoutButton = document.getElementById('logout-button');
+    const resetButton = document.getElementById('reset-button');
+    const qrcodeContainer = document.getElementById('qrcode-container');
+    const qrcodeDiv = document.getElementById('qrcode');
     const tabs = document.getElementById('tabs');
     const content = document.getElementById('content');
     const modal = document.getElementById('form-modal');
@@ -13,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const formTitle = document.getElementById('form-title');
     const formError = document.getElementById('form-error');
     const closeModalButton = document.querySelector('.close-button');
+    const totpUrl = document.getElementById('totp-url');
+    const copyUrlButton = document.getElementById('copy-url-button');
 
     // --- State ---
     const API_BASE_URL = '/api';
@@ -79,6 +84,64 @@ document.addEventListener('DOMContentLoaded', () => {
 
     logoutButton.addEventListener('click', showLogin);
 
+    resetButton.addEventListener('click', async () => {
+        if (!confirm('您确定要重置授权吗？这将使当前的所有登录失效，并生成一个新的二维码。')) {
+            return;
+        }
+        try {
+            loginError.textContent = '';
+            qrcodeContainer.classList.add('hidden');
+
+            const response = await fetch(`${API_BASE_URL}/auth/reset-secrets`, {
+                method: 'POST',
+                headers: {
+                    // No JWT token is sent for reset
+                    'Content-Type': 'application/json',
+                },
+                 body: JSON.stringify({}), // Empty body
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Reset request failed');
+            }
+
+            const data = await response.json();
+
+            if (data.otpAuthUri) {
+                qrcodeDiv.innerHTML = ''; // Clear previous QR code
+                console.log(data.otpAuthUri)
+                new QRCode(qrcodeDiv, {
+                    text: data.otpAuthUri,
+                    width: 256,
+                    height: 256,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+                qrcodeContainer.classList.remove('hidden');
+                console.log(qrcodeContainer)
+                totpUrl.textContent = data.otpAuthUri;
+                alert('授权已重置。请扫描新的二维码。');
+            } else {
+                throw new Error('Reset response did not contain OTP URI.');
+            }
+        } catch (error) {
+            loginError.textContent = `重置失败: ${error.message}`;
+        }
+    });
+
+    copyUrlButton.addEventListener('click', () => {
+        const url = totpUrl.textContent;
+        if (url) {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('URL已复制到剪贴板');
+            }, (err) => {
+                alert('无法复制URL: ', err);
+            });
+        }
+    });
+
     tabs.addEventListener('click', (e) => {
         if (e.target.classList.contains('tab-button')) {
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
@@ -119,6 +182,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (e.target.id === 'add-wiki-button') {
             addDynamicListItem('wikis-list', createWikiRow());
+        }
+        if (e.target.id === 'add-asset-creator-button') {
+            addDynamicListItem('asset-creators-list', createAssetCreatorRow());
         }
     });
 
@@ -214,8 +280,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <div id="works-grid">
                 ${data.map(work => {
                     const title = work.titles.find(t => t.is_official)?.title || work.titles[0]?.title || 'Untitled';
-                    const previewAsset = work.asset?.find(a => a.is_previewpic);
-                    const imageUrl = previewAsset ? `/file/${work.work_uuid}` : 'https://via.placeholder.com/300x200.png?text=No+Image';
+                    // The backend currently does not provide a direct URL for preview assets.
+                    // The 'preview_asset' object has a 'file_id', but there is no '/file/:id' endpoint to resolve it.
+                    // Using a placeholder until a file serving mechanism is implemented.
+                    const imageUrl = 'https://via.placeholder.com/300x200.png?text=No+Image';
                     return `
                     <div class="work-card" data-uuid="${work.work_uuid}">
                         <div class="work-card-image">
@@ -259,7 +327,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!uuid || !confirm(`Are you sure you want to delete this item from ${target}?`)) return;
 
-        const uuidKeyMap = { works: 'work_uuid', authors: 'creator_uuid', media: 'media_uuid', asset: 'asset_uuid', relation: 'relation_uuid' };
+        const uuidKeyMap = {
+            works: 'work_uuid',
+            authors: 'creator_uuid',
+            media: 'media_uuid',
+            asset: 'asset_uuid',
+            relation: 'relation_uuid'
+        };
         const endpointMap = { authors: 'creator', works: 'work' };
         const uuidKey = uuidKeyMap[target];
         const deleteEndpoint = endpointMap[target] || target;
@@ -354,7 +428,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <option value="true" ${data?.asset?.is_previewpic ? 'selected' : ''}>Yes</option>
                 </select>
                 <label for="language">Language:</label><input type="text" id="language" name="language" value="${data?.asset?.language || ''}">
-                <label for="creators">Creators (JSON):</label><textarea id="creators" name="creators">${s(data?.creators || [])}</textarea>
+                <div class="form-section">
+                    <h4>Creators</h4>
+                    <div id="asset-creators-list" class="dynamic-list">
+                        ${(data?.creators || []).map(createAssetCreatorRow).join('')}
+                    </div>
+                    <button type="button" id="add-asset-creator-button" class="add-row-button">Add Creator</button>
+                </div>
             `,
             relation: `
                 <input type="hidden" name="relation_uuid" value="${data?.uuid || ''}">
@@ -418,7 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="dynamic-list-item">
                 <input type="text" name="title_text" placeholder="Title" required value="${title.title || ''}">
                 <input type="text" name="title_lang" placeholder="Lang" required value="${title.language || 'ja'}">
-                <label><input type="radio" name="title_is_official" ${title.is_official ? 'checked' : ''}> 官方标题</label>
+                <label><input type="checkbox" name="title_is_official" ${title.is_official ? 'checked' : ''}> 官方标题</label>
                 <button type="button" class="remove-row-button">Remove</button>
             </div>
         `;
@@ -442,6 +522,16 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="dynamic-list-item">
                 <input type="text" name="wiki_platform" placeholder="Wiki Platform" required value="${wiki.platform || ''}">
                 <input type="text" name="wiki_id" placeholder="Wiki ID" required value="${wiki.identifier || ''}">
+                <button type="button" class="remove-row-button">Remove</button>
+            </div>
+        `;
+    }
+
+    function createAssetCreatorRow(creator = { creator_uuid: '', role: '' }) {
+        return `
+            <div class="dynamic-list-item">
+                <input type="text" name="asset_creator_uuid" placeholder="Creator UUID" required value="${creator.creator_uuid || ''}">
+                <input type="text" name="asset_creator_role" placeholder="Role" required value="${creator.role || ''}">
                 <button type="button" class="remove-row-button">Remove</button>
             </div>
         `;
@@ -500,6 +590,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                     break;
                 case 'asset':
+                    creators = [];
+                    document.querySelectorAll('#asset-creators-list .dynamic-list-item').forEach(item => {
+                        creators.push({
+                            creator_uuid: item.querySelector('input[name="asset_creator_uuid"]').value,
+                            role: item.querySelector('input[name="asset_creator_role"]').value,
+                        });
+                    });
                      body = {
                         asset_uuid: formData.get('asset_uuid'),
                         asset: {
@@ -511,7 +608,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             is_previewpic: formData.get('is_previewpic') === 'true',
                             language: formData.get('language') || null,
                         },
-                        creators: JSON.parse(formData.get('creators')),
+                        creators: creators,
                     };
                     break;
                 case 'relation':

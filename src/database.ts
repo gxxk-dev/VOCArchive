@@ -113,6 +113,12 @@ CREATE TABLE IF NOT EXISTS work_creator (
     role TEXT NOT NULL,
     PRIMARY KEY (work_uuid, creator_uuid, role)
 );
+
+-- Config表 (键值对存储)
+CREATE TABLE config (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
 `);
 
 
@@ -120,7 +126,7 @@ CREATE TABLE IF NOT EXISTS work_creator (
 const USER_TABLES = [
     'work_title', 'work_license', 'media_source', 'asset',
     'asset_creator', 'work_relation', 'work_wiki', 'work_creator',
-    'work', 'creator_wiki', 'creator'
+    'work', 'creator_wiki', 'creator', 'config'
 ];
 
 const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -235,11 +241,11 @@ interface WorkRelation {
     to_work_uuid: string;
     relation_type: 'original' | 'remix' | 'cover' | 'remake' | 'picture' | 'lyrics';
     related_work_titles?: {
-        from_work_titles: Array<{
+        from_work_titles: Array<{ 
             language: string;
             title: string;
         }>;
-        to_work_titles: Array<{
+        to_work_titles: Array<{ 
             language: string;
             title: string;
         }>;
@@ -1126,4 +1132,30 @@ export async function ListAuthors(DB: D1Database, page: number, pageSize: number
     const offset = (page - 1) * pageSize;
     const { results } = await DB.prepare("SELECT * FROM creator LIMIT ? OFFSET ?").bind(pageSize, offset).all();
     return results || [];
+}
+
+// Config-related functions
+export async function getConfig(DB: D1Database, key: string): Promise<string | null> {
+    const result = await DB.prepare(`
+        SELECT value FROM config WHERE key = ?
+    `).bind(key).first<{ value: string }>();
+    
+    return result ? result.value : null;
+}
+
+export async function setConfig(DB: D1Database, key: string, value: string): Promise<boolean> {
+    const result = await DB.prepare(`
+        INSERT INTO config (key, value) VALUES (?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value
+    `).bind(key, value).run();
+    
+    return result.success;
+}
+
+export async function deleteConfig(DB: D1Database, key: string): Promise<boolean> {
+    const result = await DB.prepare(`
+        DELETE FROM config WHERE key = ?
+    `).bind(key).run();
+    
+    return result.success && (result.meta.changes as number) > 0;
 }

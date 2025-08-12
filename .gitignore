@@ -175,3 +175,6 @@ dist
 # AI tools
 
 .gemini
+
+# dependency files
+package-lock.json

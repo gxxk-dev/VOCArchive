@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理后台</title>
+    <script src="https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,6 +16,20 @@
             <button type="submit">登录</button>
         </form>
         <p id="login-error" class="error-message"></p>
+        <div id="reset-container">
+            <button type="button" id="reset-button">重置授权</button>
+            <div id="qrcode-container" class="hidden">
+                <p>请使用您的验证器应用扫描新的二维码：</p>
+                <div id="qrcode"></div>
+                <details id="totp-url-container">
+                    <summary>显示/隐藏URL</summary>
+                    <div id="totp-url-wrapper">
+                        <p id="totp-url"></p>
+                        <button id="copy-url-button" title="复制链接">📋</button>
+                    </div>
+                </details>
+            </div>
+        </div>
     </div>
 
     <!-- Main Admin Panel -->

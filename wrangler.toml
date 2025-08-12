@@ -1,0 +1,9 @@
+name = "vocarchive"
+main = "src/index.ts"
+compatibility_date = "2025-07-12"
+assets = { directory = "./public" }
+
+[[d1_databases]]
+binding = "DB"
+database_name = "vocarchive_offical_deploy_database"
+database_id = "17a4dd12-6d14-4fdc-8a15-7e70e53eab8d"
