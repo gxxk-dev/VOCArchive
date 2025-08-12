@@ -11,10 +11,9 @@ import {
     ListAssets, ListAuthors, ListMedia, ListRelations, ListWorks
 } from "./database";
 
-import { VerifyCode, generateJWT, verifyJWT, generateTotpSecret, generateTotpUri, setTotpSecret, resetJwtSecret } from "./auth";
-import { exportKey } from "otp-io";
+import { VerifyCode, generateJWT, verifyJWT, GenerateRandKey, generateTotpUri, setTotpSecret, resetJwtSecret, resetAndReturnJwtSecret } from "./auth";
 
-interface Env extends Cloudflare.Env { }
+interface Env extends Cloudflare.Env { }    
 
 // --- Helper Functions ---
 
@@ -22,18 +21,6 @@ function validatePagination(page: number, pageSize: number): boolean {
     return Number.isInteger(page) && page > 0 &&
         Number.isInteger(pageSize) && pageSize > 0 && pageSize <= 100;
 }
-
-async function secretKeyToCryptoKey(secretKey: any): Promise<CryptoKey> {
-    const keyData = exportKey(secretKey);
-    return await crypto.subtle.importKey(
-        'raw',
-        new TextEncoder().encode(keyData),
-        { name: 'HMAC', hash: 'SHA-1' },
-        false,
-        ['sign', 'verify']
-    );
-}
-
 
 function jsonResponse(data: any, status: number = 200): Response {
     return new Response(JSON.stringify(data), {
@@ -255,14 +242,13 @@ async function handleAuth(request: Request, env: Env, params: URLSearchParams, b
     } else if (route === 'reset-secrets') {
         try {
             // 使用D1存储TOTP密钥
-            const newTotpKey = generateTotpSecret();
-            const newTotpSecretString = exportKey(newTotpKey);
-            
+            const newTotpKey = await GenerateRandKey();
+
             // 存储新密钥到D1
-            await setTotpSecret(env.DB, newTotpSecretString);
+            await setTotpSecret(env.DB, newTotpKey);
             // 生成OTP URI
             const otpAuthUri = await generateTotpUri(newTotpKey, "Admin", "VOCArch1ve");
-            console.log(otpAuthUri,newTotpKey,newTotpSecretString)
+            console.log(otpAuthUri,newTotpKey,newTotpKey)
             return jsonResponse({ otpAuthUri: otpAuthUri });
         } catch (error: any) {
             console.error("Authorization secrets reset failed:", error);
@@ -270,8 +256,8 @@ async function handleAuth(request: Request, env: Env, params: URLSearchParams, b
         }
     } else if (route === 'reset-jwt-secret') {
         try {
-            await resetJwtSecret(env.DB);
-            return new Response("JWT secret reset successfully.", { status: 200 });
+            const newSecret = await resetAndReturnJwtSecret(env.DB);
+            return jsonResponse({ new_secret: newSecret });
         } catch (error: any) {
             console.error("JWT secret reset failed:", error);
             return new Response("Could not reset JWT secret.", { status: 500 });

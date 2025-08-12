@@ -2,6 +2,10 @@ name = "vocarchive"
 main = "src/index.ts"
 compatibility_date = "2025-07-12"
 assets = { directory = "./public" }
+compatibility_flags = [
+	"nodejs_compat"
+]
+
 
 [[d1_databases]]
 binding = "DB"
