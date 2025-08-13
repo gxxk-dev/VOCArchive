@@ -1,40 +1,51 @@
 import { Hono } from 'hono'
-import { middleware_Auth } from './auth'
 
 import { listInfo } from './routes/list'
 import { getInfo } from './routes/get'
 import { deleteInfo } from './routes/delete'
 import { updateInfo } from './routes/update'
 import { inputInfo } from './routes/input'
+import { auth } from './routes/auth'
+import { jwt } from 'hono/jwt'
+import { getConfig } from './database'
 
-const app = new Hono()
-const api = new Hono()
-app.route('/api', api) // 为ssr做准备...
+//const app = new Hono()
+
+const app = new Hono().basePath("/api")
+app.get('/', (c) => {
+  return c.text('Hello Hono!')
+})
+
+// ========== 中间件 ==========
+const middleware=async (c: any, next:any) => {
+    console.log("?")
+    const jwtMiddleware = jwt({
+        secret: await getConfig(c.env.DB, "JWT_SECRET") || '',
+    })
+    return jwtMiddleware(c, next)
+}
 
 // ========== 信息管理 ==========
-const infoManage = new Hono()
-infoManage.use(
-    '*',
-    middleware_Auth
-)
-api.route('/api', infoManage)
 // ---------- 删除信息 ----------
-infoManage.route('/api/delete', deleteInfo)
+app.route('/delete', deleteInfo)
+    .use("/delete",middleware)
 // ---------- 修改信息 ----------
-infoManage.route('/api/update', updateInfo)
-// ========== 配置设置 ==========
-const configSetting = new Hono()
-api.route('/api', configSetting)
-// ---------- TOTP_SECRET重置 ----------
+app.route('/update', updateInfo)
+    .use("/update",middleware)
+// ---------- 录入信息 ----------
+app.route('/input', inputInfo)
+    .use("/input",middleware)
 
-// ---------- JWT_SECRET重置 ----------
+// ========== 配置/权限 ==========
+app.route('/auth', auth)
 
-// ========== 信息读取 ==========
-const infoGet = new Hono()
-app.route('/api', infoGet)
 
+// ========== 信息读取(仅GET方法) ==========
 // ---------- 获取信息 ----------
-
+app.route('/get', getInfo)
 // ---------- 列出信息 ----------
+app.route('/list', listInfo)
+
+
 
 export default app

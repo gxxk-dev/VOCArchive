@@ -24,19 +24,17 @@ const deleteHandlers = {
     }
 };
 export const deleteInfo = new Hono();
-deleteInfo.delete('/:resType', async (c: any) => {
+deleteInfo.post('/:resType', async (c: any) => {
     const resType = c.req.param('resType');
     const handler = deleteHandlers[resType as keyof typeof deleteHandlers];
     
-    if (!handler) {
-        return c.json({ error: 'Invalid resource type' }, 400);
-    }
+    if (!handler) return c.json({ error: 'Invalid resource type' }, 400)
     
     const body = await c.req.json();
     const result = await handler(c.env.DB, body);
     
     if (resType === 'worksbycreator') {
-        return c.json({ message: `Successfully deleted ${result} works.` }, 200);
+        return c.json({ message: `Successfully deleted ${result} work.` }, 200);
     }
     
     if (resType === 'dbclear') {

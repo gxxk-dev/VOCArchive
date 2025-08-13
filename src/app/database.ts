@@ -187,9 +187,9 @@ interface WorkInfo {
     titles: WorkTitle[];
     license?: string;
     media_sources: MediaSource[];
-    assets: AssetWithCreators[];
-    creators: CreatorWithRole[];
-    relations: WorkRelation[];
+    asset: AssetWithCreators[];
+    creator: CreatorWithRole[];
+    relation: WorkRelation[];
     wikis: WikiRef[];
 }
 
@@ -219,7 +219,7 @@ interface Asset {
 }
 
 interface AssetWithCreators extends Asset {
-    creators: CreatorWithRole[];
+    creator: CreatorWithRole[];
 }
 
 interface Creator {
@@ -266,13 +266,13 @@ interface WorkTitle {
     title: string;
 }
 
-// 在 WorkListItem 接口中添加 creators 字段
+// 在 WorkListItem 接口中添加 creator 字段
 interface WorkListItem {
     work_uuid: string;
     titles: WorkTitle[];
     preview_asset?: Asset;
     non_preview_asset?: Asset;
-    creators: CreatorWithRole[];  // 添加作者信息
+    creator: CreatorWithRole[];  // 添加作者信息
 }
 
 
@@ -370,7 +370,7 @@ export async function GetWorkListWithPagination(DB: D1Database, page: number, pa
             titles,
             preview_asset: previewResult || undefined,
             non_preview_asset: nonPreviewResult || undefined,
-            creators: creatorMap.get(uuid) || []
+            creator: creatorMap.get(uuid) || []
         };
     });
     
@@ -444,12 +444,12 @@ export async function GetWorkByUUID(DB: D1Database, workUUID: string): Promise<W
                 file_name: row.file_name,
                 is_previewpic: row.is_previewpic,
                 language: row.language,
-                creators: []
+                creator: []
             });
         }
         
         if (row.creator_uuid) {
-            assetMap.get(row.uuid)!.creators.push({
+            assetMap.get(row.uuid)!.creator.push({
                 creator_uuid: row.creator_uuid,
                 creator_name: row.creator_name,
                 creator_type: row.creator_type,
@@ -458,7 +458,7 @@ export async function GetWorkByUUID(DB: D1Database, workUUID: string): Promise<W
         }
     });
     
-    const assets = Array.from(assetMap.values());
+    const asset = Array.from(assetMap.values());
     // 7. 获取作品创作者信息
     const creatorStmt = DB.prepare(`
         SELECT c.uuid as creator_uuid, c.name as creator_name, wc.role
@@ -468,7 +468,7 @@ export async function GetWorkByUUID(DB: D1Database, workUUID: string): Promise<W
     `).bind(workUUID);
     
     const creatorResult = await creatorStmt.all();
-    const creators: CreatorWithRole[] = (creatorResult.results || []).map((row: any) => ({
+    const creator: CreatorWithRole[] = (creatorResult.results || []).map((row: any) => ({
         creator_uuid: row.creator_uuid,
         creator_name: row.creator_name,
         creator_type: row.creator_type,
@@ -506,7 +506,7 @@ export async function GetWorkByUUID(DB: D1Database, workUUID: string): Promise<W
 
 
     const relationResult = await relationStmt.all<WorkRelation>();
-    const relations = relationResult.results?.map(relation => ({
+    const relation = relationResult.results?.map(relation => ({
         ...relation,
         related_work_titles: relation.related_work_titles 
             ? JSON.parse(relation.related_work_titles as unknown as string)
@@ -529,9 +529,9 @@ export async function GetWorkByUUID(DB: D1Database, workUUID: string): Promise<W
         titles,
         license,
         media_sources,
-        assets,
-        creators,
-        relations,
+        asset,
+        creator,
+        relation,
         wikis
     };
 
@@ -560,7 +560,7 @@ export async function GetMediaByUUID(DB: D1Database, mediaUUID: string): Promise
     return await DB.prepare(`SELECT * FROM media_source WHERE uuid = ?`).bind(mediaUUID).first<MediaSource>();
 }
 
-export async function GetAssetByUUID(DB: D1Database, assetUUID: string): Promise<{ asset: Asset, creators: CreatorWithRole[] } | null> {
+export async function GetAssetByUUID(DB: D1Database, assetUUID: string): Promise<{ asset: Asset, creator: CreatorWithRole[] } | null> {
     if (!(await UUIDCheck(assetUUID))) {
         return null;
     }
@@ -577,14 +577,14 @@ export async function GetAssetByUUID(DB: D1Database, assetUUID: string): Promise
         WHERE ac.asset_uuid = ?
     `).bind(assetUUID).all();
 
-    const creators: CreatorWithRole[] = (creatorResult.results || []).map((row: any) => ({
+    const creator: CreatorWithRole[] = (creatorResult.results || []).map((row: any) => ({
         creator_uuid: row.creator_uuid,
         creator_name: row.creator_name,
         creator_type: row.creator_type,
         role: row.role
     }));
 
-    return { asset, creators };
+    return { asset, creator };
 }
 
 export async function GetRelationByUUID(DB: D1Database, relationUUID: string): Promise<WorkRelation | null> {
@@ -621,7 +621,7 @@ export async function InputCreator(DB: D1Database, creator: Creator, wikis?: Wik
 
 // InputWork - 插入作品核心及相关信息
 export async function InputWork(DB: D1Database, work: Work, titles: WorkTitle[], 
-                               license: string | null, creators: CreatorWithRole[],
+                               license: string | null, creator: CreatorWithRole[],
                                wikis?: WikiRef[]) {
     // 使用事务确保操作原子性
     await DB.batch([
@@ -648,7 +648,7 @@ export async function InputWork(DB: D1Database, work: Work, titles: WorkTitle[],
         ] : []),
         
         // 插入创作者关联
-        ...creators.map(c => 
+        ...creator.map(c => 
             DB.prepare(`
                 INSERT INTO work_creator (work_uuid, creator_uuid, role)
                 VALUES (?, ?, ?)
@@ -666,7 +666,7 @@ export async function InputWork(DB: D1Database, work: Work, titles: WorkTitle[],
 }
 
 // InputAsset - 插入资产及相关创作者
-export async function InputAsset(DB: D1Database, asset: Asset, creators?: CreatorWithRole[]) {
+export async function InputAsset(DB: D1Database, asset: Asset, creator?: CreatorWithRole[]) {
     // 使用事务批量操作
     const statements: D1PreparedStatement[] = [
         // 插入资产主体
@@ -686,8 +686,8 @@ export async function InputAsset(DB: D1Database, asset: Asset, creators?: Creato
     ];
     
     // 添加资产创作者
-    if (creators) {
-        creators.forEach(c => {
+    if (creator) {
+        creator.forEach(c => {
             statements.push(
                 DB.prepare(`
                     INSERT INTO asset_creator (asset_uuid, creator_uuid, role)
@@ -738,7 +738,7 @@ export interface InputWorkRequestBody {
     work: Work;
     titles: WorkTitle[];
     license?: string | null;
-    creators: CreatorWithRole[];
+    creator: CreatorWithRole[];
     wikis?: WikiRef[];
 }
 
@@ -751,7 +751,7 @@ export interface InputCreatorRequestBody {
 // 用于 POST /inputasset 的请求体
 export interface InputAssetRequestBody {
     asset: Asset;
-    creators?: CreatorWithRole[];
+    creator?: CreatorWithRole[];
 }
 
 // 用于 POST /inputrelation 的请求体
@@ -971,7 +971,7 @@ export async function UpdateCreator(DB: D1Database, creator_uuid: string, creato
     return results.every(result => result.success);
 }
 
-export async function UpdateWork(DB: D1Database, work_uuid: string, work: Work, titles: WorkTitle[], license: string | null, creators: CreatorWithRole[], wikis?: WikiRef[]): Promise<boolean> {
+export async function UpdateWork(DB: D1Database, work_uuid: string, work: Work, titles: WorkTitle[], license: string | null, creator: CreatorWithRole[], wikis?: WikiRef[]): Promise<boolean> {
     if (!(await UUIDCheck(work_uuid))) return false;
 
     const statements: D1PreparedStatement[] = [];
@@ -985,7 +985,7 @@ export async function UpdateWork(DB: D1Database, work_uuid: string, work: Work, 
         `).bind(work.copyright_basis, work_uuid)
     );
 
-    // Delete and re-insert titles, license, creators, and wikis
+    // Delete and re-insert titles, license, creator, and wikis
     statements.push(DB.prepare(`DELETE FROM work_title WHERE work_uuid = ?`).bind(work_uuid));
     titles.forEach(title => {
         statements.push(
@@ -1007,7 +1007,7 @@ export async function UpdateWork(DB: D1Database, work_uuid: string, work: Work, 
     }
 
     statements.push(DB.prepare(`DELETE FROM work_creator WHERE work_uuid = ?`).bind(work_uuid));
-    creators.forEach(c => {
+    creator.forEach(c => {
         statements.push(
             DB.prepare(`
                 INSERT INTO work_creator (work_uuid, creator_uuid, role)
@@ -1032,7 +1032,7 @@ export async function UpdateWork(DB: D1Database, work_uuid: string, work: Work, 
     return results.every(result => result.success);
 }
 
-export async function UpdateAsset(DB: D1Database, asset_uuid: string, asset: Asset, creators?: CreatorWithRole[]): Promise<boolean> {
+export async function UpdateAsset(DB: D1Database, asset_uuid: string, asset: Asset, creator?: CreatorWithRole[]): Promise<boolean> {
     if (!(await UUIDCheck(asset_uuid))) return false;
 
     const statements: D1PreparedStatement[] = [];
@@ -1054,10 +1054,10 @@ export async function UpdateAsset(DB: D1Database, asset_uuid: string, asset: Ass
         )
     );
 
-    // Delete and re-insert asset creators
+    // Delete and re-insert asset creator
     statements.push(DB.prepare(`DELETE FROM asset_creator WHERE asset_uuid = ?`).bind(asset_uuid));
-    if (creators) {
-        creators.forEach(c => {
+    if (creator) {
+        creator.forEach(c => {
             statements.push(
                 DB.prepare(`
                     INSERT INTO asset_creator (asset_uuid, creator_uuid, role)

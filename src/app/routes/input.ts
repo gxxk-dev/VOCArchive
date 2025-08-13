@@ -6,7 +6,7 @@ import { Hono } from "hono";
 
 const inputHandlers = {
     work: async (DB: any, body: InputWorkRequestBody) => {
-        await InputWork(DB, body.work, body.titles || [], body.license || null, body.creators || [], body.wikis || []);
+        await InputWork(DB, body.work, body.titles || [], body.license || null, body.creator || [], body.wikis || []);
         return "Work added successfully.";
     },
     creator: async (DB: any, body: InputCreatorRequestBody) => {
@@ -14,7 +14,7 @@ const inputHandlers = {
         return "Creator added successfully.";
     },
     asset: async (DB: any, body: InputAssetRequestBody) => {
-        await InputAsset(DB, body.asset, body.creators || []);
+        await InputAsset(DB, body.asset, body.creator || []);
         return "Asset added successfully.";
     },
     relation: async (DB: any, body: InputRelationRequestBody) => {

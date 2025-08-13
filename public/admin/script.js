@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- State ---
     const API_BASE_URL = '/api';
     let jwtToken = localStorage.getItem('jwtToken');
-    let currentTab = 'works';
+    let currentTab = 'work';
     let currentEditUUID = null; // To track the item being edited
 
     // --- API & Helper Functions ---
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loginContainer.classList.add('hidden');
         adminPanel.classList.remove('hidden');
         const activeTab = document.querySelector('.tab-button.active');
-        currentTab = activeTab ? activeTab.dataset.target : 'works';
+        currentTab = activeTab ? activeTab.dataset.target : 'work';
         loadContent(currentTab);
     }
 
@@ -178,13 +178,13 @@ document.addEventListener('DOMContentLoaded', () => {
             addDynamicListItem('titles-list', createTitleRow());
         }
         if (e.target.id === 'add-creator-button') {
-            addDynamicListItem('creators-list', createCreatorRow());
+            addDynamicListItem('creator-list', createCreatorRow());
         }
         if (e.target.id === 'add-wiki-button') {
             addDynamicListItem('wikis-list', createWikiRow());
         }
         if (e.target.id === 'add-asset-creator-button') {
-            addDynamicListItem('asset-creators-list', createAssetCreatorRow());
+            addDynamicListItem('asset-creator-list', createAssetCreatorRow());
         }
     });
 
@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadContent(target) {
         content.innerHTML = '<h2>Loading...</h2>';
         try {
-            const data = await apiFetch(`/list/${target}?page=1&pageSize=100`);
+            const data = await apiFetch(`/list/${target}/1?pageSize=999`);
             renderTable(target, data);
         } catch (error) {
             content.innerHTML = `<p class="error-message">Failed to load ${target}: ${error.message}</p>`;
@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderTable(target, data) {
-        if (target === 'works') {
+        if (target === 'work') {
             renderWorksGrid(target, data);
             return;
         }
@@ -277,10 +277,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button class="create-button" data-target="${target}">Create New ${capTarget}</button>
             </div>
             ${!data || data.length === 0 ? `<p>No ${target} found.</p>` : `
-            <div id="works-grid">
+            <div id="work-grid">
                 ${data.map(work => {
                     const title = work.titles.find(t => t.is_official)?.title || work.titles[0]?.title || 'Untitled';
-                    // The backend currently does not provide a direct URL for preview assets.
+                    // The backend currently does not provide a direct URL for preview asset.
                     // The 'preview_asset' object has a 'file_id', but there is no '/file/:id' endpoint to resolve it.
                     // Using a placeholder until a file serving mechanism is implemented.
                     const imageUrl = 'https://via.placeholder.com/300x200.png?text=No+Image';
@@ -294,8 +294,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <p class="work-card-uuid">${work.work_uuid}</p>
                         </div>
                         <div class="work-card-actions">
-                            <button class="edit-button" data-target="works" data-uuid="${work.work_uuid}">Edit</button>
-                            <button class="delete-button" data-target="works">Delete</button>
+                            <button class="edit-button" data-target="work" data-uuid="${work.work_uuid}">Edit</button>
+                            <button class="delete-button" data-target="work">Delete</button>
                         </div>
                     </div>
                     `;
@@ -309,10 +309,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const button = e.target;
         const target = button.dataset.target;
         const uuid = button.dataset.uuid;
-        const endpointMap = { authors: 'creator', works: 'work' };
+        const endpointMap = { creator: 'creator', work: 'work' };
         const getEndpoint = endpointMap[target] || target;
         try {
-            const data = await apiFetch(`/get/${getEndpoint}?uuid=${uuid}`);
+            const data = await apiFetch(`/get/${getEndpoint}/${uuid}`);
             showFormModal(target, data);
         } catch (error) {
             alert(`Failed to fetch item details: ${error.message}`);
@@ -328,13 +328,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!uuid || !confirm(`Are you sure you want to delete this item from ${target}?`)) return;
 
         const uuidKeyMap = {
-            works: 'work_uuid',
-            authors: 'creator_uuid',
+            work: 'work_uuid',
+            creator: 'creator_uuid',
             media: 'media_uuid',
             asset: 'asset_uuid',
             relation: 'relation_uuid'
         };
-        const endpointMap = { authors: 'creator', works: 'work' };
+        const endpointMap = { creator: 'creator', work: 'work' };
         const uuidKey = uuidKeyMap[target];
         const deleteEndpoint = endpointMap[target] || target;
 
@@ -359,8 +359,8 @@ document.addEventListener('DOMContentLoaded', () => {
         modalForm.onsubmit = (e) => handleFormSubmit(e, target, !!data);
         modal.classList.remove('hidden');
 
-        // Logic to toggle license field visibility for 'works'
-        if (target === 'works') {
+        // Logic to toggle license field visibility for 'work'
+        if (target === 'work') {
             const copyrightBasisSelect = document.getElementById('copyright_basis');
             const licenseContainer = document.getElementById('license-container');
 
@@ -383,7 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function generateFormFields(target, data = null) {
         const s = (val) => JSON.stringify(val, null, 2);
         const fields = {
-            authors: `
+            creator: `
                 <input type="hidden" name="creator_uuid" value="${data?.creator?.uuid || ''}">
                 <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.creator?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''}>
                 <label for="name">Name:</label><input type="text" id="name" name="name" required value="${data?.creator?.name || ''}">
@@ -429,9 +429,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 </select>
                 <label for="language">Language:</label><input type="text" id="language" name="language" value="${data?.asset?.language || ''}">
                 <div class="form-section">
-                    <h4>Creators</h4>
-                    <div id="asset-creators-list" class="dynamic-list">
-                        ${(data?.creators || []).map(createAssetCreatorRow).join('')}
+                    <h4>creator</h4>
+                    <div id="asset-creator-list" class="dynamic-list">
+                        ${(data?.creator || []).map(createAssetCreatorRow).join('')}
                     </div>
                     <button type="button" id="add-asset-creator-button" class="add-row-button">Add Creator</button>
                 </div>
@@ -446,7 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${['original', 'remix', 'cover', 'remake', 'picture', 'lyrics'].map(type => `<option value="${type}" ${data?.relation_type === type ? 'selected' : ''}>${type}</option>`).join('')}
                 </select>
             `,
-            works: `
+            work: `
                 <div class="form-section">
                     <h4>Work Details</h4>
                     <input type="hidden" name="work_uuid" value="${data?.work?.uuid || ''}">
@@ -473,9 +473,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
 
                 <div class="form-section">
-                    <h4>Creators</h4>
-                    <div id="creators-list" class="dynamic-list">
-                        ${(data?.creators || []).map(createCreatorRow).join('')}
+                    <h4>creator</h4>
+                    <div id="creator-list" class="dynamic-list">
+                        ${(data?.creator || []).map(createCreatorRow).join('')}
                     </div>
                     <button type="button" id="add-creator-button" class="add-row-button">Add Creator</button>
                 </div>
@@ -550,15 +550,15 @@ document.addEventListener('DOMContentLoaded', () => {
         formError.textContent = '';
         const formData = new FormData(e.target);
         let body;
-        const endpointMap = { authors: 'creator', works: 'work' };
+        const endpointMap = { creator: 'creator', work: 'work' };
         const apiTarget = endpointMap[target] || target;
         let wikis = [];
         let titles = [];
-        let creators = [];
+        let creator = [];
         try {
             // Construct the request body based on the target type
             switch (target) {
-                case 'authors':
+                case 'creator':
                     wikis = [];
                     document.querySelectorAll('#wikis-list .dynamic-list-item').forEach(item => {
                         wikis.push({
@@ -590,9 +590,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                     break;
                 case 'asset':
-                    creators = [];
-                    document.querySelectorAll('#asset-creators-list .dynamic-list-item').forEach(item => {
-                        creators.push({
+                    creator = [];
+                    document.querySelectorAll('#asset-creator-list .dynamic-list-item').forEach(item => {
+                        creator.push({
                             creator_uuid: item.querySelector('input[name="asset_creator_uuid"]').value,
                             role: item.querySelector('input[name="asset_creator_role"]').value,
                         });
@@ -608,7 +608,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             is_previewpic: formData.get('is_previewpic') === 'true',
                             language: formData.get('language') || null,
                         },
-                        creators: creators,
+                        creator: creator,
                     };
                     break;
                 case 'relation':
@@ -620,7 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         relation_type: formData.get('relation_type'),
                     };
                     break;
-                case 'works':
+                case 'work':
                     titles = [];
                     document.querySelectorAll('#titles-list .dynamic-list-item').forEach((item, index) => {
                         titles.push({
@@ -630,9 +630,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     });
 
-                    creators = [];
-                    document.querySelectorAll('#creators-list .dynamic-list-item').forEach(item => {
-                        creators.push({
+                    creator = [];
+                    document.querySelectorAll('#creator-list .dynamic-list-item').forEach(item => {
+                        creator.push({
                             creator_uuid: item.querySelector('input[name="creator_uuid"]').value,
                             role: item.querySelector('input[name="creator_role"]').value,
                         });
@@ -654,7 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         },
                         titles: titles,
                         license: formData.get('license') || null,
-                        creators: creators,
+                        creator: creator,
                         wikis: wikis,
                     };
 

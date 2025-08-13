@@ -97,7 +97,7 @@
             color: var(--md-sys-color-on-surface);
         }
 
-        .work-creators {
+        .work-creator {
             font-size: 1rem;
             line-height: 1.5rem;
             letter-spacing: 0.5px;
@@ -181,8 +181,8 @@
             box-shadow: var(--md-sys-elevation-level1);
         }
 
-        /* Assets Section */
-        .assets-section {
+        /* asset Section */
+        .asset-section {
             background-color: var(--md-sys-color-surface-container-low);
             border-radius: var(--md-sys-shape-corner-large);
             padding: 24px;
@@ -202,7 +202,7 @@
             gap: 8px;
         }
 
-        .assets-grid {
+        .asset-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
             gap: 16px;
@@ -288,7 +288,7 @@
             border: 1px solid var(--md-sys-color-outline-variant);
         }
 
-        .search-terms, .related-works {
+        .search-terms, .related-work {
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -352,7 +352,7 @@
                 min-width: auto;
             }
             
-            .assets-grid {
+            .asset-grid {
                 grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
             }
         }
@@ -506,7 +506,7 @@
                     </div>
                 </div>
             </div>
-            <div class="work-creators">创作者1, 创作者2</div>
+            <div class="work-creator">创作者1, 创作者2</div>
         </div>
 
         <!-- Version Cards -->
@@ -551,14 +551,14 @@
         </div>
 
 
-        <!-- Assets Section -->
-        <div class="assets-section">
+        <!-- asset Section -->
+        <div class="asset-section">
             <div class="setting-label">
                 <span class="material-symbols-outlined">folder</span>
                 作品资产
             </div>
             
-            <div class="assets-grid">
+            <div class="asset-grid">
                 <a href="">
                     <div class="asset-card">
                         <span class="material-symbols-outlined">图标名</span>
@@ -590,7 +590,7 @@
             </div>
         </div>
 
-        <!-- Related Works Section -->
+        <!-- Related work Section -->
         <div class="section">
             <div class="section-header" onclick="toggleSection('related')">
                 <span class="material-symbols-outlined">local_movies</span>
@@ -598,7 +598,7 @@
                 <span class="material-symbols-outlined section-arrow">expand_more</span>
             </div>
             <div class="content-box" id="relatedContent">
-                <div class="related-works">
+                <div class="related-work">
                     <a href="">
                         <span class="material-symbols-outlined">music_note</span>
                         名称
@@ -625,7 +625,7 @@
         }
 
         // 对象存储端点URL(B2API)
-        const B2_NATIVE_URL = 'http://assets.vocarchive.com/b2api/v1/b2_download_file_by_id?fileId=';
+        const B2_NATIVE_URL = 'http://asset.vocarchive.com/b2api/v1/b2_download_file_by_id?fileId=';
 
         const wikiURLMap = {
             "moegirl": "https://zh.moegirl.org.cn/{}",
@@ -636,15 +636,15 @@
         // ====================
 
         const workTitleEl=document.querySelector('.work-title');
-        const workCreatorsEl=document.querySelector('.work-creators');
+        const workCreatorsEl=document.querySelector('.work-creator');
 
-        function SetWorkTitle(title, creators) {
+        function SetWorkTitle(title, creator) {
             workTitleEl.textContent = title;
-            workCreatorsEl.textContent = creators;
+            workCreatorsEl.textContent = creator;
         }
 
         function AddAsset(title, info, url, icon="image") {
-            const assetsGrid = document.querySelector('.assets-grid');
+            const assetsGrid = document.querySelector('.asset-grid');
             const assetCard = document.createElement('a');
             assetCard.href = url;
             assetCard.classList.add('asset-card');
@@ -678,7 +678,7 @@
         }
 
         function AddRelatedWork(title, url, icon="music_note") {
-            const relatedWorks = document.querySelector('.related-works');
+            const relatedWorks = document.querySelector('.related-work');
             const relatedWork = document.createElement('a');
             relatedWork.href = url;
             relatedWork.classList.add('related-work');
@@ -755,7 +755,6 @@
             // 信息
             ClearPageData()
             const workInfo = await GetWorkInfo();
-            console.log(workInfo);
             RenderWorkInfo(workInfo) 
         });
     
@@ -772,14 +771,14 @@
         // 获取作品信息
         async function GetWorkInfo() {
             const uuid = GetUUIDByParam();
-            return await fetch(`/api/get/work?uuid=${uuid}`)
+            return await fetch(`/api/get/work/${uuid}`)
                     .then(response => response.json())
         }
 
         function ClearPageData() {
             // 清空作品标题和创作者
             document.querySelector('.work-title').textContent = '';
-            document.querySelector('.work-creators').textContent = '';
+            document.querySelector('.work-creator').textContent = '';
 
             // 重置版本卡片信息
             const versionCards = document.querySelectorAll('.version-card');
@@ -798,17 +797,18 @@
             });
 
             // 清空资产区域
-            document.querySelector('.assets-grid').innerHTML = '';
+            document.querySelector('.asset-grid').innerHTML = '';
 
             // 清空Wiki页面
             document.querySelector('.search-terms').innerHTML = '';
 
             // 清空相关作品
-            document.querySelector('.related-works').innerHTML = '';
+            document.querySelector('.related-work').innerHTML = '';
         }
 
         // 渲染页面内容
         function RenderWorkInfo(data) {
+            console.log("Render data:", data)
             // 1. 设置作品标题和创作者
             // 获取用户首选语言
             const userLang = navigator.language;
@@ -858,8 +858,8 @@
             }
             
             // 设置创作者
-            const creatorNames = data.creators.map(c => c.creator_name).join(', ');
-            document.querySelector('.work-creators').textContent = creatorNames;
+            const creatorNames = data.creator.map(c => c.creator_name).join(', ');
+            document.querySelector('.work-creator').textContent = creatorNames;
             
             // 2. 设置媒体源卡片
             const versionCardsContainer = document.querySelector('.versions-container');
@@ -921,16 +921,16 @@
             SetCopyrightStatus(copyrightStatus, licenseInfo);
             
             // 4. 添加作品资产
-            const assetsGrid = document.querySelector('.assets-grid');
+            const assetsGrid = document.querySelector('.asset-grid');
             assetsGrid.innerHTML = ''; // 清空容器
             
-            data.assets.forEach(asset => {
+            data.asset.forEach(asset => {
                 // 确定资产类型图标
                 const icon = asset.asset_type === 'lyrics' ? 'description' : 'image';
                 
                 // 构建创作者信息
-                const creatorInfo = asset.creators.length > 0 
-                    ? asset.creators.map(c => `${c.role}: ${c.creator.name}`).join(', ') 
+                const creatorInfo = asset.creator.length > 0 
+                    ? asset.creator.map(c => `${c.role}: ${c.creator_name}`).join(', ') 
                     : '';
                 
                 // 构建语言信息
@@ -972,10 +972,10 @@
             });
             
             // 6. 添加相关作品
-            const relatedWorks = document.querySelector('.related-works');
+            const relatedWorks = document.querySelector('.related-work');
             relatedWorks.innerHTML = ''; // 清空容器
             
-            data.relations.forEach(relation => {
+            data.relation.forEach(relation => {
                 // 确定当前作品在关系中的位置
                 const isFromWork = data.work.uuid === relation.from_work_uuid;
                 const otherWorkUUID = isFromWork ? relation.to_work_uuid : relation.from_work_uuid;

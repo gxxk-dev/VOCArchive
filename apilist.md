@@ -26,18 +26,7 @@
    * 数据库管理 (Database)
        * POST /api/input/dbinit (或 GET /api/dbinit): 初始化数据库表。
        * POST /api/delete/dbclear (或 GET /api/dbclear): 清空数据库中的用户数据表。
-       * GET /api/dbexport: 导出用户数据表。
-       * GET /api/addfakedata: 添加用于测试的假数据。
 
-  外部API
+# 外部API
 
    * GET http://assets.vocarchive.com/b2api/v1/b2_download_file_by_id?fileId={file_id}: 从对象存储下载文件。
-
-  可能已弃用的接口
-
-  在 poc.html 中发现了一些旧的或可能是测试用的API命名方式：
-
-   * GET /api/getwork: 可能是 /api/get/work 的旧版本。   
-   * GET /api/getworks: 可能是 /api/list/works 的旧版本。
-
-  以上就是目前前端代码中调用的所有后端API端点。

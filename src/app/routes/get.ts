@@ -13,7 +13,7 @@ const resHandlers = {
 
 export const getInfo = new Hono();
 
-getInfo.get('/:resType/:uuid', (c: any) => {
+getInfo.get('/:resType/:uuid', async (c: any) => {
     const resType = c.req.param('resType');
     const handler = resHandlers[resType as keyof typeof resHandlers];
     
@@ -21,5 +21,6 @@ getInfo.get('/:resType/:uuid', (c: any) => {
         return c.json({ error: 'Invalid resource type' }, 400);
     }
     
-    return c.json(handler(c.env.DB, c.req.param('uuid')));
+    const result = await handler(c.env.DB, c.req.param('uuid'));
+    return c.json(result);
 });

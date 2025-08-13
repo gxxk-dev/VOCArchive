@@ -8,9 +8,9 @@ const updateHandlers = {
     creator: async (DB: any, body: UpdateCreatorRequestBody) => 
         await UpdateCreator(DB, body.creator_uuid, body.creator, body.wikis),
     work: async (DB: any, body: UpdateWorkRequestBody) => 
-        await UpdateWork(DB, body.work_uuid, body.work, body.titles, body.license || null, body.creators, body.wikis),
+        await UpdateWork(DB, body.work_uuid, body.work, body.titles, body.license || null, body.creator, body.wikis),
     asset: async (DB: any, body: UpdateAssetRequestBody) => 
-        await UpdateAsset(DB, body.asset_uuid, body.asset, body.creators),
+        await UpdateAsset(DB, body.asset_uuid, body.asset, body.creator),
     relation: async (DB: any, body: UpdateRelationRequestBody) => 
         await UpdateRelation(DB, body.relation_uuid, body),
     media: async (DB: any, body: UpdateMediaRequestBody) => 

@@ -169,12 +169,8 @@ dist
 
 # wrangler project
 
-.dev.vars
 .wrangler/
 
 # AI tools
 
 .gemini
-
-# dependency files
-package-lock.json

@@ -13,15 +13,15 @@ const resHandlers = {
 
 export const listInfo = new Hono();
 
-listInfo.get('/:resType/:pageNum?pageSize=:pageSize', (c:any) => {
+listInfo.get('/:resType/:pageNum/:pageSize?', async (c:any) => {
     const resType = c.req.param("resType");
     const pageNum = Number(c.req.param("pageNum")) || 1;
-    const pageSize = Number(c.req.query("pageSize")) || 10;
+    const pageSize = Number(c.req.param("pageSize")) || 10;
     const handler = resHandlers[resType as keyof typeof resHandlers];
     
     if (!handler) {
         return c.json({ error: 'Invalid resource type' }, 400);
     }
     
-    return c.json(handler(c.env.DB, pageNum, pageSize));
+    return c.json(await handler(c.env.DB, pageNum, pageSize));
 });
