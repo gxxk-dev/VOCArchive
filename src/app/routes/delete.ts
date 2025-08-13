@@ -18,7 +18,7 @@ const deleteHandlers = {
         const deletedCount = await DeleteWorksByCreator(DB, body.creator_uuid);
         return deletedCount;
     },
-    dbclear: async (DB: any) => {
+    dbclear: async (DB: any, _:any) => {
         await DropUserTables(DB);
         return true;
     }

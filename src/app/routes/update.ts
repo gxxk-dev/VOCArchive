@@ -17,7 +17,6 @@ const updateHandlers = {
         await UpdateMedia(DB, body.media_uuid, body)
 };
 
-export const getInfo = new Hono();
 export const updateInfo = new Hono();
 
 updateInfo.post('/:resType', async (c: any) => {
