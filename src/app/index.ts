@@ -7,9 +7,6 @@ import { updateInfo } from './routes/update'
 import { inputInfo } from './routes/input'
 import { auth } from './routes/auth'
 import { jwt } from 'hono/jwt'
-import { getConfig } from './database'
-
-//const app = new Hono()
 
 const app = new Hono().basePath("/api")
 app.get('/', (c) => {
@@ -18,9 +15,8 @@ app.get('/', (c) => {
 
 // ========== 中间件 ==========
 const middleware=async (c: any, next:any) => {
-    console.log("?")
     const jwtMiddleware = jwt({
-        secret: await getConfig(c.env.DB, "JWT_SECRET") || '',
+        secret: c.env.JWT_SECRET as string,
     })
     return jwtMiddleware(c, next)
 }
@@ -28,13 +24,13 @@ const middleware=async (c: any, next:any) => {
 // ========== 信息管理 ==========
 // ---------- 删除信息 ----------
 app.route('/delete', deleteInfo)
-    .use("/delete",middleware)
+    .use("/delete/*",middleware)
 // ---------- 修改信息 ----------
 app.route('/update', updateInfo)
-    .use("/update",middleware)
+    .use("/update/*",middleware)
 // ---------- 录入信息 ----------
 app.route('/input', inputInfo)
-    .use("/input",middleware)
+    .use("/input/*",middleware)
 
 // ========== 配置/权限 ==========
 app.route('/auth', auth)

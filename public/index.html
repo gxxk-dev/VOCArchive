@@ -679,9 +679,9 @@
                     // 获取封面URL
                     let coverUrl = '';
                     if (item.preview_asset) {
-                        coverUrl = `/file/${item.preview_asset.file_id}`;
+                        coverUrl = `https://vocarchive-offical-deploy-bucket.s3.us-west-004.backblazeb2.com/${item.preview_asset.file_id}`;
                     } else if (item.non_preview_asset) {
-                        coverUrl = `/file/${item.non_preview_asset.file_id}`;
+                        coverUrl = `https://vocarchive-offical-deploy-bucket.s3.us-west-004.backblazeb2.com/${item.non_preview_asset.file_id}`;
                     } else {
                         // 默认封面
                         coverUrl = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100';

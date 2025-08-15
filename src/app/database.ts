@@ -114,11 +114,7 @@ CREATE TABLE IF NOT EXISTS work_creator (
     PRIMARY KEY (work_uuid, creator_uuid, role)
 );
 
--- Config表 (键值对存储)
-CREATE TABLE config (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL
-);
+
 `);
 
 
@@ -126,7 +122,7 @@ CREATE TABLE config (
 const USER_TABLES = [
     'work_title', 'work_license', 'media_source', 'asset',
     'asset_creator', 'work_relation', 'work_wiki', 'work_creator',
-    'work', 'creator_wiki', 'creator', 'config'
+    'work', 'creator_wiki', 'creator'
 ];
 
 const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -738,7 +734,7 @@ export interface InputWorkRequestBody {
     work: Work;
     titles: WorkTitle[];
     license?: string | null;
-    creator: CreatorWithRole[];
+    creator?: CreatorWithRole[];
     wikis?: WikiRef[];
 }
 
@@ -971,7 +967,7 @@ export async function UpdateCreator(DB: D1Database, creator_uuid: string, creato
     return results.every(result => result.success);
 }
 
-export async function UpdateWork(DB: D1Database, work_uuid: string, work: Work, titles: WorkTitle[], license: string | null, creator: CreatorWithRole[], wikis?: WikiRef[]): Promise<boolean> {
+export async function UpdateWork(DB: D1Database, work_uuid: string, work: Work, titles: WorkTitle[], license: string | null, creator?: CreatorWithRole[], wikis?: WikiRef[]): Promise<boolean> {
     if (!(await UUIDCheck(work_uuid))) return false;
 
     const statements: D1PreparedStatement[] = [];
@@ -1006,15 +1002,17 @@ export async function UpdateWork(DB: D1Database, work_uuid: string, work: Work, 
         );
     }
 
-    statements.push(DB.prepare(`DELETE FROM work_creator WHERE work_uuid = ?`).bind(work_uuid));
-    creator.forEach(c => {
-        statements.push(
-            DB.prepare(`
-                INSERT INTO work_creator (work_uuid, creator_uuid, role)
-                VALUES (?, ?, ?)
-            `).bind(work_uuid, c.creator_uuid, c.role)
-        );
-    });
+    if (creator) {
+        statements.push(DB.prepare(`DELETE FROM work_creator WHERE work_uuid = ?`).bind(work_uuid));
+        creator.forEach(c => {
+            statements.push(
+                DB.prepare(`
+                    INSERT INTO work_creator (work_uuid, creator_uuid, role)
+                    VALUES (?, ?, ?)
+                `).bind(work_uuid, c.creator_uuid, c.role)
+            );
+        });
+    }
 
     statements.push(DB.prepare(`DELETE FROM work_wiki WHERE work_uuid = ?`).bind(work_uuid));
     if (wikis) {
@@ -1140,28 +1138,3 @@ export async function ListCreators(DB: D1Database, page: number, pageSize: numbe
     return results || [];
 }
 
-// Config-related functions
-export async function getConfig(DB: D1Database, key: string): Promise<string | null> {
-    const result = await DB.prepare(`
-        SELECT value FROM config WHERE key = ?
-    `).bind(key).first<{ value: string }>();
-    
-    return result ? result.value : null;
-}
-
-export async function setConfig(DB: D1Database, key: string, value: string): Promise<boolean> {
-    const result = await DB.prepare(`
-        INSERT INTO config (key, value) VALUES (?, ?)
-        ON CONFLICT(key) DO UPDATE SET value = excluded.value
-    `).bind(key, value).run();
-    
-    return result.success;
-}
-
-export async function deleteConfig(DB: D1Database, key: string): Promise<boolean> {
-    const result = await DB.prepare(`
-        DELETE FROM config WHERE key = ?
-    `).bind(key).run();
-    
-    return result.success && (result.meta.changes as number) > 0;
-}

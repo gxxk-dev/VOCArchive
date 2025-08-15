@@ -6,9 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const authCodeInput = document.getElementById('auth-code');
     const loginError = document.getElementById('login-error');
     const logoutButton = document.getElementById('logout-button');
-    const resetButton = document.getElementById('reset-button');
-    const qrcodeContainer = document.getElementById('qrcode-container');
-    const qrcodeDiv = document.getElementById('qrcode');
     const tabs = document.getElementById('tabs');
     const content = document.getElementById('content');
     const modal = document.getElementById('form-modal');
@@ -16,14 +13,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const formTitle = document.getElementById('form-title');
     const formError = document.getElementById('form-error');
     const closeModalButton = document.querySelector('.close-button');
-    const totpUrl = document.getElementById('totp-url');
-    const copyUrlButton = document.getElementById('copy-url-button');
 
     // --- State ---
     const API_BASE_URL = '/api';
     let jwtToken = localStorage.getItem('jwtToken');
     let currentTab = 'work';
     let currentEditUUID = null; // To track the item being edited
+    let allCreators = [];
 
     // --- API & Helper Functions ---
     function showLogin() {
@@ -84,63 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     logoutButton.addEventListener('click', showLogin);
 
-    resetButton.addEventListener('click', async () => {
-        if (!confirm('您确定要重置授权吗？这将使当前的所有登录失效，并生成一个新的二维码。')) {
-            return;
-        }
-        try {
-            loginError.textContent = '';
-            qrcodeContainer.classList.add('hidden');
-
-            const response = await fetch(`${API_BASE_URL}/auth/reset-secrets`, {
-                method: 'POST',
-                headers: {
-                    // No JWT token is sent for reset
-                    'Content-Type': 'application/json',
-                },
-                 body: JSON.stringify({}), // Empty body
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText || 'Reset request failed');
-            }
-
-            const data = await response.json();
-
-            if (data.otpAuthUri) {
-                qrcodeDiv.innerHTML = ''; // Clear previous QR code
-                console.log(data.otpAuthUri)
-                new QRCode(qrcodeDiv, {
-                    text: data.otpAuthUri,
-                    width: 256,
-                    height: 256,
-                    colorDark : "#000000",
-                    colorLight : "#ffffff",
-                    correctLevel : QRCode.CorrectLevel.H
-                });
-                qrcodeContainer.classList.remove('hidden');
-                console.log(qrcodeContainer)
-                totpUrl.textContent = data.otpAuthUri;
-                alert('授权已重置。请扫描新的二维码。');
-            } else {
-                throw new Error('Reset response did not contain OTP URI.');
-            }
-        } catch (error) {
-            loginError.textContent = `重置失败: ${error.message}`;
-        }
-    });
-
-    copyUrlButton.addEventListener('click', () => {
-        const url = totpUrl.textContent;
-        if (url) {
-            navigator.clipboard.writeText(url).then(() => {
-                alert('URL已复制到剪贴板');
-            }, (err) => {
-                alert('无法复制URL: ', err);
-            });
-        }
-    });
 
     tabs.addEventListener('click', (e) => {
         if (e.target.classList.contains('tab-button')) {
@@ -178,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
             addDynamicListItem('titles-list', createTitleRow());
         }
         if (e.target.id === 'add-creator-button') {
-            addDynamicListItem('creator-list', createCreatorRow());
+            addDynamicListItem('creator-list', createCreatorRow(undefined, allCreators));
         }
         if (e.target.id === 'add-wiki-button') {
             addDynamicListItem('wikis-list', createWikiRow());
@@ -209,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof data === 'string') {
             // Truncate long strings like UUIDs
             if (data.length > 30 && data.includes('-')) {
-                 return `<span class="string-value" title="${data}">${data.substring(0, 8)}...</span>`;
+                 return `<span class="string-value uuid" title="${data}">${data.substring(0, 8)}...</span>`;
             }
             // Check if it's a URL
             if (data.startsWith('http')) {
@@ -280,10 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div id="work-grid">
                 ${data.map(work => {
                     const title = work.titles.find(t => t.is_official)?.title || work.titles[0]?.title || 'Untitled';
-                    // The backend currently does not provide a direct URL for preview asset.
-                    // The 'preview_asset' object has a 'file_id', but there is no '/file/:id' endpoint to resolve it.
-                    // Using a placeholder until a file serving mechanism is implemented.
-                    const imageUrl = 'https://via.placeholder.com/300x200.png?text=No+Image';
+                    const imageUrl = work.preview_asset ? `https://vocarchive-offical-deploy-bucket.s3.us-west-004.backblazeb2.com/${work.preview_asset.file_id}` : 'https://via.placeholder.com/300x200.png?text=No+Image';
                     return `
                     <div class="work-card" data-uuid="${work.work_uuid}">
                         <div class="work-card-image">
@@ -291,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         <div class="work-card-content">
                             <h3 class="work-card-title">${title}</h3>
-                            <p class="work-card-uuid">${work.work_uuid}</p>
+                            <p class="work-card-uuid uuid">${work.work_uuid}</p>
                         </div>
                         <div class="work-card-actions">
                             <button class="edit-button" data-target="work" data-uuid="${work.work_uuid}">Edit</button>
@@ -311,12 +247,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const uuid = button.dataset.uuid;
         const endpointMap = { creator: 'creator', work: 'work' };
         const getEndpoint = endpointMap[target] || target;
-        try {
+        //try {
             const data = await apiFetch(`/get/${getEndpoint}/${uuid}`);
+            console.log(data)
             showFormModal(target, data);
-        } catch (error) {
-            alert(`Failed to fetch item details: ${error.message}`);
-        }
+        //} catch (error) {
+        //    alert(`Failed to fetch item details: ${error.message}`);
+        //}
     }
 
     async function handleDelete(e) {
@@ -350,12 +287,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Form & Create/Update Logic ---
-    function showFormModal(target, data = null) {
+    async function showFormModal(target, data = null) {
         currentEditUUID = data ? (data.uuid || data.work?.uuid || data.creator?.uuid || data.asset?.uuid) : null;
         const mode = data ? 'Edit' : 'Create New';
         formTitle.textContent = `${mode} ${target.charAt(0).toUpperCase() + target.slice(1)}`;
         formError.textContent = '';
-        modalForm.innerHTML = generateFormFields(target, data);
+
+        if (target === 'work') {
+            try {
+                allCreators = await apiFetch(`/list/creator/1?pageSize=999`);
+            } catch (error) {
+                formError.textContent = `Failed to load creators: ${error.message}`;
+            }
+        }
+
+        modalForm.innerHTML = generateFormFields(target, data, { creators: allCreators });
         modalForm.onsubmit = (e) => handleFormSubmit(e, target, !!data);
         modal.classList.remove('hidden');
 
@@ -380,30 +326,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function generateFormFields(target, data = null) {
+    function generateFormFields(target, data = null, options = {}) {
         const s = (val) => JSON.stringify(val, null, 2);
+        
+        const data_wikis = (data?.wikis || []).map(createWikiRow).join('');
+        const data_creators = (data?.creator || []).map(creator => createCreatorRow(creator, options.creators)).join('');
+        const data_relations = ['original', 'remix', 'cover', 'remake', 'picture', 'lyrics'].map(type => `<option value="${type}" ${data?.relation_type === type ? 'selected' : ''}>${type}</option>`).join('');
+        const data_titles = (data?.titles || []).map(createTitleRow).join('')
+        
         const fields = {
             creator: `
-                <input type="hidden" name="creator_uuid" value="${data?.creator?.uuid || ''}">
-                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.creator?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''}>
-                <label for="name">Name:</label><input type="text" id="name" name="name" required value="${data?.creator?.name || ''}">
+                <input type="hidden" name="creator_uuid" value="${data?.creator?.uuid || data?.uuid || ''}">
+                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.creator?.uuid || data?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
+                <label for="name">Name:</label><input type="text" id="name" name="name" required value="${data?.creator?.name || data?.name || ''}">
                 <label for="type">Type:</label><select id="type" name="type">
-                    <option value="human" ${data?.creator?.type === 'human' ? 'selected' : ''}>Human</option>
-                    <option value="virtual" ${data?.creator?.type === 'virtual' ? 'selected' : ''}>Virtual</option>
+                    <option value="human" ${(data?.creator?.type || data?.type) === 'human' ? 'selected' : ''}>Human</option>
+                    <option value="virtual" ${(data?.creator?.type || data?.type) === 'virtual' ? 'selected' : ''}>Virtual</option>
                 </select>
-                <label for="voicelib">Voice Library:</label><input type="text" id="voicelib" name="voicelib" value="${data?.creator?.voicelib || ''}">
+                <label for="voicelib">Voice Library:</label><input type="text" id="voicelib" name="voicelib" value="${data?.creator?.voicelib || data?.voicelib || ''}">
                 <div class="form-section">
                     <h4>Wikis</h4>
                     <div id="wikis-list" class="dynamic-list">
-                        ${(data?.wikis || []).map(createWikiRow).join('')}
+                        ${data_wikis}
                     </div>
                     <button type="button" id="add-wiki-button" class="add-row-button">Add Wiki</button>
                 </div>
             `,
             media: `
                 <input type="hidden" name="media_uuid" value="${data?.uuid || ''}">
-                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''}>
-                <label for="work_uuid">Work UUID:</label><input type="text" id="work_uuid" name="work_uuid" required value="${data?.work_uuid || ''}">
+                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
+                <label for="work_uuid">Work UUID:</label><input type="text" id="work_uuid" name="work_uuid" required value="${data?.work_uuid || ''}" class="uuid">
                 <label for="is_music">Is Music:</label><select id="is_music" name="is_music">
                     <option value="true" ${data?.is_music ? 'selected' : ''}>Yes</option>
                     <option value="false" ${!data?.is_music ? 'selected' : ''}>No</option>
@@ -415,9 +367,9 @@ document.addEventListener('DOMContentLoaded', () => {
             `,
             asset: `
                 <input type="hidden" name="asset_uuid" value="${data?.asset?.uuid || ''}">
-                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.asset?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''}>
+                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.asset?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
                 <label for="file_id">File ID:</label><input type="text" id="file_id" name="file_id" required value="${data?.asset?.file_id || ''}">
-                <label for="work_uuid">Work UUID:</label><input type="text" id="work_uuid" name="work_uuid" required value="${data?.asset?.work_uuid || ''}">
+                <label for="work_uuid">Work UUID:</label><input type="text" id="work_uuid" name="work_uuid" required value="${data?.asset?.work_uuid || ''}" class="uuid">
                 <label for="asset_type">Asset Type:</label><select id="asset_type" name="asset_type">
                     <option value="lyrics" ${data?.asset?.asset_type === 'lyrics' ? 'selected' : ''}>Lyrics</option>
                     <option value="picture" ${data?.asset?.asset_type === 'picture' ? 'selected' : ''}>Picture</option>
@@ -431,19 +383,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="form-section">
                     <h4>creator</h4>
                     <div id="asset-creator-list" class="dynamic-list">
-                        ${(data?.creator || []).map(createAssetCreatorRow).join('')}
+                        ${data_creators}
                     </div>
                     <button type="button" id="add-asset-creator-button" class="add-row-button">Add Creator</button>
                 </div>
             `,
             relation: `
                 <input type="hidden" name="relation_uuid" value="${data?.uuid || ''}">
-                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''}>
-                <label for="from_work_uuid">From Work UUID:</label><input type="text" id="from_work_uuid" name="from_work_uuid" required value="${data?.from_work_uuid || ''}">
-                <label for="to_work_uuid">To Work UUID:</label><input type="text" id="to_work_uuid" name="to_work_uuid" required value="${data?.to_work_uuid || ''}">
+                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
+                <label for="from_work_uuid">From Work UUID:</label><input type="text" id="from_work_uuid" name="from_work_uuid" required value="${data?.from_work_uuid || ''}" class="uuid">
+                <label for="to_work_uuid">To Work UUID:</label><input type="text" id="to_work_uuid" name="to_work_uuid" required value="${data?.to_work_uuid || ''}" class="uuid">
                 <label for="relation_type">Relation Type:</label>
                 <select id="relation_type" name="relation_type">
-                    ${['original', 'remix', 'cover', 'remake', 'picture', 'lyrics'].map(type => `<option value="${type}" ${data?.relation_type === type ? 'selected' : ''}>${type}</option>`).join('')}
+                    ${data_relations}
                 </select>
             `,
             work: `
@@ -451,7 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h4>Work Details</h4>
                     <input type="hidden" name="work_uuid" value="${data?.work?.uuid || ''}">
                     <label for="work-uuid">Work UUID:</label>
-                    <input type="text" id="work-uuid" name="work_uuid_field" required value="${data?.work?.uuid || crypto.randomUUID()}" readonly>
+                    <input type="text" id="work-uuid" name="work_uuid_field" required value="${data?.work?.uuid || crypto.randomUUID()}" readonly class="uuid">
                     <label for="work-copyright-basis">Copyright Basis:</label>
                     <select id="copyright_basis" name="copyright_basis">
                         <option value="none" ${(data?.work?.copyright_basis || 'none') === 'none' ? 'selected' : ''}>未知/不明</option>
@@ -467,7 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="form-section">
                     <h4>Titles</h4>
                     <div id="titles-list" class="dynamic-list">
-                        ${(data?.titles || []).map(createTitleRow).join('')}
+                        ${data_titles}
                     </div>
                     <button type="button" id="add-title-button" class="add-row-button">Add Title</button>
                 </div>
@@ -475,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="form-section">
                     <h4>creator</h4>
                     <div id="creator-list" class="dynamic-list">
-                        ${(data?.creator || []).map(createCreatorRow).join('')}
+                        ${data_creators}
                     </div>
                     <button type="button" id="add-creator-button" class="add-row-button">Add Creator</button>
                 </div>
@@ -483,7 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="form-section">
                     <h4>Wikis</h4>
                     <div id="wikis-list" class="dynamic-list">
-                        ${(data?.wikis || []).map(createWikiRow).join('')}
+                        ${data_wikis}
                     </div>
                     <button type="button" id="add-wiki-button" class="add-row-button">Add Wiki</button>
                 </div>
@@ -504,13 +456,21 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    function createCreatorRow(creator = { creator_uuid: '', role: '', creator_name: '' }) {
-        console.log("[Edit UI] Show creator:",creator)
+    function createCreatorRow(creator = { creator_uuid: '', role: '' }, allCreators = []) {
+        console.log("[Edit UI] Show creator:", creator)
+        const creatorUuid = creator.creator?.uuid || creator.creator_uuid;
+        const creatorRole = creator.role || '';
+        const creatorOptions = allCreators.map(c => 
+            `<option value="${c.uuid}" ${creatorUuid === c.uuid ? 'selected' : ''}>${c.name}</option>`
+        ).join('');
+
         return `
             <div class="dynamic-list-item">
-                <input type="text" name="creator_uuid" placeholder="Creator UUID" required value="${creator.creator_uuid || ''}">
-                <input type="text" name="creator_role" placeholder="Role" required value="${creator.role || ''}">
-                <input type="text" name="creator_name" placeholder="Creator Name" value="${creator.creator_name || ''}" readonly>
+                <select name="creator_uuid" required>
+                    <option value="">Select Creator</option>
+                    ${creatorOptions}
+                </select>
+                <input type="text" name="creator_role" placeholder="Role" required value="${creatorRole}">
                 <button type="button" class="remove-row-button">Remove</button>
             </div>
         `;
@@ -633,11 +593,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     creator = [];
                     document.querySelectorAll('#creator-list .dynamic-list-item').forEach(item => {
                         creator.push({
-                            creator_uuid: item.querySelector('input[name="creator_uuid"]').value,
+                            creator_uuid: item.querySelector('select[name="creator_uuid"]').value,
                             role: item.querySelector('input[name="creator_role"]').value,
                         });
                     });
-                    
+
                     wikis = [];
                     document.querySelectorAll('#wikis-list .dynamic-list-item').forEach(item => {
                         wikis.push({
@@ -724,6 +684,40 @@ document.addEventListener('DOMContentLoaded', () => {
             alert(`清空数据库失败: ${error.message}`);
         }
     });
+
+    document.addEventListener('click', (e) => {
+        const target = e.target;
+        if (target.classList.contains('uuid') || target.id === 'generated-uuid-result') {
+            let textToCopy = '';
+            if (target.tagName.toLowerCase() === 'input' || target.tagName.toLowerCase() === 'textarea') {
+                textToCopy = target.value;
+            } else if (target.hasAttribute('title') && target.getAttribute('title').length > 0) {
+                textToCopy = target.getAttribute('title');
+            } 
+            else {
+                textToCopy = target.textContent;
+            }
+
+            if (textToCopy) {
+                copyToClipboard(textToCopy, target);
+            }
+        }
+    });
+
+    function copyToClipboard(text, element) {
+        navigator.clipboard.writeText(text).then(() => {
+            // Optional: Add a visual cue
+            if (element) {
+                const originalClass = element.className;
+                element.classList.add('copied');
+                setTimeout(() => {
+                    element.classList.remove('copied');
+                }, 1000);
+            }
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+        });
+    }
 });
 
 // Helper to get a value from a potentially nested object

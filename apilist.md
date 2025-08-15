@@ -17,7 +17,7 @@
        * POST /api/delete/{type}: 删除项目 (例如 /api/delete/work)。
 
    * 文件服务 (File Serving)
-       * GET /file/{file_id}: 获取文件内容。   
+       * 文件服务已迁移至 `assets.vocarchive.com`
 
 # 管理和测试接口
 
@@ -29,4 +29,4 @@
 
 # 外部API
 
-   * GET http://assets.vocarchive.com/b2api/v1/b2_download_file_by_id?fileId={file_id}: 从对象存储下载文件。
+   * GET https://assets.vocarchive.com/{file_id}: 从对象存储下载文件。

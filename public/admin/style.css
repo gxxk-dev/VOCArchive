@@ -628,3 +628,47 @@ td .string-value[title] {
 #copy-url-button:hover {
     opacity: 0.7;
 }
+
+/* UUID Click-to-Copy Styles */
+.uuid {
+    cursor: pointer;
+    position: relative;
+}
+
+.uuid:hover {
+    text-decoration: underline;
+    text-decoration-style: dotted;
+}
+
+.copied {
+    animation: flash-bg 1s ease-out;
+}
+
+@keyframes flash-bg {
+    0% {
+        background-color: transparent;
+    }
+    25% {
+        background-color: #cce5ff; /* A light blue flash */
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+/* Ensure the flash is visible on input fields as well */
+input.copied {
+    animation: flash-input-bg 1s ease-out;
+}
+
+@keyframes flash-input-bg {
+    0% {
+        background-color: #e9ecef; /* Default readonly bg */
+    }
+    25% {
+        background-color: #cce5ff;
+    }
+    100% {
+        background-color: #e9ecef;
+    }
+}

@@ -10,4 +10,4 @@ compatibility_flags = [
 [[d1_databases]]
 binding = "DB"
 database_name = "vocarchive_offical_deploy_database"
-database_id = "17a4dd12-6d14-4fdc-8a15-7e70e53eab8d"
+database_id = "ec0a34ea-2e41-4cc4-831e-6b9f4c5808ae"

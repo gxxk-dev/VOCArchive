@@ -624,8 +624,8 @@
             other: 'insert_drive_file'
         }
 
-        // 对象存储端点URL(B2API)
-        const B2_NATIVE_URL = 'http://asset.vocarchive.com/b2api/v1/b2_download_file_by_id?fileId=';
+        // 对象存储端点URL
+        const ASSET_URL = 'https://vocarchive-offical-deploy-bucket.s3.us-west-004.backblazeb2.com/';
 
         const wikiURLMap = {
             "moegirl": "https://zh.moegirl.org.cn/{}",
@@ -938,7 +938,7 @@
                 
                 // 创建资产卡片
                 const assetCard = document.createElement('a');
-                assetCard.href = `${B2_NATIVE_URL}${asset.file_id}`;
+                assetCard.href = `${ASSET_URL}${asset.file_id}`;
                 assetCard.className = 'asset-card';
                 assetCard.innerHTML = `
                     <span class="material-symbols-outlined">${icon}</span>
