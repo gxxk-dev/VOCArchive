@@ -672,6 +672,9 @@
                 loader.style.display = 'flex';
                 workList.innerHTML = '<div class="loader" id="loader"><div class="loader-dots"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div></div>';
                 
+                // 显示分页
+                paginationContainer.style.display = 'flex';
+
                 // 调用后端API
                 const response = await fetch(`/api/list/work/${currentPage}/${itemsPerPage}`);
                 
@@ -732,6 +735,8 @@
                 
                 // 渲染音乐列表
                 renderMusicList();
+                // 更新分页
+                updatePagination();
             } catch (error) {
                 console.error('获取音乐列表失败:', error);
                 workList.innerHTML = `<div class="error-message">加载失败，请重试</div>`;
@@ -741,6 +746,84 @@
             }
         }
 
+        // 搜索音乐
+        async function searchMusic() {
+            const query = searchInput.value.trim();
+            if (!query) {
+                // 如果搜索词为空，可以重新加载默认列表
+                currentPage = 1;
+                fetchMusicList();
+                return;
+            }
+
+            try {
+                // 显示加载动画
+                loader.style.display = 'flex';
+                workList.innerHTML = '<div class="loader" id="loader"><div class="loader-dots"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div></div>';
+                
+                // 隐藏分页
+                paginationContainer.style.display = 'none';
+
+                // 调用搜索API
+                const response = await fetch(`/api/search/${encodeURIComponent(query)}`);
+                
+                if (!response.ok) {
+                    throw new Error(`请求失败: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // 处理数据
+                filteredMusic = data.map(item => {
+                    // (这里的处理逻辑和 fetchMusicList 中的一样)
+                    let mainTitle = '';
+                    if (item.titles && item.titles.length > 0) {
+                        const officialTitle = item.titles.find(t => t.is_official);
+                        mainTitle = officialTitle ? officialTitle.title : item.titles[0].title;
+                    } else {
+                        mainTitle = '无标题';
+                    }
+                    
+                    let artistName = '未知艺术家';
+                    if (item.creator && item.creator.length > 0) {
+                        const humanCreator = item.creator.find(c => c.creator_type === 'human');
+                        if (humanCreator) {
+                            artistName = humanCreator.creator_name;
+                        } else {
+                            artistName = item.creator[0].creator_name;
+                        }
+                    }
+                    
+                    let coverUrl = '';
+                    if (item.preview_asset) {
+                        coverUrl = `https://vocarchive-offical-deploy-bucket.s3.us-west-004.backblazeb2.com/${item.preview_asset.file_id}`;
+                    } else if (item.non_preview_asset) {
+                        coverUrl = `https://vocarchive-offical-deploy-bucket.s3.us-west-004.backblazeb2.com/${item.non_preview_asset.file_id}`;
+                    } else {
+                        coverUrl = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100';
+                    }
+                    
+                    return {
+                        id: item.work_uuid,
+                        title: mainTitle,
+                        artist: artistName,
+                        cover: coverUrl,
+                        duration: '0:00',
+                        genre: '',
+                        releaseYear: 0
+                    };
+                });
+                
+                // 渲染搜索结果
+                renderMusicList();
+            } catch (error) {
+                console.error('搜索音乐失败:', error);
+                workList.innerHTML = `<div class="error-message">搜索失败，请重试</div>`;
+            } finally {
+                // 隐藏加载动画
+                loader.style.display = 'none';
+            }
+        }
         
         // 渲染音乐列表
         function renderMusicList() {
@@ -774,9 +857,6 @@
                 
                 workList.appendChild(workItem);
             });
-            
-            // 更新分页按钮
-            updatePagination();
         }
         
         // 更新分页状态
@@ -825,7 +905,7 @@
                 if (workItem) {
                     const songId = workItem.dataset.id;
                     // 跳转到播放页面
-                    window.location.href = `/player?uuid=${songId}`;
+                    window.location.href = `player.html?uuid=${songId}`;
                 }
                 
                 // 播放按钮点击事件
@@ -835,7 +915,7 @@
                     const workItem = playBtn.closest('.work-item');
                     const songId = workItem.dataset.id;
                     // 跳转到播放页面
-                    window.location.href = `/player?uuid=${songId}`;
+                    window.location.href = `player.html?uuid=${songId}`;
                 }
             });
             
@@ -850,6 +930,14 @@
                     changePage(1);
                 } else if (btn.dataset.page) {
                     goToPage(parseInt(btn.dataset.page));
+                }
+            });
+
+            // 搜索功能
+            searchButton.addEventListener('click', searchMusic);
+            searchInput.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') {
+                    searchMusic();
                 }
             });
             

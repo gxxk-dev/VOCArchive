@@ -5,6 +5,7 @@ import { getInfo } from './routes/get'
 import { deleteInfo } from './routes/delete'
 import { updateInfo } from './routes/update'
 import { inputInfo } from './routes/input'
+import { searchInfo } from './routes/search'
 import { auth } from './routes/auth'
 import { jwt } from 'hono/jwt'
 
@@ -39,6 +40,8 @@ app.route('/auth', auth)
 // ========== 信息读取(仅GET方法) ==========
 // ---------- 获取信息 ----------
 app.route('/get', getInfo)
+// ---------- 搜索信息 ----------
+app.route('/search', searchInfo)
 // ---------- 列出信息 ----------
 app.route('/list', listInfo)
 
