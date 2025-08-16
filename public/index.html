@@ -373,30 +373,6 @@
             cursor: not-allowed;
         }
 
-        /* 返回按钮 */
-        .back-button {
-            position: fixed;
-            top: var(--spacing-md);
-            left: var(--spacing-md);
-            padding: var(--spacing-sm) 20px;
-            background: rgba(20, 20, 20, 0.85);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: var(--element-radius);
-            cursor: pointer;
-            font-size: clamp(0.85rem, 2vw, 0.95rem);
-            font-weight: 500;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(20px);
-            z-index: 1000;
-            box-shadow: 
-                var(--shadow-md),
-                0 0 0 1px rgba(255, 255, 255, 0.05);
-            animation: slideInRight 0.6s ease-out;
-            animation-delay: 0.1s;
-            animation-fill-mode: both;
-        }
-
         .back-button:hover {
             background: rgba(25, 25, 25, 0.9);
             border-color: rgba(120, 119, 198, 0.3);
@@ -554,6 +530,65 @@
                 opacity: 0.7;
             }
         }
+
+        /* Footer */
+        .site-footer {
+            text-align: center;
+            padding: var(--spacing-lg) var(--spacing-md);
+            margin-top: var(--spacing-xl);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .footer-links a {
+            color: var(--text-accent);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--text-primary);
+            text-decoration: underline;
+        }
+
+        .footer-social {
+            display: flex;
+            gap: var(--spacing-lg);
+        }
+
+        .footer-social a {
+            color: var(--text-accent);
+            font-size: 1.4rem;
+            transition: color 0.3s ease, transform 0.3s ease;
+            display: inline-block;
+        }
+
+        .footer-social a:hover {
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+
+        .footer-copyright p {
+            margin: 0;
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
@@ -562,12 +597,7 @@
         <div class="background-overlay" id="backgroundOverlay"></div>
         <div class="background-pattern" id="backgroundPattern"></div>
     </div>
-    
-    <!-- 返回按钮 -->
-    <button class="back-button" id="backButton">
-        <i class="fas fa-arrow-left"></i> 返回播放器
-    </button>
-    
+
     <!-- 浮动搜索 -->
     <div class="floating-search">
         <input type="text" class="floating-search-input" placeholder="搜索歌曲、艺术家..." id="searchInput">
@@ -618,7 +648,6 @@
         const workList = document.getElementById('workList');
         const searchInput = document.getElementById('searchInput');
         const searchButton = document.getElementById('searchButton');
-        const backButton = document.getElementById('backButton');
         const prevPageBtn = document.getElementById('prevPage');
         const nextPageBtn = document.getElementById('nextPage');
         const paginationContainer = document.getElementById('pagination');
@@ -824,8 +853,6 @@
                 }
             });
             
-            // 返回按钮
-            backButton.addEventListener('click', goBack);
         }
         
         // ========== 分页功能 ==========
@@ -846,13 +873,23 @@
             }
         }
         
-        // ========== 返回功能 ==========
-        function goBack() {
-            window.location.href = '/';
-        }
-        
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', initPage);
     </script>
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="mailto:contact@vocarchive.com">联系我们</a>
+                <a href="mailto:feedback@vocarchive.com">意见反馈</a>
+                <a href="mailto:copyright@vocarchive.com">侵权投诉</a>
+            </div>
+            <div class="footer-social">
+                <a href="https://github.com/gxxk-dev/VOCArchive" title="GitHub"><i class="fab fa-github"></i></a>
+            </div>
+        </div>
+        <div class="footer-copyright">
+            <p>© 2025 VOCArchive. AGPL v3 (or later).</p>
+        </div>
+    </footer>
 </body>
 </html>
