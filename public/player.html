@@ -1008,109 +1008,127 @@
             SetCopyrightStatus(copyrightStatus, licenseInfo);
             
             // 4. 添加作品资产
-            const assetsGrid = document.querySelector('.asset-grid');
-            assetsGrid.innerHTML = ''; // 清空容器
-            
-            data.asset.forEach(asset => {
-                // 确定资产类型图标
-                const icon = asset.asset_type === 'lyrics' ? 'description' : 'image';
+            const assetSection = document.querySelector('.asset-section');
+            if (data.asset && data.asset.length > 0) {
+                assetSection.style.display = '';
+                const assetsGrid = assetSection.querySelector('.asset-grid');
+                assetsGrid.innerHTML = ''; // 清空容器
                 
-                // 构建创作者信息
-                const creatorInfo = asset.creator.length > 0 
-                    ? asset.creator.map(c => `${c.role}: ${c.creator_name}`).join(', ') 
-                    : '';
-                
-                // 构建语言信息
-                const langInfo = asset.language ? ` · ${asset.language}` : '';
-                
-                // 创建资产卡片
-                const assetCard = document.createElement('a');
-                assetCard.href = `${ASSET_URL}${asset.file_id}`;
-                assetCard.className = 'asset-card';
-                assetCard.innerHTML = `
-                    <span class="material-symbols-outlined">${icon}</span>
-                    <div class="asset-details">
-                        <h4>${asset.file_name}</h4>
-                        <p>${creatorInfo}${langInfo}</p>
-                    </div>
-                `;
-                assetsGrid.appendChild(assetCard);
-            });
+                data.asset.forEach(asset => {
+                    // 确定资产类型图标
+                    const icon = asset.asset_type === 'lyrics' ? 'description' : 'image';
+                    
+                    // 构建创作者信息
+                    const creatorInfo = asset.creator.length > 0 
+                        ? asset.creator.map(c => `${c.role}: ${c.creator_name}`).join(', ') 
+                        : '';
+                    
+                    // 构建语言信息
+                    const langInfo = asset.language ? ` · ${asset.language}` : '';
+                    
+                    // 创建资产卡片
+                    const assetCard = document.createElement('a');
+                    assetCard.href = `${ASSET_URL}${asset.file_id}`;
+                    assetCard.className = 'asset-card';
+                    assetCard.innerHTML = `
+                        <span class="material-symbols-outlined">${icon}</span>
+                        <div class="asset-details">
+                            <h4>${asset.file_name}</h4>
+                            <p>${creatorInfo}${langInfo}</p>
+                        </div>
+                    `;
+                    assetsGrid.appendChild(assetCard);
+                });
+            } else {
+                assetSection.style.display = 'none';
+            }
             
             // 5. 添加Wiki页面
-            const searchTerms = document.querySelector('.search-terms');
-            searchTerms.innerHTML = ''; // 清空容器
-            
-            data.wikis.forEach(wiki => {
-                // 使用平台名称作为图标，如果没有预设图标则使用默认图标
-                const icon = wiki.platform in wikiURLMap 
-                    ? `<img src="${wikiURLMap[wiki.platform].replace('{}', 'icon')}" alt="${wiki.platform} icon">`
-                    : `<span class="material-symbols-outlined">public</span>`;
+            const wikiSection = document.getElementById('wikiContent').parentElement;
+            if (data.wikis && data.wikis.length > 0) {
+                wikiSection.style.display = '';
+                const searchTerms = wikiSection.querySelector('.search-terms');
+                searchTerms.innerHTML = ''; // 清空容器
                 
-                // 构建链接
-                const wikiLink = document.createElement('a');
-                wikiLink.href = wikiURLMap[wiki.platform] 
-                    ? wikiURLMap[wiki.platform].replace('{}', wiki.identifier)
-                    : '#';
-                wikiLink.innerHTML = `${icon} ${wiki.platform}: ${wiki.identifier}`;
-                wikiLink.className = 'search-term';
-                
-                searchTerms.appendChild(wikiLink);
-            });
+                data.wikis.forEach(wiki => {
+                    // 使用平台名称作为图标，如果没有预设图标则使用默认图标
+                    const icon = wiki.platform in wikiURLMap 
+                        ? `<img src="${wikiURLMap[wiki.platform].replace('{}', 'icon')}" alt="${wiki.platform} icon">`
+                        : `<span class="material-symbols-outlined">public</span>`;
+                    
+                    // 构建链接
+                    const wikiLink = document.createElement('a');
+                    wikiLink.href = wikiURLMap[wiki.platform] 
+                        ? wikiURLMap[wiki.platform].replace('{}', wiki.identifier)
+                        : '#';
+                    wikiLink.innerHTML = `${icon} ${wiki.platform}: ${wiki.identifier}`;
+                    wikiLink.className = 'search-term';
+                    
+                    searchTerms.appendChild(wikiLink);
+                });
+            } else {
+                wikiSection.style.display = 'none';
+            }
             
             // 6. 添加相关作品
-            const relatedWorks = document.querySelector('.related-work');
-            relatedWorks.innerHTML = ''; // 清空容器
-            
-            data.relation.forEach(relation => {
-                // 确定当前作品在关系中的位置
-                const isFromWork = data.work.uuid === relation.from_work_uuid;
-                const otherWorkUUID = isFromWork ? relation.to_work_uuid : relation.from_work_uuid;
+            const relatedSection = document.getElementById('relatedContent').parentElement;
+            if (data.relation && data.relation.length > 0) {
+                relatedSection.style.display = '';
+                const relatedWorks = relatedSection.querySelector('.related-work');
+                relatedWorks.innerHTML = ''; // 清空容器
                 
-                // 获取相关作品的标题
-                const titles = isFromWork 
-                    ? relation.related_work_titles?.to_work_titles || []
-                    : relation.related_work_titles?.from_work_titles || [];
-                
-                let otherWorkTitle = "";
-                if (titles.length > 0) {
-                    // 尝试匹配用户语言
-                    const userLangTitle = titles.find(t => t.language === userLang);
-                    if (userLangTitle) {
-                        otherWorkTitle = userLangTitle.title;
-                    } else {
-                        // 使用第一条标题
-                        otherWorkTitle = titles[0].title;
+                data.relation.forEach(relation => {
+                    // 确定当前作品在关系中的位置
+                    const isFromWork = data.work.uuid === relation.from_work_uuid;
+                    const otherWorkUUID = isFromWork ? relation.to_work_uuid : relation.from_work_uuid;
+                    
+                    // 获取相关作品的标题
+                    const titles = isFromWork 
+                        ? relation.related_work_titles?.to_work_titles || []
+                        : relation.related_work_titles?.from_work_titles || [];
+                    
+                    let otherWorkTitle = "";
+                    if (titles.length > 0) {
+                        // 尝试匹配用户语言
+                        const userLangTitle = titles.find(t => t.language === userLang);
+                        if (userLangTitle) {
+                            otherWorkTitle = userLangTitle.title;
+                        } else {
+                            // 使用第一条标题
+                            otherWorkTitle = titles[0].title;
+                        }
                     }
-                }
-                
-                // 确定关系类型描述
-                let relationType = "";
-                switch (relation.relation_type) {
-                    case 'original':
-                        relationType = isFromWork ? "衍生自" : "原作品";
-                        break;
-                    case 'cover':
-                        relationType = isFromWork ? "翻唱自" : "翻唱作品";
-                        break;
-                    case 'remix':
-                        relationType = isFromWork ? "混音自" : "混音作品";
-                        break;
-                    default:
-                        relationType = relation.relation_type;
-                }
-                
-                // 创建相关作品链接
-                const relatedLink = document.createElement('a');
-                relatedLink.href = `?uuid=${otherWorkUUID}`;
-                relatedLink.className = 'related-work';
-                relatedLink.innerHTML = `
-                    <span class="material-symbols-outlined">music_note</span>
-                    ${relationType}: ${otherWorkTitle}
-                `;
-                
-                relatedWorks.appendChild(relatedLink);
-            });
+                    
+                    // 确定关系类型描述
+                    let relationType = "";
+                    switch (relation.relation_type) {
+                        case 'original':
+                            relationType = isFromWork ? "衍生自" : "原作品";
+                            break;
+                        case 'cover':
+                            relationType = isFromWork ? "翻唱自" : "翻唱作品";
+                            break;
+                        case 'remix':
+                            relationType = isFromWork ? "混音自" : "混音作品";
+                            break;
+                        default:
+                            relationType = relation.relation_type;
+                    }
+                    
+                    // 创建相关作品链接
+                    const relatedLink = document.createElement('a');
+                    relatedLink.href = `?uuid=${otherWorkUUID}`;
+                    relatedLink.className = 'related-work';
+                    relatedLink.innerHTML = `
+                        <span class="material-symbols-outlined">music_note</span>
+                        ${relationType}: ${otherWorkTitle}
+                    `;
+                    
+                    relatedWorks.appendChild(relatedLink);
+                });
+            } else {
+                relatedSection.style.display = 'none';
+            }
         }
 
     </script>
