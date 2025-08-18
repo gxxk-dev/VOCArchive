@@ -1,4 +1,4 @@
-# VOCArch1ve
+# VOCArchive
 
 一个基于 Cloudflare Workers 和 D1 数据库的 泛VOCALOID 歌曲存档项目。
 
@@ -20,14 +20,23 @@
 
 (命名随意 合法即可)
 
+- D1 的 读取复制 对项目的运行速度有帮助 但由于cf对大陆特殊的ip分配机制 它不会在中国大陆地区奏效
+
 ### 2. 初始化数据库
 
 在 部署时一同创建的数据库内 执行`initdb.sql`文件即可
 
-### 3. 配置鉴权key
+### 3. 配置环境变量
+
+#### 3.1 鉴权Key
 
 配置`TOTP_SECRET`/`JWT_SECRET`即可
+
 key内容合法/保证安全性即可 
+
+#### 3.2 资产根URL
+
+填写一个 兼容S3 GET方法的存储桶端点URL于`asset_url`即可
 
 ## 📝 API
 

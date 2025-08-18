@@ -9,7 +9,7 @@ import { searchInfo } from './routes/search'
 import { auth } from './routes/auth'
 import { jwt } from 'hono/jwt'
 
-const app = new Hono().basePath("/api")
+const app = new Hono<{ Bindings: Cloudflare }>().basePath("/api")
 app.get('/', (c) => {
   return c.text('Hello Hono!')
 })
@@ -36,6 +36,23 @@ app.route('/input', inputInfo)
 // ========== 配置/权限 ==========
 app.route('/auth', auth)
 
+// ========== 站点配置 ==========
+app.get('/config', (c:any) => {
+  return c.json({ 
+    asset_url: c.env.ASSET_URL 
+  })
+})
+
+app.get('/sw_config.js', (c:any) => {
+  const assetUrl = c.env.ASSET_URL;
+  const hostname = new URL(assetUrl).hostname;
+  const content = `const ASSET_HOST = '${hostname}';`;
+  return new Response(content, {
+    headers: {
+      'Content-Type': 'application/javascript',
+    },
+  });
+});
 
 // ========== 信息读取(仅GET方法) ==========
 // ---------- 获取信息 ----------

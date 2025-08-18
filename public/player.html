@@ -684,11 +684,37 @@
         }
 
         // 对象存储端点URL
-        const ASSET_URL = 'https://assets.vocarchive.com/';
+        let ASSET_URL = '';
 
         const wikiURLMap = {
             "moegirl": "https://zh.moegirl.org.cn/{}",
             "baidu": "https://baike.baidu.com/item/{}",
+        }
+
+        // ====================
+        //   Config Fetching
+        // ====================
+        async function fetchConfig() {
+            try {
+                const response = await fetch('/api/config');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch config');
+                }
+                const config = await response.json();
+                if (config.asset_url) {
+                    ASSET_URL = config.asset_url;
+                    // Ensure trailing slash
+                    if (!ASSET_URL.endsWith('/')) {
+                        ASSET_URL += '/';
+                    }
+                } else {
+                    throw new Error('Asset URL not found in config');
+                }
+            } catch (error) {
+                console.error('Error fetching configuration:', error);
+                // Fallback to a default value
+                ASSET_URL = 'https://assets.vocarchive.com/';
+            }
         }
 
         // ====================
@@ -813,6 +839,7 @@
                 section.style.animationDelay = `${0.05 * (index + 1)}s`;
             });
             // 信息
+            await fetchConfig(); // Fetch config first
             ClearPageData()
             const workInfo = await GetWorkInfo();
             RenderWorkInfo(workInfo) 
@@ -1090,6 +1117,7 @@
     <footer class="md-footer">
         <div class="footer-content">
             <div class="footer-links">
+                <a href="/cache.html">缓存管理</a>
                 <a href="mailto:contact@vocarchive.com">联系我们</a>
                 <a href="mailto:feedback@vocarchive.com">意见反馈</a>
                 <a href="mailto:copyright@vocarchive.com">侵权投诉</a>

@@ -1,4 +1,15 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // --- Config ---
+    try {
+        const response = await fetch('/api/config');
+        if (!response.ok) throw new Error('Config fetch failed');
+        const config = await response.json();
+        window.ASSET_URL = config.asset_url || 'https://assets.vocarchive.com';
+    } catch (error) {
+        console.error('Could not fetch config:', error);
+        window.ASSET_URL = 'https://assets.vocarchive.com';
+    }
+
     // --- DOM Elements ---
     const loginContainer = document.getElementById('login-container');
     const adminPanel = document.getElementById('admin-panel');
@@ -232,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div id="work-grid">
                 ${data.map(work => {
                     const title = work.titles.find(t => t.is_official)?.title || work.titles[0]?.title || 'Untitled';
-                    const imageUrl = work.preview_asset ? `https://assets.vocarchive.com/${work.preview_asset.file_id}` : 'https://via.placeholder.com/300x200.png?text=No+Image';
+                    const imageUrl = work.preview_asset ? `${window.ASSET_URL}/${work.preview_asset.file_id}` : 'https://via.placeholder.com/300x200.png?text=No+Image';
                     return `
                     <div class="work-card" data-uuid="${work.work_uuid}">
                         <div class="work-card-image">

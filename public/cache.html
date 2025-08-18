@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cache Management</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            text-align: center;
+            padding: 2em;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #111;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #message {
+            margin-top: 20px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cache Management</h1>
+        <p>Click the button below to clear the application cache.</p>
+        <p>This can help resolve issues or apply updates immediately.</p>
+        <button id="clear-cache-btn">Clear Cache</button>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        const clearCacheBtn = document.getElementById('clear-cache-btn');
+        const messageDiv = document.getElementById('message');
+
+        clearCacheBtn.addEventListener('click', async () => {
+            if ('caches' in window) {
+                try {
+                    const keys = await caches.keys();
+                    const cacheKeysToDelete = keys.filter(key => key.startsWith('vocarchive-cache-v'));
+                    
+                    if (cacheKeysToDelete.length === 0) {
+                        messageDiv.textContent = 'No application caches found to clear.';
+                        messageDiv.style.color = 'orange';
+                        return;
+                    }
+
+                    await Promise.all(cacheKeysToDelete.map(key => caches.delete(key)));
+                    
+                    messageDiv.textContent = 'Cache cleared successfully! The page will now reload.';
+                    messageDiv.style.color = 'green';
+                    
+                    // Also unregister the service worker to ensure a clean state
+                    if ('serviceWorker' in navigator) {
+                        const registrations = await navigator.serviceWorker.getRegistrations();
+                        for(let registration of registrations) {
+                            await registration.unregister();
+                        }
+                    }
+
+                    alert('Cache and service worker cleared. The application will now reload.');
+                    // Reload the page to apply changes
+                    window.location.reload();
+
+                } catch (error) {
+                    messageDiv.textContent = 'Error clearing cache: ' + error;
+                    messageDiv.style.color = 'red';
+                    console.error('Error clearing cache:', error);
+                }
+            } else {
+                messageDiv.textContent = 'Cache API is not supported in this browser.';
+                messageDiv.style.color = 'red';
+            }
+        });
+    </script>
+</body>
+</html>
