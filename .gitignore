@@ -170,6 +170,7 @@ dist
 # wrangler project
 
 .wrangler/
+wrangler.toml
 
 # AI tools
 
