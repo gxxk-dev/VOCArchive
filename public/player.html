@@ -555,17 +555,14 @@
     <div class="player-container">
         <!-- Song Header -->
         <div class="work-header">
-            <div class="work-title">作品标题
+            <div class="work-title">
                 <div class="info-icon">
                     <span class="material-symbols-outlined">info</span>
                     <div class="tooltip">
-                        <strong>非官方翻译</strong>
-                        这是一个非官方标题译名，其官方名称为：<br>
-                        <span style="color: var(--md-sys-color-outline);">ja</span> - 世界で一番お姫様
                     </div>
                 </div>
             </div>
-            <div class="work-creator">创作者1, 创作者2</div>
+            <div class="work-creator"></div>
         </div>
 
         <!-- Version Cards -->
@@ -576,7 +573,7 @@
                 </div>
                 <div class="version-details">
                     <h3>音频版本</h3>
-                    <p id="audio-format">类型(压缩级别)<br/>比特率</p>
+                    <p id="audio-format"></p>
                 </div>
                 <button id="download-audio" class="download-btn">下载</button>
             </div>
@@ -587,7 +584,7 @@
                 </div>
                 <div class="version-details">
                     <h3>视频版本</h3>
-                    <p id="video-format">编码 crfXX<br/>XXXXxXXXXp XXfps XX.XXmbps</p>
+                    <p id="video-format"></p>
                 </div>
                 <button id="download-video" class="download-btn">下载</button>
             </div> 
@@ -601,10 +598,10 @@
             </div>
 
             <div class="copyright-status authorized" id="copyrightStatus">
-                <span class="material-symbols-outlined copyright-icon">verified</span>
+                <span class="material-symbols-outlined copyright-icon"></span>
                 <div class="copyright-text">
-                    <h4>已获得授权</h4>
-                    <p>本作品已获得版权方正式授权，可以合法使用和分发</p>
+                    <h4></h4>
+                    <p></p>
                 </div>
             </div>
         </div>
@@ -620,10 +617,8 @@
             <div class="asset-grid">
                 <a href="">
                     <div class="asset-card">
-                        <span class="material-symbols-outlined">图标名</span>
+                        <span class="material-symbols-outlined"></span>
                         <div class="asset-details">
-                            <h4>标题</h4>
-                            <p>(语言 · )作者</p>
                         </div>
                     </div>
                 </a>
@@ -641,10 +636,6 @@
             </div>
             <div class="content-box" id="wikiContent">
                 <div class="search-terms">
-                    <a href="">
-                        <span class="material-symbols-outlined">站点图标</span>
-                        页面标题
-                    </a>
                 </div>
             </div>
         </div>
@@ -658,10 +649,7 @@
             </div>
             <div class="content-box" id="relatedContent">
                 <div class="related-work">
-                    <a href="">
-                        <span class="material-symbols-outlined">music_note</span>
-                        名称
-                    </a>
+
                 </div>
             </div>
         </div>
@@ -898,7 +886,7 @@
             console.log("Render data:", data)
             // 1. 设置作品标题和创作者
             // 获取用户首选语言
-            const userLang = navigator.language;
+            const userLang = navigator.language.toLowerCase();
             let displayTitle = "";
             let isOfficialTitle = true;
             
@@ -918,7 +906,7 @@
                     isOfficialTitle = false;
                 }
             }
-            
+
             // 添加标题到页面
             const titleEl = document.querySelector('.work-title');
             titleEl.textContent = displayTitle;

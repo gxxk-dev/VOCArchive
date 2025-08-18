@@ -745,24 +745,31 @@
                 
                 // 处理数据
                 filteredMusic = data.map(item => {
-                    console.log("处理作品数据：", item);
-                    // 获取主标题（优先官方标题）
-                    let mainTitle = '';
+                    const userLang = navigator.language || navigator.userLanguage;
+                    
+                    // 获取主标题
+                    let mainTitle = '[Untitled]';
                     if (item.titles && item.titles.length > 0) {
-                        const officialTitle = item.titles.find(t => t.is_official);
-                        mainTitle = officialTitle ? officialTitle.title : item.titles[0].title;
-                    } else {
-                        mainTitle = '无标题';
+                        const userLangTitle = item.titles.find(t => t.language.startsWith(userLang.split('-')[0]));
+                        if (userLangTitle) {
+                            mainTitle = userLangTitle.title;
+                        } else {
+                            const officialTitle = item.titles.find(t => t.is_official);
+                            if (officialTitle) {
+                                mainTitle = officialTitle.title;
+                            } else {
+                                mainTitle = item.titles[0].title;
+                            }
+                        }
                     }
                     
-                    // 获取艺术家名（优先显示人类创作者）
-                    let artistName = '未知艺术家';
+                    // 获取艺术家名
+                    let artistName = '[Unknown Artist]';
                     if (item.creator && item.creator.length > 0) {
                         const humanCreator = item.creator.find(c => c.creator_type === 'human');
                         if (humanCreator) {
                             artistName = humanCreator.creator_name;
                         } else {
-                            // 如果没有人类创作者，显示第一个虚拟歌姬
                             artistName = item.creator[0].creator_name;
                         }
                     }
@@ -834,16 +841,25 @@
                 
                 // 处理数据
                 filteredMusic = data.map(item => {
-                    // (这里的处理逻辑和 fetchMusicList 中的一样)
-                    let mainTitle = '';
+                    const userLang = navigator.language || navigator.userLanguage;
+                    
+                    // 获取主标题
+                    let mainTitle = '[Untitled]';
                     if (item.titles && item.titles.length > 0) {
-                        const officialTitle = item.titles.find(t => t.is_official);
-                        mainTitle = officialTitle ? officialTitle.title : item.titles[0].title;
-                    } else {
-                        mainTitle = '无标题';
+                        const userLangTitle = item.titles.find(t => t.language.startsWith(userLang.split('-')[0]));
+                        if (userLangTitle) {
+                            mainTitle = userLangTitle.title;
+                        } else {
+                            const officialTitle = item.titles.find(t => t.is_official);
+                            if (officialTitle) {
+                                mainTitle = officialTitle.title;
+                            } else {
+                                mainTitle = item.titles[0].title;
+                            }
+                        }
                     }
                     
-                    let artistName = '未知艺术家';
+                    let artistName = '[Unknown Artist]';
                     if (item.creator && item.creator.length > 0) {
                         const humanCreator = item.creator.find(c => c.creator_type === 'human');
                         if (humanCreator) {
