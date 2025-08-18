@@ -72,6 +72,15 @@ async function handleDeleteCacheItem(event, url) {
   }
 }
 
+  self.addEventListener('install', (event) => {
+  // Perform install steps
+});
+
+self.addEventListener('activate', (event) => {
+  // Perform activate steps
+});
+
+self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Check if the request is for the target asset host and has a cacheable file extension

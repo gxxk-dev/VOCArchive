@@ -1040,9 +1040,10 @@
                 
                 data.wikis.forEach(wiki => {
                     // 使用平台名称作为图标，如果没有预设图标则使用默认图标
-                    const icon = wiki.platform in wikiURLMap 
+                    // TODO: 平台ICON支持
+                    const icon =/* wiki.platform in wikiURLMap 
                         ? `<img src="${wikiURLMap[wiki.platform].replace('{}', 'icon')}" alt="${wiki.platform} icon">`
-                        : `<span class="material-symbols-outlined">public</span>`;
+                        : */`<span class="material-symbols-outlined">public</span>`;
                     
                     // 构建链接
                     const wikiLink = document.createElement('a');
