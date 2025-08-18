@@ -656,6 +656,23 @@ td .string-value[title] {
     }
 }
 
+/* Styles for input with quick select dropdown */
+.input-with-quick-select {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.input-with-quick-select input {
+    flex-grow: 1; /* Input takes up available space */
+}
+
+.input-with-quick-select select {
+    flex-grow: 0;
+    width: auto; /* Select only takes as much space as needed */
+    min-width: 150px; /* Optional: give it a minimum width */
+}
+
 /* Ensure the flash is visible on input fields as well */
 input.copied {
     animation: flash-input-bg 1s ease-out;

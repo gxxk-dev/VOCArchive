@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentTab = 'work';
     let currentEditUUID = null; // To track the item being edited
     let allCreators = [];
+    let allWorks = [];
 
     // --- API & Helper Functions ---
     function showLogin() {
@@ -43,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
             headers['Authorization'] = `Bearer ${jwtToken}`;
         }
         const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+        console.log("API交互：",response)
         if (response.status === 401) {
             showLogin();
             throw new Error('Unauthorized');
@@ -66,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 body: JSON.stringify({ code: authCodeInput.value }),
             });
-            if (response.token) {
+            if (response.token) {   
                 jwtToken = response.token;
                 localStorage.setItem('jwtToken', jwtToken);
                 showAdminPanel();
@@ -124,6 +126,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (e.target.id === 'add-asset-creator-button') {
             addDynamicListItem('asset-creator-list', createAssetCreatorRow());
+        }
+    });
+
+    modalForm.addEventListener('change', (e) => {
+        if (e.target.classList.contains('quick-select')) {
+            const selectedValue = e.target.value;
+            const targetInputId = e.target.dataset.targetInput;
+            const targetInput = document.getElementById(targetInputId);
+            if (targetInput && selectedValue) {
+                targetInput.value = selectedValue;
+            }
         }
     });
 
@@ -219,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div id="work-grid">
                 ${data.map(work => {
                     const title = work.titles.find(t => t.is_official)?.title || work.titles[0]?.title || 'Untitled';
-                    const imageUrl = work.preview_asset ? `https://vocarchive-offical-deploy-bucket.s3.us-west-004.backblazeb2.com/${work.preview_asset.file_id}` : 'https://via.placeholder.com/300x200.png?text=No+Image';
+                    const imageUrl = work.preview_asset ? `https://assets.vocarchive.com/${work.preview_asset.file_id}` : 'https://via.placeholder.com/300x200.png?text=No+Image';
                     return `
                     <div class="work-card" data-uuid="${work.work_uuid}">
                         <div class="work-card-image">
@@ -293,15 +306,21 @@ document.addEventListener('DOMContentLoaded', () => {
         formTitle.textContent = `${mode} ${target.charAt(0).toUpperCase() + target.slice(1)}`;
         formError.textContent = '';
 
-        if (target === 'work') {
-            try {
+        // Pre-fetch data needed for selectors
+        try {
+            if (['work', 'asset'].includes(target)) {
                 allCreators = await apiFetch(`/list/creator/1?pageSize=999`);
-            } catch (error) {
-                formError.textContent = `Failed to load creators: ${error.message}`;
             }
+            if (['media', 'asset', 'relation'].includes(target)) {
+                allWorks = await apiFetch(`/list/work/1?pageSize=999`);
+            }
+        } catch (error) {
+            formError.textContent = `Failed to load selection data: ${error.message}`;
+            // Decide if we should stop or continue with empty selectors
         }
 
-        modalForm.innerHTML = generateFormFields(target, data, { creators: allCreators });
+
+        modalForm.innerHTML = generateFormFields(target, data, { creators: allCreators, works: allWorks });
         modalForm.onsubmit = (e) => handleFormSubmit(e, target, !!data);
         modal.classList.remove('hidden');
 
@@ -355,7 +374,11 @@ document.addEventListener('DOMContentLoaded', () => {
             media: `
                 <input type="hidden" name="media_uuid" value="${data?.uuid || ''}">
                 <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
-                <label for="work_uuid">Work UUID:</label><input type="text" id="work_uuid" name="work_uuid" required value="${data?.work_uuid || ''}" class="uuid">
+                <label for="work_uuid">Work UUID:</label>
+                <div class="input-with-quick-select">
+                    <input type="text" id="work_uuid" name="work_uuid" required value="${data?.work_uuid || ''}" class="uuid">
+                    ${createQuickSelect('work-quick-select', 'work-quick-select-name', options.works, 'work_uuid', 'titles', data?.work_uuid, 'work_uuid')}
+                </div>
                 <label for="is_music">Is Music:</label><select id="is_music" name="is_music">
                     <option value="true" ${data?.is_music ? 'selected' : ''}>Yes</option>
                     <option value="false" ${!data?.is_music ? 'selected' : ''}>No</option>
@@ -369,7 +392,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input type="hidden" name="asset_uuid" value="${data?.asset?.uuid || ''}">
                 <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.asset?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
                 <label for="file_id">File ID:</label><input type="text" id="file_id" name="file_id" required value="${data?.asset?.file_id || ''}">
-                <label for="work_uuid">Work UUID:</label><input type="text" id="work_uuid" name="work_uuid" required value="${data?.asset?.work_uuid || ''}" class="uuid">
+                <label for="work_uuid">Work UUID:</label>
+                <div class="input-with-quick-select">
+                    <input type="text" id="work_uuid_asset" name="work_uuid" required value="${data?.asset?.work_uuid || ''}" class="uuid">
+                    ${createQuickSelect('work-quick-select-asset', 'work-quick-select-asset-name', options.works, 'work_uuid', 'titles', data?.asset?.work_uuid, 'work_uuid_asset')}
+                </div>
                 <label for="asset_type">Asset Type:</label><select id="asset_type" name="asset_type">
                     <option value="lyrics" ${data?.asset?.asset_type === 'lyrics' ? 'selected' : ''}>Lyrics</option>
                     <option value="picture" ${data?.asset?.asset_type === 'picture' ? 'selected' : ''}>Picture</option>
@@ -391,8 +418,16 @@ document.addEventListener('DOMContentLoaded', () => {
             relation: `
                 <input type="hidden" name="relation_uuid" value="${data?.uuid || ''}">
                 <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
-                <label for="from_work_uuid">From Work UUID:</label><input type="text" id="from_work_uuid" name="from_work_uuid" required value="${data?.from_work_uuid || ''}" class="uuid">
-                <label for="to_work_uuid">To Work UUID:</label><input type="text" id="to_work_uuid" name="to_work_uuid" required value="${data?.to_work_uuid || ''}" class="uuid">
+                <label for="from_work_uuid">From Work UUID:</label>
+                <div class="input-with-quick-select">
+                    <input type="text" id="from_work_uuid" name="from_work_uuid" required value="${data?.from_work_uuid || ''}" class="uuid">
+                    ${createQuickSelect('from-work-quick-select', 'from-work-quick-select-name', options.works, 'work_uuid', 'titles', data?.from_work_uuid, 'from_work_uuid')}
+                </div>
+                <label for="to_work_uuid">To Work UUID:</label>
+                <div class="input-with-quick-select">
+                    <input type="text" id="to_work_uuid" name="to_work_uuid" required value="${data?.to_work_uuid || ''}" class="uuid">
+                    ${createQuickSelect('to-work-quick-select', 'to-work-quick-select-name', options.works, 'work_uuid', 'titles', data?.to_work_uuid, 'to_work_uuid')}
+                </div>
                 <label for="relation_type">Relation Type:</label>
                 <select id="relation_type" name="relation_type">
                     ${data_relations}
@@ -442,6 +477,33 @@ document.addEventListener('DOMContentLoaded', () => {
             `
         };
         return (fields[target] || '<p>Form not implemented for this type.</p>') + '<button type="submit">Submit</button>';
+    }
+    
+
+    function createQuickSelect(id, name, data, valueField, displayField, selectedValue, targetInputId) {
+        if (!data || data.length === 0) return '';
+    
+        const getDisplayValue = (item) => {
+            if (displayField === 'titles') {
+                const officialTitle = item.titles.find(t => t.is_official);
+                return officialTitle ? officialTitle.title : item.titles[0]?.title || 'Untitled';
+            }
+            return item[displayField] || 'Unnamed';
+        };
+    
+        const options = data.map(item => {
+            const value = item[valueField];
+            const display = getDisplayValue(item);
+            const isSelected = value === selectedValue ? 'selected' : '';
+            return `<option value="${value}" ${isSelected}>${display} (${value.substring(0, 8)}...)</option>`;
+        }).join('');
+    
+        return `
+            <select id="${id}" name="${name}" class="quick-select" data-target-input="${targetInputId}">
+                <option value="">--快速选择--</option>
+                ${options}
+            </select>
+        `;
     }
 
     function createTitleRow(title = { title: '', language: 'ja', is_official: false }) {
