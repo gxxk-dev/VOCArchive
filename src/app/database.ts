@@ -228,6 +228,7 @@ interface CreatorWithRole {
     creator_name?: string;
     creator_type: 'human' | 'virtual';
     role: string;
+    wikis?: WikiRef[];
 }
 
 interface WorkRelation {
@@ -456,7 +457,16 @@ export async function GetWorkByUUID(DB: D1Database, workUUID: string): Promise<W
     const asset = Array.from(assetMap.values());
     // 7. 获取作品创作者信息
     const creatorStmt = DB.prepare(`
-        SELECT c.uuid as creator_uuid, c.name as creator_name, c.type as creator_type, wc.role
+        SELECT 
+            c.uuid as creator_uuid, 
+            c.name as creator_name, 
+            c.type as creator_type, 
+            wc.role,
+            (
+                SELECT json_group_array(json_object('platform', cw.platform, 'identifier', cw.identifier))
+                FROM creator_wiki cw
+                WHERE cw.creator_uuid = c.uuid
+            ) as wikis
         FROM work_creator wc
         JOIN creator c ON wc.creator_uuid = c.uuid
         WHERE wc.work_uuid = ?
@@ -467,7 +477,8 @@ export async function GetWorkByUUID(DB: D1Database, workUUID: string): Promise<W
         creator_uuid: row.creator_uuid,
         creator_name: row.creator_name,
         creator_type: row.creator_type,
-        role: row.role
+        role: row.role,
+        wikis: row.wikis ? JSON.parse(row.wikis) : []
     }));
 
     // 8. 获取作品关系信息（包含关联作品多语言标题）

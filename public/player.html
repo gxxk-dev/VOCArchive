@@ -710,11 +710,9 @@
         // ====================
 
         const workTitleEl=document.querySelector('.work-title');
-        const workCreatorsEl=document.querySelector('.work-creator');
 
         function SetWorkTitle(title, creator) {
             workTitleEl.textContent = title;
-            workCreatorsEl.textContent = creator;
         }
 
         function AddAsset(title, info, url, icon="image") {
@@ -853,7 +851,6 @@
         function ClearPageData() {
             // 清空作品标题和创作者
             document.querySelector('.work-title').textContent = '';
-            document.querySelector('.work-creator').textContent = '';
 
             // 重置版本卡片信息
             const versionCards = document.querySelectorAll('.version-card');
@@ -931,10 +928,6 @@
                     </div>
                 `;
             }
-            
-            // 设置创作者
-            const creatorNames = data.creator.map(c => c.creator_name).join(', ');
-            document.querySelector('.work-creator').textContent = creatorNames;
             
             // 2. 设置媒体源卡片
             const versionCardsContainer = document.querySelector('.versions-container');
@@ -1033,28 +1026,58 @@
             
             // 5. 添加Wiki页面
             const wikiSection = document.getElementById('wikiContent').parentElement;
+            const searchTerms = wikiSection.querySelector('.search-terms');
+            searchTerms.innerHTML = ''; // 清空容器
+
+            let hasWikis = false;
+
             if (data.wikis && data.wikis.length > 0) {
-                wikiSection.style.display = '';
-                const searchTerms = wikiSection.querySelector('.search-terms');
-                searchTerms.innerHTML = ''; // 清空容器
-                
+                hasWikis = true;
                 data.wikis.forEach(wiki => {
-                    // 使用平台名称作为图标，如果没有预设图标则使用默认图标
-                    // TODO: 平台ICON支持
-                    const icon =/* wiki.platform in wikiURLMap 
-                        ? `<img src="${wikiURLMap[wiki.platform].replace('{}', 'icon')}" alt="${wiki.platform} icon">`
-                        : */`<span class="material-symbols-outlined">public</span>`;
+                    const icon =`<span class="material-symbols-outlined">public</span>`;
                     
                     // 构建链接
                     const wikiLink = document.createElement('a');
                     wikiLink.href = wikiURLMap[wiki.platform] 
                         ? wikiURLMap[wiki.platform].replace('{}', wiki.identifier)
                         : '#';
-                    wikiLink.innerHTML = `${icon} ${wiki.platform}: ${wiki.identifier}`;
+                    wikiLink.innerHTML = `${icon} 作品WIKI - ${wiki.platform}: ${wiki.identifier}`;
                     wikiLink.className = 'search-term';
                     
                     searchTerms.appendChild(wikiLink);
                 });
+            }
+
+            // Add creators and their wikis
+            if (data.creator && data.creator.length > 0) {
+                hasWikis = true; // We are showing creators here, so the section should be visible
+                data.creator.forEach(c => {
+                    if (c.wikis && c.wikis.length > 0) {
+                        c.wikis.forEach(wiki => {
+                            const icon = `<span class="material-symbols-outlined">person</span>`;
+                            const wikiUrl = wikiURLMap[wiki.platform]
+                                ? wikiURLMap[wiki.platform].replace('{}', wiki.identifier)
+                                : '#';
+                            
+                            const wikiLink = document.createElement('a');
+                            wikiLink.href = wikiUrl;
+                            wikiLink.innerHTML = `${icon} 作者WIKI - [${c.role}] ${c.creator_name} (${wiki.platform})</span>`;
+                            wikiLink.className = 'search-term';
+                            
+                            searchTerms.appendChild(wikiLink);
+                        });
+                    } else {
+                        const icon = `<span class="material-symbols-outlined">person</span>`;
+                        const creatorInfo = document.createElement('div'); // Using div instead of 'a' as there is no link
+                        creatorInfo.className = 'search-term'; // Keep same style
+                        creatorInfo.innerHTML = `${icon} 作者WIKI - [${c.role}] ${c.creator_name}`;
+                        searchTerms.appendChild(creatorInfo);
+                    }
+                });
+            }
+
+            if (hasWikis) {
+                wikiSection.style.display = '';
             } else {
                 wikiSection.style.display = 'none';
             }
