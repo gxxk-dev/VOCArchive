@@ -24,8 +24,7 @@ const DB_INIT_SQL:string[]=RemoveComments_SQLStmts(`
 CREATE TABLE creator (
     uuid TEXT PRIMARY KEY,
     name TEXT NOT NULL,
-    type TEXT CHECK(type IN ('human', 'virtual')) NOT NULL,
-    voicelib TEXT  -- 仅虚拟歌姬需要 (e.g. "Teto SV")
+    type TEXT CHECK(type IN ('human', 'virtual')) NOT NULL
 );
 
 -- 创作者百科表 (多源存储)
@@ -222,7 +221,6 @@ interface Creator {
     uuid: string;
     name: string;
     type: 'human' | 'virtual';
-    voicelib?: string;
 }
 
 interface CreatorWithRole {
@@ -303,12 +301,13 @@ export async function GetWorkListWithPagination(DB: D1Database, page: number, pa
     
     const workListResult = await workListStmt.all<{ uuid: string }>();
     const workUUIDs = workListResult.results || [];
-    
     if (workUUIDs.length === 0) {
         return [];
     }
     
     // 4. 获取所有作品的创作者信息（单次查询）
+    console.log(workUUIDs.map(() => '?').join(','))
+    console.log(...workUUIDs.map(w => w.uuid))
     const creatorStmt = DB.prepare(`
         SELECT 
             wc.work_uuid,
@@ -322,8 +321,8 @@ export async function GetWorkListWithPagination(DB: D1Database, page: number, pa
     `).bind(...workUUIDs.map(w => w.uuid));
     
     const creatorResult = await creatorStmt.all();
+    console.log(creatorResult);
     const creatorMap = new Map<string, CreatorWithRole[]>();
-    
     // 创建作品UUID到创作者的映射
     creatorResult.results?.forEach((row: any) => {
         if (!creatorMap.has(row.work_uuid)) {
@@ -457,7 +456,7 @@ export async function GetWorkByUUID(DB: D1Database, workUUID: string): Promise<W
     const asset = Array.from(assetMap.values());
     // 7. 获取作品创作者信息
     const creatorStmt = DB.prepare(`
-        SELECT c.uuid as creator_uuid, c.name as creator_name, wc.role
+        SELECT c.uuid as creator_uuid, c.name as creator_name, c.type as creator_type, wc.role
         FROM work_creator wc
         JOIN creator c ON wc.creator_uuid = c.uuid
         WHERE wc.work_uuid = ?
@@ -594,13 +593,12 @@ export async function GetRelationByUUID(DB: D1Database, relationUUID: string): P
 export async function InputCreator(DB: D1Database, creator: Creator, wikis?: WikiRef[]) {
     // 插入主创作者表
     await DB.prepare(`
-        INSERT INTO creator (uuid, name, type, voicelib) 
-        VALUES (?, ?, ?, ?)
+        INSERT INTO creator (uuid, name, type) 
+        VALUES (?, ?, ?)
     `).bind(
         creator.uuid, 
         creator.name, 
-        creator.type, 
-        creator.voicelib
+        creator.type
     ).run();
     
     // 插入百科信息（如果存在）
@@ -941,9 +939,9 @@ export async function UpdateCreator(DB: D1Database, creator_uuid: string, creato
     statements.push(
         DB.prepare(`
             UPDATE creator 
-            SET name = ?, type = ?, voicelib = ?
+            SET name = ?, type = ?
             WHERE uuid = ?
-        `).bind(creator.name, creator.type, creator.voicelib, creator_uuid)
+        `).bind(creator.name, creator.type, creator_uuid)
     );
 
     // Delete old wiki entries

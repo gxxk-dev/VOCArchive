@@ -329,8 +329,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             formError.textContent = `Failed to load selection data: ${error.message}`;
             // Decide if we should stop or continue with empty selectors
         }
-
-
+        
         modalForm.innerHTML = generateFormFields(target, data, { creators: allCreators, works: allWorks });
         modalForm.onsubmit = (e) => handleFormSubmit(e, target, !!data);
         modal.classList.remove('hidden');
@@ -360,7 +359,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const s = (val) => JSON.stringify(val, null, 2);
         
         const data_wikis = (data?.wikis || []).map(createWikiRow).join('');
-        const data_creators = (data?.creator || []).map(creator => createCreatorRow(creator, options.creators)).join('');
+        console.log(data.creator)
+        const data_creators = (data.creator instanceof Array)
+                        // 兼容创作者修改
+                        ? (data?.creator || []).map(creator => createCreatorRow(creator, options.creators)).join('')
+                        : createCreatorRow(data.creator, options.creators);
         const data_relations = ['original', 'remix', 'cover', 'remake', 'picture', 'lyrics'].map(type => `<option value="${type}" ${data?.relation_type === type ? 'selected' : ''}>${type}</option>`).join('');
         const data_titles = (data?.titles || []).map(createTitleRow).join('')
         
@@ -373,7 +376,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <option value="human" ${(data?.creator?.type || data?.type) === 'human' ? 'selected' : ''}>Human</option>
                     <option value="virtual" ${(data?.creator?.type || data?.type) === 'virtual' ? 'selected' : ''}>Virtual</option>
                 </select>
-                <label for="voicelib">Voice Library:</label><input type="text" id="voicelib" name="voicelib" value="${data?.creator?.voicelib || data?.voicelib || ''}">
+                
                 <div class="form-section">
                     <h4>Wikis</h4>
                     <div id="wikis-list" class="dynamic-list">
@@ -605,7 +608,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             uuid: formData.get('uuid'),
                             name: formData.get('name'),
                             type: formData.get('type'),
-                            voicelib: formData.get('voicelib') || null,
+                            
                         },
                         wikis: wikis,
                     };

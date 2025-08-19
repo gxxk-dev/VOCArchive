@@ -44,14 +44,14 @@ app.get('/config', (c:any) => {
 })
 
 app.get('/sw_config.js', (c:any) => {
-  const assetUrl = c.env.ASSET_URL;
-  const hostname = new URL(assetUrl).hostname;
-  const content = `const ASSET_HOST = '${hostname}';`;
-  return new Response(content, {
-    headers: {
-      'Content-Type': 'application/javascript',
-    },
-  });
+    const assetUrl = c.env.ASSET_URL;
+    const hostname = new URL(assetUrl).hostname;
+    const content = `const ASSET_HOST = '${hostname}';`;
+    return new Response(content, {
+        headers: {
+            'Content-Type': 'application/javascript',
+        },
+      });
 });
 
 // ========== 信息读取(仅GET方法) ==========

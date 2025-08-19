@@ -1,5 +1,5 @@
 PRAGMA defer_foreign_keys=TRUE;
-CREATE TABLE creator ( uuid TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT CHECK(type IN ('human', 'virtual')) NOT NULL, voicelib TEXT );
+CREATE TABLE creator ( uuid TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT CHECK(type IN ('human', 'virtual')) NOT NULL );
 CREATE TABLE creator_wiki ( creator_uuid TEXT NOT NULL REFERENCES creator(uuid) ON DELETE CASCADE, platform TEXT NOT NULL, identifier TEXT NOT NULL, PRIMARY KEY (creator_uuid, platform) );
 CREATE TABLE work ( uuid TEXT PRIMARY KEY, copyright_basis TEXT NOT NULL CHECK(copyright_basis IN ('none', 'accept', 'license')) );
 CREATE TABLE work_title ( work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE, is_official BOOLEAN NOT NULL, language TEXT NOT NULL, title TEXT NOT NULL, PRIMARY KEY (work_uuid, language) );
