@@ -83,7 +83,7 @@ app.get('/', async (c) => {
   return c.html(<IndexPage works={works} asset_url={c.env.ASSET_URL} />)
 })
 
-app.get('/player.html', async (c) => {
+app.get('/player', async (c) => {
     const { uuid } = c.req.query()
     if (!uuid) {
         return c.notFound()

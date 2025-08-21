@@ -739,14 +739,14 @@ export const IndexPage = (props: { works: any[], asset_url: string }) => {
         
         let currentPage = 1;
         let itemsPerPage = 6;
-        window.ASSET_URL = ${props.asset_url};
+        window.ASSET_URL = "${props.asset_url}";
 
         function setupEventListeners() {
             workList.addEventListener('click', function(e) {
                 const workItem = e.target.closest('.work-item');
                 if (workItem) {
                     const songId = workItem.dataset.id;
-                    window.location.href = \`/player.html?uuid=\${songId}\`;
+                    window.location.href = \`/player?uuid=\${songId}\`;
                 }
                 
                 const playBtn = e.target.closest('.work-play-btn');
@@ -754,7 +754,7 @@ export const IndexPage = (props: { works: any[], asset_url: string }) => {
                     e.stopPropagation();
                     const workItem = playBtn.closest('.work-item');
                     const songId = workItem.dataset.id;
-                    window.location.href = \`/player.html?uuid=\${songId}\`;
+                    window.location.href = \`/player?uuid=\${songId}\`;
                 }
             });
             

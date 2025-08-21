@@ -66,7 +66,7 @@ export const PlayerPage = (props: { workInfo: any, asset_url: string }) => {
         "moegirl": "https://zh.moegirl.org.cn/{}",
         "baidu": "https://baike.baidu.com/item/{}",
     }
-
+    
     return (
         <html>
             <head>
@@ -692,7 +692,7 @@ export const PlayerPage = (props: { workInfo: any, asset_url: string }) => {
                                         ? asset.creator.map((c: any) => `${c.role}: ${c.creator_name}`).join(', ')
                                         : '';
                                     const langInfo = asset.language ? ` · ${asset.language}` : '';
-                                    return (
+                                    const asset_card = (
                                         <a href={`${asset_url}/${asset.file_id}`} class="asset-card">
                                             <span class="material-symbols-outlined">{icon}</span>
                                             <div class="asset-details">
@@ -701,36 +701,39 @@ export const PlayerPage = (props: { workInfo: any, asset_url: string }) => {
                                             </div>
                                         </a>
                                     )
+                                    return asset_card;
                                 })}
                             </div>
                         </div>
                     )}
 
-                    <div class="section">
-                        <div class="section-header" onclick="toggleSection('wiki')">
-                            <span class="material-symbols-outlined">menu_book</span>
-                            Wiki页面
-                            <span class="material-symbols-outlined section-arrow">expand_more</span>
-                        </div>
-                        <div class="content-box" id="wikiContent" style="display: none;">
-                            <div class="search-terms">
-                                {workInfo.wikis && workInfo.wikis.map((wiki: any) => (
-                                    <a href={wikiURLMap[wiki.platform as keyof typeof wikiURLMap] ? wikiURLMap[wiki.platform as keyof typeof wikiURLMap].replace('{}', wiki.identifier) : '#'} class="search-term">
-                                        <span class="material-symbols-outlined">public</span>
-                                        作品WIKI - {wiki.platform}: {wiki.identifier}
-                                    </a>
-                                ))}
-                                {workInfo.creator && workInfo.creator.map((c: any) => (
-                                    c.wikis && c.wikis.map((wiki: any) => (
+                    {workInfo.wikis && workInfo.wikis.length > 0 && workInfo.creator && workInfo.creator.some((c: any) => c.wikis && c.wikis.length > 0) && (
+                        <div class="section">
+                            <div class="section-header" onclick="toggleSection('wiki')">
+                                <span class="material-symbols-outlined">menu_book</span>
+                                Wiki页面
+                                <span class="material-symbols-outlined section-arrow">expand_more</span>
+                            </div>
+                            <div class="content-box" id="wikiContent" style="display: none;">
+                                <div class="search-terms">
+                                    {workInfo.wikis && workInfo.wikis.map((wiki: any) => (
                                         <a href={wikiURLMap[wiki.platform as keyof typeof wikiURLMap] ? wikiURLMap[wiki.platform as keyof typeof wikiURLMap].replace('{}', wiki.identifier) : '#'} class="search-term">
-                                            <span class="material-symbols-outlined">person</span>
-                                            作者WIKI - [{c.role}] {c.creator_name} ({wiki.platform})
+                                            <span class="material-symbols-outlined">public</span>
+                                            作品WIKI - {wiki.platform}: {wiki.identifier}
                                         </a>
-                                    ))
-                                ))}
+                                    ))}
+                                    {workInfo.creator && workInfo.creator.map((c: any) => (
+                                        c.wikis && c.wikis.map((wiki: any) => (
+                                            <a href={wikiURLMap[wiki.platform as keyof typeof wikiURLMap] ? wikiURLMap[wiki.platform as keyof typeof wikiURLMap].replace('{}', wiki.identifier) : '#'} class="search-term">
+                                                <span class="material-symbols-outlined">person</span>
+                                                作者WIKI - [{c.role}] {c.creator_name} ({wiki.platform})
+                                            </a>
+                                        ))
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     {workInfo.relation && workInfo.relation.length > 0 && (
                         <div class="section">
@@ -774,13 +777,14 @@ export const PlayerPage = (props: { workInfo: any, asset_url: string }) => {
                                             <a href={`/player?uuid=${otherWorkUUID}`} class="related-work">
                                                 <span class="material-symbols-outlined">music_note</span>
                                                 {relationType}: {otherWorkTitle}
-                                            </a>
+                                            </a>    
                                         )
                                     })}
                                 </div>
                             </div>
                         </div>
                     )}
+
                 </div>
                 <footer class="md-footer">
                     <div class="footer-content">
@@ -798,34 +802,6 @@ export const PlayerPage = (props: { workInfo: any, asset_url: string }) => {
                         <p>© 2025 VOCArchive. AGPL v3 (or later).</p>
                     </div>
                 </footer>
-                <script>
-                    {`
-                    function toggleSection(sectionId) {
-                        const header = event.target.closest('.section-header');
-                        const content = header.nextElementSibling;
-                        const arrow = header.querySelector('.section-arrow');
-                        
-                        if (content.style.display === 'none') {
-                            content.style.display = 'block';
-                            arrow.style.transform = 'rotate(180deg)';
-                        } else {
-                            content.style.display = 'none';
-                            arrow.style.transform = 'rotate(0deg)';
-                        }
-                    }
-                    if ('serviceWorker' in navigator) {
-                        window.addEventListener('load', () => {
-                            navigator.serviceWorker.register('/sw.js')
-                                .then(registration => {
-                                    console.log('Service Worker registered with scope:', registration.scope);
-                                })
-                                .catch(error => {
-                                    console.error('Service Worker registration failed:', error);
-                                });
-                        });
-                    }
-                    `}
-                </script>
             </body>
         </html>
     )

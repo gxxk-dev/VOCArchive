@@ -359,11 +359,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const s = (val) => JSON.stringify(val, null, 2);
         
         const data_wikis = (data?.wikis || []).map(createWikiRow).join('');
-        console.log(data.creator)
-        const data_creators = (data.creator instanceof Array)
+        console.log(data)
+        const data_creators = (data?.creator instanceof Array)
                         // 兼容创作者修改
                         ? (data?.creator || []).map(creator => createCreatorRow(creator, options.creators)).join('')
-                        : createCreatorRow(data.creator, options.creators);
+                        : (data?.creator ? createCreatorRow(data.creator, options.creators) : '');
         const data_relations = ['original', 'remix', 'cover', 'remake', 'picture', 'lyrics'].map(type => `<option value="${type}" ${data?.relation_type === type ? 'selected' : ''}>${type}</option>`).join('');
         const data_titles = (data?.titles || []).map(createTitleRow).join('')
         
