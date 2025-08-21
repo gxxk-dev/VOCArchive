@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { serveStatic } from 'hono/cloudflare-workers'
 
 import { listInfo } from './routes/list'
 import { getInfo } from './routes/get'
@@ -9,8 +10,13 @@ import { searchInfo } from './routes/search'
 import { auth } from './routes/auth'
 import { jwt } from 'hono/jwt'
 
-const app = new Hono<{ Bindings: Cloudflare }>().basePath("/api")
-app.get('/', (c) => {
+import { IndexPage } from './pages'
+import { PlayerPage } from './pages/player'
+import { GetWorkByUUID, GetWorkListWithPagination, SearchWorksByTitle } from './database'
+
+const apiApp = new Hono<{ Bindings: Cloudflare }>()
+
+apiApp.get('/', (c) => {
   return c.text('Hello Hono!')
 })
 
@@ -24,26 +30,26 @@ const middleware=async (c: any, next:any) => {
 
 // ========== 信息管理 ==========
 // ---------- 删除信息 ----------
-app.route('/delete', deleteInfo)
+apiApp.route('/delete', deleteInfo)
     .use("/delete/*",middleware)
 // ---------- 修改信息 ----------
-app.route('/update', updateInfo)
+apiApp.route('/update', updateInfo)
     .use("/update/*",middleware)
 // ---------- 录入信息 ----------
-app.route('/input', inputInfo)
+apiApp.route('/input', inputInfo)
     .use("/input/*",middleware)
 
 // ========== 配置/权限 ==========
-app.route('/auth', auth)
+apiApp.route('/auth', auth)
 
 // ========== 站点配置 ==========
-app.get('/config', (c:any) => {
+apiApp.get('/config', (c:any) => {
   return c.json({ 
     asset_url: c.env.ASSET_URL 
   })
 })
 
-app.get('/sw_config.js', (c:any) => {
+apiApp.get('/sw_config.js', (c:any) => {
     const assetUrl = c.env.ASSET_URL;
     const hostname = new URL(assetUrl).hostname;
     const content = `const ASSET_HOST = '${hostname}';`;
@@ -56,12 +62,38 @@ app.get('/sw_config.js', (c:any) => {
 
 // ========== 信息读取(仅GET方法) ==========
 // ---------- 获取信息 ----------
-app.route('/get', getInfo)
+apiApp.route('/get', getInfo)
 // ---------- 搜索信息 ----------
-app.route('/search', searchInfo)
+apiApp.route('/search', searchInfo)
 // ---------- 列出信息 ----------
-app.route('/list', listInfo)
+apiApp.route('/list', listInfo)
 
+const app = new Hono<{ Bindings: Cloudflare }>()
+
+app.route('/api', apiApp)
+
+app.get('/', async (c) => {
+  const { search, page } = c.req.query()
+  let works;
+  if (search) {
+    works = await SearchWorksByTitle(c.env.DB, search)
+  } else {
+    works = await GetWorkListWithPagination(c.env.DB, parseInt(page) || 1, 6)
+  }
+  return c.html(<IndexPage works={works} asset_url={c.env.ASSET_URL} />)
+})
+
+app.get('/player.html', async (c) => {
+    const { uuid } = c.req.query()
+    if (!uuid) {
+        return c.notFound()
+    }
+    const workInfo = await GetWorkByUUID(c.env.DB, uuid)
+    if (!workInfo) {
+        return c.notFound()
+    }
+    return c.html(<PlayerPage workInfo={workInfo} asset_url={c.env.ASSET_URL} />)
+})
 
 
 export default app

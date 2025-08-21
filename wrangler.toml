@@ -1,5 +1,5 @@
 name = "vocarchive"
-main = "src/app/index.ts"
+main = "src/app/index.tsx"
 compatibility_date = "2025-07-12"
 assets = { directory = "./public" }
 compatibility_flags = [
