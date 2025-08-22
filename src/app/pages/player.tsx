@@ -68,6 +68,8 @@ export const PlayerPage = (props: { workInfo: any, asset_url: string, footerSett
         "moegirl": "https://zh.moegirl.org.cn/{}",
         "baidu": "https://baike.baidu.com/item/{}",
     }
+
+    const creatorNames = workInfo.creator ? workInfo.creator.map((c: any) => c.creator_name).join(', ') : '';
     
     return (
         <html>
@@ -636,7 +638,7 @@ export const PlayerPage = (props: { workInfo: any, asset_url: string, footerSett
                                 </div>
                             )}
                         </div>
-                        <div class="work-creator"></div>
+                        <div class="work-creator">{creatorNames}</div>
                     </div>
 
                     <div class="versions-container">
@@ -711,11 +713,10 @@ export const PlayerPage = (props: { workInfo: any, asset_url: string, footerSett
                     {workInfo.wikis && workInfo.wikis.length > 0 && workInfo.creator && workInfo.creator.some((c: any) => c.wikis && c.wikis.length > 0) && (
                         <div class="section">
                             <div class="section-header" onclick="toggleSection('wiki')">
-                                <span class="material-symbols-outlined">menu_book</span>
+                                <span class="material-symbols-outlined">menu_book</span>&nbsp;
                                 Wiki页面
-                                <span class="material-symbols-outlined section-arrow">expand_more</span>
                             </div>
-                            <div class="content-box" id="wikiContent" style="display: none;">
+                            <div class="content-box" id="wikiContent" style="">
                                 <div class="search-terms">
                                     {workInfo.wikis && workInfo.wikis.map((wiki: any) => (
                                         <a href={wikiURLMap[wiki.platform as keyof typeof wikiURLMap] ? wikiURLMap[wiki.platform as keyof typeof wikiURLMap].replace('{}', wiki.identifier) : '#'} class="search-term">
@@ -741,9 +742,8 @@ export const PlayerPage = (props: { workInfo: any, asset_url: string, footerSett
                             <div class="section-header" onclick="toggleSection('related')">
                                 <span class="material-symbols-outlined">local_movies</span>
                                 相关作品
-                                <span class="material-symbols-outlined section-arrow">expand_more</span>
                             </div>
-                            <div class="content-box" id="relatedContent" style="display: none;">
+                            <div class="content-box" id="relatedContent" style="">
                                 <div class="related-work">
                                     {workInfo.relation.map((relation: any) => {
                                         const isFromWork = workInfo.work.uuid === relation.from_work_uuid;
@@ -785,7 +785,7 @@ export const PlayerPage = (props: { workInfo: any, asset_url: string, footerSett
                             </div>
                         </div>
                     )}
-
+                    
                 </div>
                 <Footer settings={props.footerSettings} />
             </body>
