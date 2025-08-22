@@ -1,5 +1,7 @@
 import { jsx } from 'hono/jsx'
 import { html } from 'hono/html'
+import { Footer } from './footer'
+import { FooterSetting } from '../database'
 
 const WorkList = (props: { works: any[], asset_url: string }) => {
     return props.works.length > 0 ? props.works.map((item: any) => {
@@ -51,7 +53,7 @@ const WorkList = (props: { works: any[], asset_url: string }) => {
                             }) : <div class="no-results">未找到歌曲</div>
 }
 
-export const IndexPage = (props: { works: any[], asset_url: string }) => {
+export const IndexPage = (props: { works: any[], asset_url: string, footerSettings: FooterSetting[] }) => {
     return html`
         <html>
             <head>
@@ -644,33 +646,6 @@ export const IndexPage = (props: { works: any[], asset_url: string }) => {
             margin: 0;
             font-size: 0.85rem;
         }
-
-        /* 缓存管理 */
-        .cache-management-section {
-            background: rgba(25, 25, 25, 0.6);
-            border-radius: var(--element-radius);
-            padding: var(--spacing-lg);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            margin-top: var(--spacing-xl);
-        }
-
-        .cache-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: var(--spacing-lg);
-            flex-wrap: wrap;
-            gap: var(--spacing-md);
-        }
-
-        .cache-size-info {
-            font-size: 1rem;
-            color: var(--text-secondary);
-        }
-
-        .delete-cache-item-btn .fas {
-            pointer-events: none;
-        }
                 </style>
             </head>
             <body>
@@ -711,23 +686,6 @@ export const IndexPage = (props: { works: any[], asset_url: string }) => {
                         </div>
                     </section>
                 </div>
-
-                <footer class="site-footer">
-                    <div class="footer-content">
-                        <div class="footer-links">
-                            <a href="/cache.html">缓存管理</a>
-                            <a href="mailto:contact@vocarchive.com">联系我们</a>
-                            <a href="mailto:feedback@vocarchive.com">意见反馈</a>
-                            <a href="mailto:copyright@vocarchive.com">侵权投诉</a>
-                        </div>
-                        <div class="footer-social">
-                            <a href="https://github.com/gxxk-dev/VOCArchive" title="GitHub"><i class="fab fa-github"></i></a>
-                        </div>
-                    </div>
-                    <div class="footer-copyright">
-                        <p>© 2025 VOCArchive. AGPL v3 (or later).</p>
-                    </div>
-                </footer>
 
                 <script>
         const workList = document.getElementById('workList');
@@ -804,6 +762,7 @@ export const IndexPage = (props: { works: any[], asset_url: string }) => {
         
         document.addEventListener('DOMContentLoaded', setupEventListeners);
                 </script>
+                ${<Footer settings={props.footerSettings}/>}
             </body>
         </html>
     `

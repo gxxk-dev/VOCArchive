@@ -11,6 +11,7 @@
 		"@cloudflare/vitest-pool-workers": "^0.8.19",
 		"@cloudflare/workers-types": "^4.20250812.0",
 		"@types/node": "^24.2.0",
+		"@types/uuid": "^10.0.0",
 		"typescript": "^5.5.2",
 		"wrangler": "^4.25.1"
 	},
@@ -18,6 +19,7 @@
 		"hono": "^4.9.0",
 		"jose": "^6.0.12",
 		"mimetext": "^3.0.27",
-		"otplib": "^12.0.1"
+		"otplib": "^12.0.1",
+		"uuid": "^11.1.0"
 	}
 }

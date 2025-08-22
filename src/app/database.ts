@@ -1227,3 +1227,44 @@ export async function SearchWorksByTitle(DB: D1Database, query: string): Promise
     return await Promise.all(workListPromises);
 }
 
+export interface FooterSetting {
+    uuid: string;
+    item_type: 'link' | 'social' | 'copyright';
+    text: string;
+    url?: string;
+    icon_class?: string;
+}
+
+export async function GetFooterSettings(DB: D1Database): Promise<FooterSetting[]> {
+    const stmt = DB.prepare(`
+        SELECT uuid, item_type, text, url, icon_class
+        FROM footer_settings
+    `);
+    const { results } = await stmt.all<FooterSetting>();
+    return results || [];
+}
+
+export async function InsertFooterSetting(DB: D1Database, setting: FooterSetting): Promise<boolean> {
+    const result = await DB.prepare(`
+        INSERT INTO footer_settings (uuid, item_type, text, url, icon_class)
+        VALUES (?, ?, ?, ?, ?)
+    `).bind(setting.uuid, setting.item_type, setting.text, setting.url, setting.icon_class).run();
+    return result.success;
+}
+
+export async function UpdateFooterSetting(DB: D1Database, setting: FooterSetting): Promise<boolean> {
+    const result = await DB.prepare(`
+        UPDATE footer_settings
+        SET item_type = ?, text = ?, url = ?, icon_class = ?
+        WHERE uuid = ?
+    `).bind(setting.item_type, setting.text, setting.url, setting.icon_class, setting.uuid).run();
+    return result.success;
+}
+
+export async function DeleteFooterSetting(DB: D1Database, uuid: string): Promise<boolean> {
+    const result = await DB.prepare(`
+        DELETE FROM footer_settings WHERE uuid = ?
+    `).bind(uuid).run();
+    return result.success;
+}
+

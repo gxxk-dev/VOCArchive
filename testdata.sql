@@ -67,3 +67,12 @@ INSERT INTO work_creator VALUES('7e513b12-7454-4994-9919-9a80e39deaee','597ecbdb
 INSERT INTO work_creator VALUES('7e513b12-7454-4994-9919-9a80e39deaee','dc45304b-cb07-4de4-bb7c-9648c381ed7a','remixer');
 INSERT INTO work_creator VALUES('b7213789-847b-4c62-9630-dfd0f8e5868f','41eb7722-f7ca-4dd1-9f91-0721b4e1cba3','remixer');
 INSERT INTO work_creator VALUES('b7213789-847b-4c62-9630-dfd0f8e5868f','67124873-3411-4771-bc85-e24b5b8cb71f','original');
+
+CREATE TABLE footer_settings ( uuid TEXT PRIMARY KEY, item_type TEXT NOT NULL CHECK(item_type IN ('link', 'social', 'copyright')), text TEXT NOT NULL, url TEXT, icon_class TEXT );
+INSERT INTO footer_settings (uuid, item_type, text, url, icon_class) VALUES ('a1b2c3d4-e5f6-7890-1234-567890abcdef', 'link', '缓存管理', '/cache.html', NULL);
+INSERT INTO footer_settings (uuid, item_type, text, url, icon_class) VALUES ('b2c3d4e5-f6a1-b2c3-d4e5-f6a1b2c3d4e5', 'link', '联系我们', 'mailto:contact@vocarchive.com', NULL);
+INSERT INTO footer_settings (uuid, item_type, text, url, icon_class) VALUES ('c3d4e5f6-a1b2-c3d4-e5f6-a1b2c3d4e5f6', 'link', '意见反馈', 'mailto:feedback@vocarchive.com', NULL);
+INSERT INTO footer_settings (uuid, item_type, text, url, icon_class) VALUES ('d4e5f6a1-b2c3-d4e5-f6a1-b2c3d4e5f6a1', 'link', '侵权投诉', 'mailto:copyright@vocarchive.com', NULL);
+INSERT INTO footer_settings (uuid, item_type, text, url, icon_class) VALUES ('e5f6a1b2-c3d4-e5f6-a1b2-c3d4e5f6a1b2', 'social', 'GitHub', 'https://github.com/gxxk-dev/VOCArchive', 'fab fa-github');
+INSERT INTO footer_settings (uuid, item_type, text, url, icon_class) VALUES ('f6a1b2c3-d4e5-f6a1-b2c3-d4e5f6a1b2c3', 'copyright', '© 2025 VOCArchive. AGPL v3 (or later).', NULL, NULL);
+

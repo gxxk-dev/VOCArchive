@@ -10,3 +10,5 @@ CREATE TABLE asset_creator ( asset_uuid TEXT NOT NULL REFERENCES asset(uuid) ON 
 CREATE TABLE work_relation ( uuid TEXT PRIMARY KEY, from_work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE, to_work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE, relation_type TEXT NOT NULL CHECK(relation_type IN ( 'original', 'remix', 'cover', 'remake', 'picture', 'lyrics' )) );
 CREATE TABLE work_wiki ( work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE, platform TEXT NOT NULL, identifier TEXT NOT NULL, PRIMARY KEY (work_uuid, platform) );
 CREATE TABLE work_creator ( work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE, creator_uuid TEXT NOT NULL REFERENCES creator(uuid) ON DELETE CASCADE, role TEXT NOT NULL, PRIMARY KEY (work_uuid, creator_uuid, role) );
+
+CREATE TABLE footer_settings ( uuid TEXT PRIMARY KEY, item_type TEXT NOT NULL CHECK(item_type IN ('link', 'social', 'copyright')), text TEXT NOT NULL, url TEXT, icon_class TEXT );

@@ -155,7 +155,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function loadContent(target) {
         content.innerHTML = '<h2>Loading...</h2>';
         try {
-            const data = await apiFetch(`/list/${target}/1?pageSize=999`);
+            const endpoint = target === 'footer' ? '/footer' : `/list/${target}/1?pageSize=999`;
+            const data = await apiFetch(endpoint);
             renderTable(target, data);
         } catch (error) {
             content.innerHTML = `<p class="error-message">Failed to load ${target}: ${error.message}</p>`;
@@ -269,15 +270,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         const button = e.target;
         const target = button.dataset.target;
         const uuid = button.dataset.uuid;
+
+        if (target === 'footer') {
+            try {
+                const allSettings = await apiFetch('/footer');
+                const data = allSettings.find(item => item.uuid === uuid);
+                if (data) {
+                    showFormModal(target, data);
+                } else {
+                    alert('Could not find the item to edit.');
+                }
+            } catch (error) {
+                alert(`Failed to fetch item details: ${error.message}`);
+            }
+            return;
+        }
+
         const endpointMap = { creator: 'creator', work: 'work' };
         const getEndpoint = endpointMap[target] || target;
-        //try {
+        try {
             const data = await apiFetch(`/get/${getEndpoint}/${uuid}`);
             console.log(data)
             showFormModal(target, data);
-        //} catch (error) {
-        //    alert(`Failed to fetch item details: ${error.message}`);
-        //}
+        } catch (error) {
+            alert(`Failed to fetch item details: ${error.message}`);
+        }
     }
 
     async function handleDelete(e) {
@@ -287,6 +304,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         const uuid = row.dataset.uuid;
 
         if (!uuid || !confirm(`Are you sure you want to delete this item from ${target}?`)) return;
+
+        if (target === 'footer') {
+            try {
+                await apiFetch(`/footer/settings/${uuid}`, { method: 'DELETE' });
+                row.remove();
+            } catch (error) {
+                alert(`Failed to delete item: ${error.message}`);
+            }
+            return;
+        }
 
         const uuidKeyMap = {
             work: 'work_uuid',
@@ -488,6 +515,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                     <button type="button" id="add-wiki-button" class="add-row-button">Add Wiki</button>
                 </div>
+            `,
+            footer: `
+                <input type="hidden" name="uuid" value="${data?.uuid || ''}">
+                <label for="item_type">Type:</label>
+                <select id="item_type" name="item_type" required>
+                    <option value="link" ${data?.item_type === 'link' ? 'selected' : ''}>Link</option>
+                    <option value="social" ${data?.item_type === 'social' ? 'selected' : ''}>Social</option>
+                    <option value="copyright" ${data?.item_type === 'copyright' ? 'selected' : ''}>Copyright</option>
+                </select>
+                <label for="text">Text:</label>
+                <input type="text" id="text" name="text" required value="${data?.text || ''}">
+                <label for="url">URL (optional):</label>
+                <input type="url" id="url" name="url" value="${data?.url || ''}">
+                <label for="icon_class">Icon Class (optional):</label>
+                <input type="text" id="icon_class" name="icon_class" value="${data?.icon_class || ''}">
             `
         };
         return (fields[target] || '<p>Form not implemented for this type.</p>') + '<button type="submit">Submit</button>';
@@ -699,14 +741,34 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                     console.log("Request Body:", JSON.stringify(body, null, 2));
                     break;
+                case 'footer':
+                    body = {
+                        item_type: formData.get('item_type'),
+                        text: formData.get('text'),
+                        url: formData.get('url') || null,
+                        icon_class: formData.get('icon_class') || null,
+                    };
+                    break;
                 default:
                     throw new Error('Invalid form target.');
             }
 
-            const endpoint = isUpdate ? `/update/${apiTarget}` : `/input/${apiTarget}`;
+            let endpoint;
+            let method = 'POST';
+
+            if (target === 'footer') {
+                if (isUpdate) {
+                    endpoint = `/footer/settings/${currentEditUUID}`;
+                    method = 'PUT';
+                } else {
+                    endpoint = '/footer/settings';
+                }
+            } else {
+                endpoint = isUpdate ? `/update/${apiTarget}` : `/input/${apiTarget}`;
+            }
             
             await apiFetch(endpoint, {
-                method: 'POST',
+                method: method,
                 body: JSON.stringify(body),
             });
 

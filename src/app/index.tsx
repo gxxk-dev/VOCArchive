@@ -8,17 +8,19 @@ import { updateInfo } from './routes/update'
 import { inputInfo } from './routes/input'
 import { searchInfo } from './routes/search'
 import { auth } from './routes/auth'
+import footer from './routes/footer'
 import { jwt } from 'hono/jwt'
 
 import { IndexPage } from './pages'
 import { PlayerPage } from './pages/player'
-import { GetWorkByUUID, GetWorkListWithPagination, SearchWorksByTitle } from './database'
+import { GetFooterSettings, GetWorkByUUID, GetWorkListWithPagination, SearchWorksByTitle } from './database'
 
 const apiApp = new Hono<{ Bindings: Cloudflare }>()
 
 apiApp.get('/', (c) => {
   return c.text('Hello Hono!')
 })
+
 
 // ========== 中间件 ==========
 const middleware=async (c: any, next:any) => {
@@ -43,6 +45,8 @@ apiApp.route('/input', inputInfo)
 apiApp.route('/auth', auth)
 
 // ========== 站点配置 ==========
+apiApp.route('/footer', footer)
+
 apiApp.get('/config', (c:any) => {
   return c.json({ 
     asset_url: c.env.ASSET_URL 
@@ -80,7 +84,8 @@ app.get('/', async (c) => {
   } else {
     works = await GetWorkListWithPagination(c.env.DB, parseInt(page) || 1, 6)
   }
-  return c.html(<IndexPage works={works} asset_url={c.env.ASSET_URL} />)
+  const footerSettings = await GetFooterSettings(c.env.DB)
+  return c.html(<IndexPage works={works} asset_url={c.env.ASSET_URL} footerSettings={footerSettings} />)
 })
 
 app.get('/player', async (c) => {
@@ -92,7 +97,8 @@ app.get('/player', async (c) => {
     if (!workInfo) {
         return c.notFound()
     }
-    return c.html(<PlayerPage workInfo={workInfo} asset_url={c.env.ASSET_URL} />)
+    const footerSettings = await GetFooterSettings(c.env.DB)
+    return c.html(<PlayerPage workInfo={workInfo} asset_url={c.env.ASSET_URL} footerSettings={footerSettings} />)
 })
 
 

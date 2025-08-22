@@ -1,7 +1,9 @@
 import { jsx } from 'hono/jsx'
+import { Footer } from './footer'
+import { FooterSetting } from '../database'
 
-export const PlayerPage = (props: { workInfo: any, asset_url: string }) => {
-    const { workInfo, asset_url } = props;
+export const PlayerPage = (props: { workInfo: any, asset_url: string, footerSettings: FooterSetting[] }) => {
+    const { workInfo, asset_url, footerSettings } = props;
 
     const userLang = "zh-cn";
     let displayTitle = "";
@@ -561,63 +563,62 @@ export const PlayerPage = (props: { workInfo: any, asset_url: string }) => {
         }
 
         /* Footer */
-        .md-footer {
+        .site-footer {
             text-align: center;
-            padding: 24px 0;
+            padding: 24px 16px;
             margin-top: 32px;
             color: var(--md-sys-color-on-surface-variant);
-            font-size: 0.875rem;
+            font-size: 0.9rem;
+            border-top: 1px solid var(--md-sys-color-outline-variant);
             width: 100%;
             max-width: 900px;
-            border-top: 1px solid var(--md-sys-color-outline-variant);
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        .md-footer .footer-content {
+        .footer-content {
             display: flex;
             justify-content: center;
             align-items: center;
             flex-wrap: wrap;
-            gap: 24px;
-            margin-bottom: 24px;
+            gap: 16px;
+            margin-bottom: 16px;
         }
 
-        .md-footer .footer-links {
+        .footer-links {
             display: flex;
-            gap: 24px;
+            gap: 16px;
             flex-wrap: wrap;
             justify-content: center;
         }
 
-        .md-footer .footer-links a {
-            color: var(--md-sys-color-on-surface-variant);
+        .footer-links a {
             text-decoration: none;
             transition: color 0.3s ease;
         }
 
-        .md-footer .footer-links a:hover {
-            color: var(--md-sys-color-primary);
+        .footer-links a:hover {
+            text-decoration: underline;
         }
 
-        .md-footer .footer-social {
+        .footer-social {
             display: flex;
-            gap: 32px;
+            gap: 24px;
         }
 
-        .md-footer .footer-social a {
-            color: var(--md-sys-color-on-surface-variant);
-            font-size: 1.5rem;
+        .footer-social a {
+            font-size: 1.4rem;
             transition: color 0.3s ease, transform 0.3s ease;
             display: inline-block;
         }
 
-        .md-footer .footer-social a:hover {
-            color: var(--md-sys-color-primary);
+        .footer-social a:hover {
             transform: translateY(-2px);
         }
 
-        .md-footer .footer-copyright p {
+        .footer-copyright p {
             margin: 0;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
         }
                     `}
                 </style>
@@ -786,22 +787,7 @@ export const PlayerPage = (props: { workInfo: any, asset_url: string }) => {
                     )}
 
                 </div>
-                <footer class="md-footer">
-                    <div class="footer-content">
-                        <div class="footer-links">
-                            <a href="/cache.html">缓存管理</a>
-                            <a href="mailto:contact@vocarchive.com">联系我们</a>
-                            <a href="mailto:feedback@vocarchive.com">意见反馈</a>
-                            <a href="mailto:copyright@vocarchive.com">侵权投诉</a>
-                        </div>
-                        <div class="footer-social">
-                            <a href="https://github.com/gxxk-dev/VOCArchive" title="GitHub"><i class="fab fa-github"></i></a>
-                        </div>
-                    </div>
-                    <div class="footer-copyright">
-                        <p>© 2025 VOCArchive. AGPL v3 (or later).</p>
-                    </div>
-                </footer>
+                <Footer settings={props.footerSettings} />
             </body>
         </html>
     )
