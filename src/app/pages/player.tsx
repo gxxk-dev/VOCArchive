@@ -67,6 +67,7 @@ export const PlayerPage = (props: { workInfo: any, asset_url: string, footerSett
     const wikiURLMap = {
         "moegirl": "https://zh.moegirl.org.cn/{}",
         "baidu": "https://baike.baidu.com/item/{}",
+        "thbwiki": "https://thwiki.cc/{}"
     }
 
     const creatorNames = workInfo.creator ? workInfo.creator.map((c: any) => c.creator_name).join(', ') : '';
@@ -363,13 +364,13 @@ export const PlayerPage = (props: { workInfo: any, asset_url: string, footerSett
             border: 1px solid var(--md-sys-color-outline-variant);
         }
 
-        .search-terms, .related-work {
+        .search-terms {
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
 
-        .search-term, .related-work {
+        .search-term {
             color: var(--md-sys-color-on-surface);
             padding: 16px;
             background-color: var(--md-sys-color-surface-container);
@@ -386,10 +387,56 @@ export const PlayerPage = (props: { workInfo: any, asset_url: string, footerSett
             gap: 12px;
         }
 
-        .search-term:hover, .related-work:hover {
+        .search-term:hover {
             background-color: var(--md-sys-color-surface-container-high);
             border-color: var(--md-sys-color-outline);
             box-shadow: var(--md-sys-elevation-level1);
+        }
+
+        .related-works-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .related-work-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            background-color: var(--md-sys-color-surface-container);
+            border-radius: var(--md-sys-shape-corner-extra-large); /* full pill shape */
+            text-decoration: none;
+            color: var(--md-sys-color-on-surface-variant);
+            border: 1px solid var(--md-sys-color-outline-variant);
+            transition: all 0.2s cubic-bezier(0.2, 0.0, 0, 1.0);
+            overflow: hidden;
+        }
+
+        .related-work-chip:hover {
+            background-color: var(--md-sys-color-surface-container-high);
+            border-color: var(--md-sys-color-primary);
+            transform: translateY(-2px);
+            box-shadow: var(--md-sys-elevation-level1);
+        }
+
+        .relation-type-badge {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 4px 10px;
+            border-radius: var(--md-sys-shape-corner-medium);
+            background-color: var(--md-sys-color-tertiary-container);
+            color: var(--md-sys-color-on-tertiary-container);
+            flex-shrink: 0; /* prevent shrinking */
+        }
+
+        .relation-title {
+            font-size: 0.9rem;
+            font-weight: 400;
+            color: var(--md-sys-color-on-surface);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         a {
@@ -744,41 +791,26 @@ export const PlayerPage = (props: { workInfo: any, asset_url: string, footerSett
                                 相关作品
                             </div>
                             <div class="content-box" id="relatedContent" style="">
-                                <div class="related-work">
+                                <div class="related-works-grid">
                                     {workInfo.relation.map((relation: any) => {
                                         const isFromWork = workInfo.work.uuid === relation.from_work_uuid;
                                         const otherWorkUUID = isFromWork ? relation.to_work_uuid : relation.from_work_uuid;
                                         const titles = isFromWork
                                             ? relation.related_work_titles?.to_work_titles || []
                                             : relation.related_work_titles?.from_work_titles || [];
-                                        let otherWorkTitle = "";
+                                        let otherWorkTitle = "[未知标题]";
                                         if (titles.length > 0) {
                                             const userLangTitle = titles.find((t: any) => t.language === userLang);
-                                            if (userLangTitle) {
-                                                otherWorkTitle = userLangTitle.title;
-                                            } else {
-                                                otherWorkTitle = titles[0].title;
-                                            }
+                                            otherWorkTitle = userLangTitle ? userLangTitle.title : titles[0].title;
                                         }
-                                        let relationType = "";
-                                        switch (relation.relation_type) {
-                                            case 'original':
-                                                relationType = isFromWork ? "衍生自" : "原作品";
-                                                break;
-                                            case 'cover':
-                                                relationType = isFromWork ? "翻唱自" : "翻唱作品";
-                                                break;
-                                            case 'remix':
-                                                relationType = isFromWork ? "混音自" : "混音作品";
-                                                break;
-                                            default:
-                                                relationType = relation.relation_type;
-                                        }
+                                        
+                                        let relationType = isFromWork ? relation.relation_type  : "original";
+                                        
                                         return (
-                                            <a href={`/player?uuid=${otherWorkUUID}`} class="related-work">
-                                                <span class="material-symbols-outlined">music_note</span>
-                                                {relationType}: {otherWorkTitle}
-                                            </a>    
+                                            <a href={`/player?uuid=${otherWorkUUID}`} class="related-work-chip">
+                                                <span class="relation-type-badge">{relationType}</span>
+                                                <span class="relation-title">{otherWorkTitle}</span>
+                                            </a>
                                         )
                                     })}
                                 </div>

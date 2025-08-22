@@ -695,7 +695,7 @@ export const IndexPage = (props: { works: any[], asset_url: string, footerSettin
         const nextPageBtn = document.getElementById('nextPage');
         const paginationContainer = document.getElementById('pagination');
         
-        let currentPage = 1;
+        let currentPage = 1; 
         let itemsPerPage = 6;
         window.ASSET_URL = "${props.asset_url}";
 

@@ -519,6 +519,54 @@ export async function GetWorkByUUID(DB: D1Database, workUUID: string): Promise<W
             : undefined
     })) || [];
 
+    // 自动检测original关系
+    // 查找以此作品为原曲的其他作品
+    const originalStmt = DB.prepare(`
+        SELECT 
+            wr.uuid, 
+            wr.from_work_uuid, 
+            wr.to_work_uuid, 
+            wr.relation_type,
+            json_object(
+                'from_work_titles', (
+                    SELECT json_group_array(json_object('language', language, 'title', title))
+                    FROM (
+                        SELECT DISTINCT language, title 
+                        FROM work_title 
+                        WHERE work_uuid = wr.from_work_uuid
+                    )
+                ),
+                'to_work_titles', (
+                    SELECT json_group_array(json_object('language', language, 'title', title))
+                    FROM (
+                        SELECT DISTINCT language, title 
+                        FROM work_title 
+                        WHERE work_uuid = wr.to_work_uuid
+                    )
+                )
+            ) as related_work_titles
+        FROM work_relation wr
+        WHERE wr.to_work_uuid = ? AND wr.relation_type = 'original'
+    `).bind(workUUID);
+    const originalResult = await originalStmt.all<WorkRelation>();
+    const originalRelations = originalResult.results?.map(relation => ({
+        ...relation,
+        related_work_titles: relation.related_work_titles
+            ? JSON.parse(relation.related_work_titles as unknown as string)
+            : undefined
+    })) || [];
+
+    // 合并关系列表
+    const allRelations = [...relation, ...originalRelations];
+
+    // 去重
+    const uniqueRelations = allRelations.reduce((acc, current) => {
+        if (!acc.find(item => item.uuid === current.uuid)) {
+            acc.push(current);
+        }
+        return acc;
+    }, [] as WorkRelation[]);
+
 
     // 9. 获取百科信息
     const wikiStmt = DB.prepare(`
@@ -537,7 +585,7 @@ export async function GetWorkByUUID(DB: D1Database, workUUID: string): Promise<W
         media_sources,
         asset,
         creator,
-        relation,
+        relation: uniqueRelations,
         wikis
     };
 
