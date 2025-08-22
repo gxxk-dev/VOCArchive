@@ -677,7 +677,7 @@ export const IndexPage = (props: { works: any[], asset_url: string, footerSettin
                         </div>
 
                         <div class="pagination" id="pagination">
-                            <button class="pagination-btn" id="prevPage" disabled>
+                            <button class="pagination-btn" id="prevPage">
                                 <i class="fas fa-arrow-left"></i> 上一页
                             </button>
                             <button class="pagination-btn" id="nextPage">
@@ -695,8 +695,6 @@ export const IndexPage = (props: { works: any[], asset_url: string, footerSettin
         const nextPageBtn = document.getElementById('nextPage');
         const paginationContainer = document.getElementById('pagination');
         
-        let currentPage = 1; 
-        let itemsPerPage = 6;
         window.ASSET_URL = "${props.asset_url}";
 
         function setupEventListeners() {
@@ -718,7 +716,7 @@ export const IndexPage = (props: { works: any[], asset_url: string, footerSettin
             
             paginationContainer.addEventListener('click', function(e) {
                 const btn = e.target.closest('.pagination-btn');
-                if (!btn) return;
+                if (!btn || btn.disabled) return;
                 
                 if (btn.id === 'prevPage') {
                     changePage(-1);
@@ -760,7 +758,20 @@ export const IndexPage = (props: { works: any[], asset_url: string, footerSettin
             }
         }
         
-        document.addEventListener('DOMContentLoaded', setupEventListeners);
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+
+            const params = new URLSearchParams(window.location.search);
+            const currentPage = parseInt(params.get('page') || '1');
+            const workCountOnPage = ${props.works.length};
+
+            if (prevPageBtn) {
+                prevPageBtn.disabled = currentPage <= 1;
+            }
+            if (nextPageBtn) {
+                nextPageBtn.disabled = workCountOnPage < 10;
+            }
+        });
                 </script>
                 ${<Footer settings={props.footerSettings}/>}
             </body>

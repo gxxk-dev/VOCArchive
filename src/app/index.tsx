@@ -78,11 +78,12 @@ app.route('/api', apiApp)
 
 app.get('/', async (c) => {
   const { search, page } = c.req.query()
+  console.log(search,page)
   let works;
   if (search) {
     works = await SearchWorksByTitle(c.env.DB, search)
   } else {
-    works = await GetWorkListWithPagination(c.env.DB, parseInt(page) || 1, 6)
+    works = await GetWorkListWithPagination(c.env.DB, parseInt(page) || 1, 10)
   }
   const footerSettings = await GetFooterSettings(c.env.DB)
   return c.html(<IndexPage works={works} asset_url={c.env.ASSET_URL} footerSettings={footerSettings} />)

@@ -22,6 +22,7 @@ INSERT INTO work VALUES('2ab4cee5-4305-49bc-9a25-f72415b49a79','none');
 INSERT INTO work VALUES('ab23094a-f912-49f5-afa2-d007531b60f2','none');
 INSERT INTO work VALUES('7e513b12-7454-4994-9919-9a80e39deaee','none');
 INSERT INTO work VALUES('b7213789-847b-4c62-9630-dfd0f8e5868f','none');
+INSERT INTO work VALUES('f287246f-ae76-42ee-bd4e-ac565fd94549','none');
 CREATE TABLE work_title ( work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE, is_official BOOLEAN NOT NULL, language TEXT NOT NULL, title TEXT NOT NULL, PRIMARY KEY (work_uuid, language) );
 INSERT INTO work_title VALUES('21d591dd-0042-4cf0-a798-6ea3676a9d23',1,'en','BUTCHER VANITY');
 INSERT INTO work_title VALUES('21d591dd-0042-4cf0-a798-6ea3676a9d23',0,'zh-cn','虚荣屠夫');
@@ -32,6 +33,8 @@ INSERT INTO work_title VALUES('db381df9-2480-4e68-af2a-63be8ad1f85b',0,'en.','Mo
 INSERT INTO work_title VALUES('ab23094a-f912-49f5-afa2-d007531b60f2',1,'en','Armageddon');
 INSERT INTO work_title VALUES('7e513b12-7454-4994-9919-9a80e39deaee',1,'en','WACCA ULTRA DREAM MEGAMIX');
 INSERT INTO work_title VALUES('b7213789-847b-4c62-9630-dfd0f8e5868f',1,'en','Bad Apple!! (REDALiCE Remix)');
+INSERT INTO work_title VALUES('f287246f-ae76-42ee-bd4e-ac565fd94549',1,'ja','霊知の太陽信仰 ～ Nuclear Fusion');
+INSERT INTO work_title VALUES('f287246f-ae76-42ee-bd4e-ac565fd94549',0,'zh-cn','灵知的太阳信仰 ～ Nuclear Fusion');
 CREATE TABLE work_license ( work_uuid TEXT PRIMARY KEY REFERENCES work(uuid) ON DELETE CASCADE, license_type TEXT NOT NULL );
 CREATE TABLE media_source ( uuid TEXT PRIMARY KEY, work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE, is_music BOOLEAN NOT NULL, file_name TEXT NOT NULL, url TEXT NOT NULL, mime_type TEXT NOT NULL, info TEXT NOT NULL );
 INSERT INTO media_source VALUES('6ca99d39-48b7-40b7-8f81-8d6be60b2cf0','21d591dd-0042-4cf0-a798-6ea3676a9d23',1,'BUTCHER VANITY ft. Yi Xi.flac','https://assets.vocarchive.com/BUTCHER+VANITY+ft.+Yi+Xi.flac','audio/x-flac','flac, 44100 Hz, stereo, s32 (24 bit), Lavf58.76.100');
@@ -42,6 +45,7 @@ INSERT INTO media_source VALUES('79718cf8-2be0-4516-af29-3a87c167c04b','ab23094a
 INSERT INTO media_source VALUES('86c29bcb-f17b-494e-a374-508ba01c3061','ab23094a-f912-49f5-afa2-d007531b60f2',1,'Armageddon.flac','https://assets.vocarchive.com/Armageddon.flac','audio/x-flac','Lavc62.8.100, flac, 48000 Hz, stereo, s32 (24 bit), 128 kb/s');
 INSERT INTO media_source VALUES('d569877e-ff05-4b4b-9250-2d823da4d61d','7e513b12-7454-4994-9919-9a80e39deaee',1,'WACCA_ULTRA_DREAM_MEGAMIX.flac','https://assets.vocarchive.com/WACCA_ULTRA_DREAM_MEGAMIX.flac','audio/x-flac','Lavf62.1.103, flac, 44100 Hz, stereo, s16');
 INSERT INTO media_source VALUES('b1e3fd28-572c-42ea-8698-aff52a9bee34','b7213789-847b-4c62-9630-dfd0f8e5868f',1,'Bad Apple!! (REDALiCE Remix).flac','https://assets.vocarchive.com/Bad Apple!! (REDALiCE Remix).flac','audio/x-flac','Lavf58.76.100, flac, 44100 Hz, stereo, s32 (24 bit), 1743 kb/s');
+INSERT INTO media_source VALUES('652a8e18-79be-49a7-9c4a-d891d7acf7ab','f287246f-ae76-42ee-bd4e-ac565fd94549',1,'nuclear_fusion.flac','https://assets.vocarchive.com/nuclear_fusion.flac','audio/x-flac','flac, 44100 Hz, stereo, s16');
 CREATE TABLE asset ( uuid TEXT PRIMARY KEY, file_id TEXT NOT NULL, work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE, asset_type TEXT CHECK(asset_type IN ('lyrics', 'picture')) NOT NULL, file_name TEXT NOT NULL, is_previewpic BOOLEAN, language TEXT );
 INSERT INTO asset VALUES('be151f76-26bc-4cad-9cac-383fc91caa26','280px-Butcher_Vanity.webp','21d591dd-0042-4cf0-a798-6ea3676a9d23','picture','280px-Butcher_Vanity.webp',1,NULL);
 INSERT INTO asset VALUES('25d5ab53-aab8-4dda-926e-1b26ab46c52d','mobius.webp','db381df9-2480-4e68-af2a-63be8ad1f85b','picture','mobius.webp',1,NULL);
@@ -49,11 +53,15 @@ INSERT INTO asset VALUES('62419365-0846-4b90-b474-9eeda7c20eaf','じゃあな.we
 INSERT INTO asset VALUES('a50ae0e1-7a12-4e2c-a215-a216510bd18c','Armageddon.webp','ab23094a-f912-49f5-afa2-d007531b60f2','picture','Armageddon.webp',1,NULL);
 INSERT INTO asset VALUES('17f113e6-dd6a-42d0-ae28-599b03a9109a','WACCA_ULTRA_DREAM_MEGAMIX_1x1.webp','7e513b12-7454-4994-9919-9a80e39deaee','picture','WACCA_ULTRA_DREAM_MEGAMIX_1x1.webp',1,NULL);
 INSERT INTO asset VALUES('27ee864b-cb6e-41eb-a8dd-c047f5242329','BadApple_REDALiCEremix.webp','b7213789-847b-4c62-9630-dfd0f8e5868f','picture','BadApple_REDALiCEremix.webp',1,NULL);
+INSERT INTO asset VALUES('b96848f1-d029-4ac6-87cb-9d7aa596c9ad','nuclear_fusion.webp','f287246f-ae76-42ee-bd4e-ac565fd94549','picture','nuclear_fusion.webp',1,NULL);
 CREATE TABLE asset_creator ( asset_uuid TEXT NOT NULL REFERENCES asset(uuid) ON DELETE CASCADE, creator_uuid TEXT NOT NULL REFERENCES creator(uuid), role TEXT NOT NULL, PRIMARY KEY (asset_uuid, creator_uuid) );
+INSERT INTO asset_creator VALUES('b96848f1-d029-4ac6-87cb-9d7aa596c9ad','67124873-3411-4771-bc85-e24b5b8cb71f','original');
 CREATE TABLE work_relation ( uuid TEXT PRIMARY KEY, from_work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE, to_work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE, relation_type TEXT NOT NULL CHECK(relation_type IN ( 'original', 'remix', 'cover', 'remake', 'picture', 'lyrics' )) );
+INSERT INTO work_relation VALUES('3be054d7-647c-4ee8-a77e-bfe0fc59ce5f','f287246f-ae76-42ee-bd4e-ac565fd94549','ab23094a-f912-49f5-afa2-d007531b60f2','remix');
 CREATE TABLE work_wiki ( work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE, platform TEXT NOT NULL, identifier TEXT NOT NULL, PRIMARY KEY (work_uuid, platform) );
 INSERT INTO work_wiki VALUES('2ab4cee5-4305-49bc-9a25-f72415b49a79','baidu','再见呐/64658112');
 INSERT INTO work_wiki VALUES('db381df9-2480-4e68-af2a-63be8ad1f85b','moegirl','Mobius');
+INSERT INTO work_wiki VALUES('f287246f-ae76-42ee-bd4e-ac565fd94549','thbwiki','灵知的太阳信仰_～_Nuclear_Fusion');
 CREATE TABLE work_creator ( work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE, creator_uuid TEXT NOT NULL REFERENCES creator(uuid) ON DELETE CASCADE, role TEXT NOT NULL, PRIMARY KEY (work_uuid, creator_uuid, role) );
 INSERT INTO work_creator VALUES('21d591dd-0042-4cf0-a798-6ea3676a9d23','5af67a71-f138-4608-ad73-f5607631dd2b','producer');
 INSERT INTO work_creator VALUES('2ab4cee5-4305-49bc-9a25-f72415b49a79','4da58d31-9aa2-4969-8404-ae589240e691','vocal');
@@ -67,12 +75,12 @@ INSERT INTO work_creator VALUES('7e513b12-7454-4994-9919-9a80e39deaee','597ecbdb
 INSERT INTO work_creator VALUES('7e513b12-7454-4994-9919-9a80e39deaee','dc45304b-cb07-4de4-bb7c-9648c381ed7a','remixer');
 INSERT INTO work_creator VALUES('b7213789-847b-4c62-9630-dfd0f8e5868f','41eb7722-f7ca-4dd1-9f91-0721b4e1cba3','remixer');
 INSERT INTO work_creator VALUES('b7213789-847b-4c62-9630-dfd0f8e5868f','67124873-3411-4771-bc85-e24b5b8cb71f','original');
-
+INSERT INTO work_creator VALUES('f287246f-ae76-42ee-bd4e-ac565fd94549','67124873-3411-4771-bc85-e24b5b8cb71f','original');
 CREATE TABLE footer_settings ( uuid TEXT PRIMARY KEY, item_type TEXT NOT NULL CHECK(item_type IN ('link', 'social', 'copyright')), text TEXT NOT NULL, url TEXT, icon_class TEXT );
-INSERT INTO footer_settings (uuid, item_type, text, url, icon_class) VALUES ('a1b2c3d4-e5f6-7890-1234-567890abcdef', 'link', '缓存管理', '/cache.html', NULL);
-INSERT INTO footer_settings (uuid, item_type, text, url, icon_class) VALUES ('b2c3d4e5-f6a1-b2c3-d4e5-f6a1b2c3d4e5', 'link', '联系我们', 'mailto:contact@vocarchive.com', NULL);
-INSERT INTO footer_settings (uuid, item_type, text, url, icon_class) VALUES ('c3d4e5f6-a1b2-c3d4-e5f6-a1b2c3d4e5f6', 'link', '意见反馈', 'mailto:feedback@vocarchive.com', NULL);
-INSERT INTO footer_settings (uuid, item_type, text, url, icon_class) VALUES ('d4e5f6a1-b2c3-d4e5-f6a1-b2c3d4e5f6a1', 'link', '侵权投诉', 'mailto:copyright@vocarchive.com', NULL);
-INSERT INTO footer_settings (uuid, item_type, text, url, icon_class) VALUES ('e5f6a1b2-c3d4-e5f6-a1b2-c3d4e5f6a1b2', 'social', 'GitHub', 'https://github.com/gxxk-dev/VOCArchive', 'fab fa-github');
-INSERT INTO footer_settings (uuid, item_type, text, url, icon_class) VALUES ('f6a1b2c3-d4e5-f6a1-b2c3-d4e5f6a1b2c3', 'copyright', '© 2025 VOCArchive. AGPL v3 (or later).', NULL, NULL);
-
+INSERT INTO footer_settings VALUES('a1b2c3d4-e5f6-7890-1234-567890abcdef','link','后台管理','/admin','fas fa-comment');
+INSERT INTO footer_settings VALUES('b2c3d4e5-f6a1-b2c3-d4e5-f6a1b2c3d4e5','link','联系我们','mailto:contact@vocarchive.com',NULL);
+INSERT INTO footer_settings VALUES('c3d4e5f6-a1b2-c3d4-e5f6-a1b2c3d4e5f6','link','意见反馈','mailto:feedback@vocarchive.com',NULL);
+INSERT INTO footer_settings VALUES('d4e5f6a1-b2c3-d4e5-f6a1-b2c3d4e5f6a1','link','侵权投诉','mailto:copyright@vocarchive.com',NULL);
+INSERT INTO footer_settings VALUES('e5f6a1b2-c3d4-e5f6-a1b2-c3d4e5f6a1b2','social','GitHub','https://github.com/gxxk-dev/VOCArchive','fab fa-github');
+INSERT INTO footer_settings VALUES('f6a1b2c3-d4e5-f6a1-b2c3-d4e5f6a1b2c3','copyright','VOCArchive-Demo. AGPL v3 (or later).',NULL,NULL);
+INSERT INTO footer_settings VALUES('be6d3df9-5d61-4e44-8e09-f38ac469b870','social','Telegram','https://t.me/VOCArch1ve_ChatHub','fab fa-telegram');
