@@ -59,7 +59,7 @@ export const IndexPage = (props: { works: any[], asset_url: string, footerSettin
             <head>
                 <meta charset="UTF-8" />
                 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                <title>选歌页面 - Music Player</title>
+                <title>VOCArchive - 作品选择</title>
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
                 <style>
                     
@@ -663,8 +663,8 @@ export const IndexPage = (props: { works: any[], asset_url: string, footerSettin
 
                 <div class="page-container" id="pageContainer">
                     <header class="page-header">
-                        <h1 class="page-title"><i class="fas fa-music"></i> 选择歌曲</h1>
-                        <p class="page-subtitle">点击歌曲开始播放</p>
+                        <h1 class="page-title">VOCArchive - 作品选择</h1>
+                        
                     </header>
 
                     <section class="work-list-section">
