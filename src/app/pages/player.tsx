@@ -8,12 +8,13 @@ import { WikiSection } from './components/player/wiki-section'
 import { RelatedWorksSection } from './components/player/related-works-section'
 import { FooterSetting } from '../database'
 import { PlayerStyles } from './styles/player-styles'
+import { CommonStyles } from './styles/common-styles'
 
 export const PlayerPage = (props: { workInfo: any, asset_url: string, footerSettings: FooterSetting[] }) => {
     const { workInfo, asset_url, footerSettings } = props;
     const userLang = "zh-cn";
 
-    const additionalStyles = `${PlayerStyles}`;
+    const additionalStyles = `${CommonStyles}${PlayerStyles}`;
 
     const pageContent = (
         <div class="player-container">
