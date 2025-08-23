@@ -11,7 +11,7 @@ import { auth } from './routes/auth'
 import footer from './routes/footer'
 import { jwt } from 'hono/jwt'
 
-import { IndexPage } from './pages'
+import { IndexPage } from './pages/index'
 import { PlayerPage } from './pages/player'
 import { GetFooterSettings, GetWorkByUUID, GetWorkListWithPagination, SearchWorks } from './database'
 
