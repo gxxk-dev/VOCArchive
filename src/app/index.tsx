@@ -13,7 +13,7 @@ import { jwt } from 'hono/jwt'
 
 import { IndexPage } from './pages'
 import { PlayerPage } from './pages/player'
-import { GetFooterSettings, GetWorkByUUID, GetWorkListWithPagination, SearchWorksByTitle } from './database'
+import { GetFooterSettings, GetWorkByUUID, GetWorkListWithPagination, SearchWorks } from './database'
 
 const apiApp = new Hono<{ Bindings: Cloudflare }>()
 
@@ -77,11 +77,11 @@ const app = new Hono<{ Bindings: Cloudflare }>()
 app.route('/api', apiApp)
 
 app.get('/', async (c) => {
-  const { search, page } = c.req.query()
-  console.log(search,page)
+  const { search, page, type } = c.req.query()
+  console.log(search, page, type)
   let works;
   if (search) {
-    works = await SearchWorksByTitle(c.env.DB, search)
+    works = await SearchWorks(c.env.DB, search, type as 'title' | 'creator' | 'all' || 'all')
   } else {
     works = await GetWorkListWithPagination(c.env.DB, parseInt(page) || 1, 10)
   }

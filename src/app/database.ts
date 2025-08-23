@@ -307,8 +307,6 @@ export async function GetWorkListWithPagination(DB: D1Database, page: number, pa
     }
     
     // 4. 获取所有作品的创作者信息（单次查询）
-    console.log(workUUIDs.map(() => '?').join(','))
-    console.log(...workUUIDs.map(w => w.uuid))
     const creatorStmt = DB.prepare(`
         SELECT 
             wc.work_uuid,
@@ -322,7 +320,6 @@ export async function GetWorkListWithPagination(DB: D1Database, page: number, pa
     `).bind(...workUUIDs.map(w => w.uuid));
     
     const creatorResult = await creatorStmt.all();
-    console.log(creatorResult);
     const creatorMap = new Map<string, CreatorWithRole[]>();
     // 创建作品UUID到创作者的映射
     creatorResult.results?.forEach((row: any) => {
@@ -1273,6 +1270,112 @@ export async function SearchWorksByTitle(DB: D1Database, query: string): Promise
     });
 
     return await Promise.all(workListPromises);
+}
+
+export async function SearchWorksByCreator(DB: D1Database, query: string): Promise<WorkListItem[]> {
+    // 1. 使用 LIKE 模糊查询获取匹配的创作者 UUID
+    const creatorSearchStmt = DB.prepare(`
+        SELECT DISTINCT uuid
+        FROM creator
+        WHERE name LIKE ?
+    `).bind(`%${query}%`);
+    const creatorSearchResult = await creatorSearchStmt.all<{ uuid: string }>();
+    const creatorUUIDs = creatorSearchResult.results || [];
+    if (creatorUUIDs.length === 0) {
+        return [];
+    }
+    
+    // 2. 通过创作者 UUID 获取相关的作品 UUID
+    const workSearchStmt = DB.prepare(`
+        SELECT DISTINCT work_uuid
+        FROM work_creator
+        WHERE creator_uuid IN (${creatorUUIDs.map(() => '?').join(',')})
+    `).bind(...creatorUUIDs.map(c => c.uuid));
+    const workSearchResult = await workSearchStmt.all<{ work_uuid: string }>();
+    const workUUIDs = workSearchResult.results || [];
+    if (workUUIDs.length === 0) {
+        return [];
+    }
+
+    // 3. 获取所有匹配作品的创作者信息（单次查询）
+    const creatorStmt = DB.prepare(`
+        SELECT 
+            wc.work_uuid,
+            c.uuid as creator_uuid,
+            c.name as creator_name,
+            c.type as creator_type,
+            wc.role
+        FROM work_creator wc
+        JOIN creator c ON wc.creator_uuid = c.uuid
+        WHERE wc.work_uuid IN (${workUUIDs.map(() => '?').join(',')})
+    `).bind(...workUUIDs.map(w => w.work_uuid));
+    const creatorResult = await creatorStmt.all();
+    const creatorMap = new Map<string, CreatorWithRole[]>();
+    // 创建作品UUID到创作者的映射
+    creatorResult.results?.forEach((row: any) => {
+        if (!creatorMap.has(row.work_uuid)) {
+            creatorMap.set(row.work_uuid, []);
+        }
+        creatorMap.get(row.work_uuid)!.push({
+            creator_uuid: row.creator_uuid,
+            creator_name: row.creator_name,
+            creator_type: row.creator_type,
+            role: row.role
+        });
+    });
+    
+    // 4. 为每个作品获取其他信息
+    const workListPromises = workUUIDs.map(async ({ work_uuid }) => {
+        // 获取标题
+        const titlesResult = await getWorkTitles(DB, work_uuid);
+        const titles = titlesResult.results || [];
+        // 获取封面资产
+        const [previewResult, nonPreviewResult] = await Promise.all([
+            DB.prepare(`
+                SELECT uuid, file_id, work_uuid, asset_type, file_name, is_previewpic, language
+                FROM asset 
+                WHERE work_uuid = ? AND asset_type = 'picture' AND is_previewpic = 1
+                ORDER BY uuid 
+                LIMIT 1
+            `).bind(work_uuid).first<Asset>(),
+            DB.prepare(`
+                SELECT uuid, file_id, work_uuid, asset_type, file_name, is_previewpic, language
+                FROM asset 
+                WHERE work_uuid = ? AND asset_type = 'picture' AND (is_previewpic = 0 OR is_previewpic IS NULL)
+                ORDER BY uuid 
+                LIMIT 1
+            `).bind(work_uuid).first<Asset>()
+        ]);
+        return {
+            work_uuid: work_uuid,
+            titles,
+            preview_asset: previewResult || undefined,
+            non_preview_asset: nonPreviewResult || undefined,
+            creator: creatorMap.get(work_uuid) || []
+        };
+    });
+    return await Promise.all(workListPromises);
+}
+
+export async function SearchWorks(DB: D1Database, query: string, searchType: 'title' | 'creator' | 'all' = 'all'): Promise<WorkListItem[]> {
+    if (searchType === 'title') {
+        return await SearchWorksByTitle(DB, query);
+    } else if (searchType === 'creator') {
+        return await SearchWorksByCreator(DB, query);
+    } else {
+        // 搜索全部：同时搜索标题和创作者，合并结果并去重
+        const [titleResults, creatorResults] = await Promise.all([
+            SearchWorksByTitle(DB, query),
+            SearchWorksByCreator(DB, query)
+        ]);
+        
+        // 使用 Map 去重，以 work_uuid 为键
+        const resultMap = new Map<string, WorkListItem>();
+        titleResults.forEach(item => resultMap.set(item.work_uuid, item));
+        creatorResults.forEach(item => resultMap.set(item.work_uuid, item));
+        
+        return Array.from(resultMap.values());
+    }
 }
 
 export interface FooterSetting {

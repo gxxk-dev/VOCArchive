@@ -201,6 +201,27 @@ export const IndexPage = (props: { works: any[], asset_url: string, footerSettin
             padding: 4px 0;
         }
 
+        .search-type-selector {
+            background: rgba(40, 40, 40, 0.8);
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 0.85rem;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-type-selector:hover {
+            background: rgba(50, 50, 50, 0.9);
+            border-color: rgba(120, 119, 198, 0.3);
+        }
+
+        .search-type-selector:focus {
+            border-color: rgba(120, 119, 198, 0.5);
+        }
+
         .floating-search-input::placeholder {
             color: #666;
         }
@@ -655,6 +676,11 @@ export const IndexPage = (props: { works: any[], asset_url: string, footerSettin
                 </div>
 
                 <div class="floating-search">
+                    <select id="searchType" class="search-type-selector">
+                        <option value="all">全部</option>
+                        <option value="title">标题</option>
+                        <option value="creator">作者</option>
+                    </select>
                     <input type="text" class="floating-search-input" placeholder="搜索歌曲、艺术家..." id="searchInput" />
                     <button class="floating-search-btn" id="searchButton">
                         <i class="fas fa-search"></i>
@@ -691,6 +717,7 @@ export const IndexPage = (props: { works: any[], asset_url: string, footerSettin
         const workList = document.getElementById('workList');
         const searchInput = document.getElementById('searchInput');
         const searchButton = document.getElementById('searchButton');
+        const searchType = document.getElementById('searchType');
         const prevPageBtn = document.getElementById('prevPage');
         const nextPageBtn = document.getElementById('nextPage');
         const paginationContainer = document.getElementById('pagination');
@@ -753,8 +780,9 @@ export const IndexPage = (props: { works: any[], asset_url: string, footerSettin
 
         function searchMusic() {
             const query = searchInput.value.trim();
+            const type = searchType.value;
             if (query) {
-                window.location.href = \`/?search=\${encodeURIComponent(query)}\`;
+                window.location.href = \`/?search=\${encodeURIComponent(query)}&type=\${encodeURIComponent(type)}\`;
             }
         }
         
