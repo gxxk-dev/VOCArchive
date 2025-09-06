@@ -64,6 +64,7 @@ The application uses a comprehensive relational schema:
 - **Data Query (Read)**:
   - `GET /api/list/{type}`: Get paginated list of specified type (e.g. `/api/list/works`)
   - `GET /api/get/{type}`: Get single item details by UUID (e.g. `/api/get/work?uuid=...`)
+  - `GET /api/get/file/{uuid}`: Get file redirect to download URL for media_source/asset UUID (returns 302 redirect)
   - `GET /api/search`: Search songs by keyword (matches title field with multi-language support)
 
 - **Data Modification (Write)** - *Requires Authentication*:
@@ -76,14 +77,20 @@ The application uses a comprehensive relational schema:
   - `POST /api/input/dbinit` or `GET /api/dbinit`: Initialize database tables
   - `POST /api/delete/dbclear` or `GET /api/dbclear`: Clear user data tables
 
-#### External Assets
+#### File Access
+- `GET /api/get/file/{uuid}`: Redirect to download URL for media_source or asset UUID
+  - Returns 302 redirect to actual file download URL
+  - Works with both media_source UUIDs (direct URL) and asset UUIDs (constructed from ASSET_URL + file_id)
+  - Returns 404 if UUID not found, 500 if ASSET_URL not configured
+
+#### External Assets (Legacy)
 - `GET https://assets.vocarchive.com/{file_id}`: Download files from object storage (Demo only)
 
 ### Frontend Architecture
 - Server-side rendered with Hono JSX
 - Main routes: `/` (song listing), `/player` (song player)
 - Supports pagination and search functionality
-- Responsive design with asset URL configuration
+- Asset access unified through `/api/get/file/{uuid}` endpoint
 
 ### Environment Configuration
 Required environment variables:

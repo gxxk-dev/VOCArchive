@@ -86,7 +86,7 @@ app.get('/', async (c) => {
     works = await GetWorkListWithPagination(c.env.DB, parseInt(page) || 1, 10)
   }
   const footerSettings = await GetFooterSettings(c.env.DB)
-  return c.html(<IndexPage works={works} asset_url={c.env.ASSET_URL} footerSettings={footerSettings} />)
+  return c.html(<IndexPage works={works} footerSettings={footerSettings} />)
 })
 
 app.get('/player', async (c) => {
@@ -99,7 +99,7 @@ app.get('/player', async (c) => {
         return c.notFound()
     }
     const footerSettings = await GetFooterSettings(c.env.DB)
-    return c.html(<PlayerPage workInfo={workInfo} asset_url={c.env.ASSET_URL} footerSettings={footerSettings} />)
+    return c.html(<PlayerPage workInfo={workInfo} footerSettings={footerSettings} />)
 })
 
 

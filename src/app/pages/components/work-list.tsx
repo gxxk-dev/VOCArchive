@@ -2,7 +2,6 @@ import { jsx } from 'hono/jsx'
 
 export interface WorkListProps {
     works: any[]
-    asset_url: string
 }
 
 export const WorkList = (props: WorkListProps) => {
@@ -35,11 +34,11 @@ export const WorkList = (props: WorkListProps) => {
 
         let coverUrl = '';
         if (item.preview_asset) {
-            coverUrl = `${props.asset_url}/${item.preview_asset.file_id}`;
+            coverUrl = `/api/get/file/${item.preview_asset.uuid}`;
         } else if (item.non_preview_asset) {
-            coverUrl = `${props.asset_url}/${item.non_preview_asset.file_id}`;
+            coverUrl = `/api/get/file/${item.non_preview_asset.uuid}`;
         } else {
-            coverUrl = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100';
+            coverUrl = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745';
         }
 
         return (

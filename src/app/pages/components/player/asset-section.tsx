@@ -2,11 +2,10 @@ import { jsx } from 'hono/jsx'
 
 export interface AssetSectionProps {
     workInfo: any
-    asset_url: string
 }
 
 export const AssetSection = (props: AssetSectionProps) => {
-    const { workInfo, asset_url } = props;
+    const { workInfo } = props;
 
     if (!workInfo.asset || workInfo.asset.length === 0) {
         return null;
@@ -26,7 +25,7 @@ export const AssetSection = (props: AssetSectionProps) => {
                         : '';
                     const langInfo = asset.language ? ` · ${asset.language}` : '';
                     return (
-                        <a href={`${asset_url}/${asset.file_id}`} class="asset-card">
+                        <a href={`/api/get/file/${asset.uuid}`} class="asset-card">
                             <span class="material-symbols-outlined">{icon}</span>
                             <div class="asset-details">
                                 <h4>{asset.file_name}</h4>

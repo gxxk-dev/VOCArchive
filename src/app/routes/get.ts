@@ -1,5 +1,5 @@
 import {
-    GetWorkByUUID, GetCreatorByUUID, GetMediaByUUID, GetAssetByUUID, GetRelationByUUID
+    GetWorkByUUID, GetCreatorByUUID, GetMediaByUUID, GetAssetByUUID, GetRelationByUUID, GetFileURLByUUID
 } from "../database"
 import { Hono } from 'hono'
 
@@ -12,6 +12,24 @@ const resHandlers = {
 };
 
 export const getInfo = new Hono();
+
+getInfo.get('/file/:uuid', async (c: any) => {
+    const fileUUID = c.req.param('uuid');
+    const assetURL = c.env.ASSET_URL as string;
+    
+    if (!assetURL) {
+        return c.json({ error: 'Asset URL not configured' }, 500);
+    }
+    
+    const fileURL = await GetFileURLByUUID(c.env.DB, fileUUID, assetURL);
+    
+    if (!fileURL) {
+        return c.json({ error: 'File not found' }, 404);
+    }
+    
+    return c.redirect(fileURL, 302);
+});
+
 
 getInfo.get('/:resType/:uuid', async (c: any) => {
     const resType = c.req.param('resType');

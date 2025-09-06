@@ -1,4 +1,4 @@
-export const IndexScripts = (props: { works: any[], asset_url: string }) => `
+export const IndexScripts = (props: { works: any[] }) => `
 const workList = document.getElementById('workList');
 const searchInput = document.getElementById('searchInput');
 const searchButton = document.getElementById('searchButton');
@@ -6,8 +6,6 @@ const searchType = document.getElementById('searchType');
 const prevPageBtn = document.getElementById('prevPage');
 const nextPageBtn = document.getElementById('nextPage');
 const paginationContainer = document.getElementById('pagination');
-
-window.ASSET_URL = "${props.asset_url}";
 
 function setupEventListeners() {
     workList.addEventListener('click', function(e) {

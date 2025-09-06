@@ -10,8 +10,8 @@ import { FooterSetting } from '../database'
 import { PlayerStyles } from './styles/player-styles'
 import { CommonStyles } from './styles/common-styles'
 
-export const PlayerPage = (props: { workInfo: any, asset_url: string, footerSettings: FooterSetting[] }) => {
-    const { workInfo, asset_url, footerSettings } = props;
+export const PlayerPage = (props: { workInfo: any, footerSettings: FooterSetting[] }) => {
+    const { workInfo, footerSettings } = props;
     const userLang = "zh-cn";
 
     const additionalStyles = `${CommonStyles}${PlayerStyles}`;
@@ -21,7 +21,7 @@ export const PlayerPage = (props: { workInfo: any, asset_url: string, footerSett
             {WorkHeader({ workInfo, userLang })}
             {VersionCards({ workInfo })}
             {CopyrightSection({ workInfo })}
-            {AssetSection({ workInfo, asset_url })}
+            {AssetSection({ workInfo })}
             {WikiSection({ workInfo })}
             {RelatedWorksSection({ workInfo, userLang })}
         </div>

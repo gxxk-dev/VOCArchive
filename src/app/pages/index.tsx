@@ -8,7 +8,7 @@ import { CommonStyles } from './styles/common-styles'
 import { IndexStyles } from './styles/index-styles'
 import { IndexScripts } from './scripts/index-scripts'
 
-export const IndexPage = (props: { works: any[], asset_url: string, footerSettings: FooterSetting[] }) => {
+export const IndexPage = (props: { works: any[], footerSettings: FooterSetting[] }) => {
     const additionalStyles = `${CommonStyles}${IndexStyles}`;
     
     const additionalScripts = IndexScripts(props);
@@ -33,7 +33,7 @@ export const IndexPage = (props: { works: any[], asset_url: string, footerSettin
                     </h2>
 
                     <div class="work-list" id="workList">
-                        {WorkList({ works: props.works, asset_url: props.asset_url })}
+                        {WorkList({ works: props.works })}
                     </div>
 
                     {Pagination()}

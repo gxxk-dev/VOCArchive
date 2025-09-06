@@ -645,6 +645,26 @@ export async function GetRelationByUUID(DB: D1Database, relationUUID: string): P
     return await DB.prepare(`SELECT uuid, from_work_uuid, to_work_uuid, relation_type FROM work_relation WHERE uuid = ?`).bind(relationUUID).first<WorkRelation>();
 }
 
+export async function GetFileURLByUUID(DB: D1Database, fileUUID: string, assetURL: string): Promise<string | null> {
+    if (!(await UUIDCheck(fileUUID))) {
+        return null;
+    }
+
+    // First check media_source table
+    const mediaSource = await DB.prepare(`SELECT url FROM media_source WHERE uuid = ?`).bind(fileUUID).first<{ url: string }>();
+    if (mediaSource) {
+        return mediaSource.url;
+    }
+
+    // Then check asset table
+    const asset = await DB.prepare(`SELECT file_id FROM asset WHERE uuid = ?`).bind(fileUUID).first<{ file_id: string }>();
+    if (asset) {
+        return `${assetURL}/${asset.file_id}`;
+    }
+
+    return null;
+}
+
 // InputCreator - 插入创作者及百科信息
 export async function InputCreator(DB: D1Database, creator: Creator, wikis?: WikiRef[]) {
     // 插入主创作者表
