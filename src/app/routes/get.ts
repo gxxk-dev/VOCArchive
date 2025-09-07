@@ -1,5 +1,6 @@
 import {
-    GetWorkByUUID, GetCreatorByUUID, GetMediaByUUID, GetAssetByUUID, GetRelationByUUID, GetFileURLByUUID
+    GetWorkByUUID, GetCreatorByUUID, GetMediaByUUID, GetAssetByUUID, GetRelationByUUID, GetFileURLByUUID,
+    GetTagByUUID, GetCategoryByUUID
 } from "../database"
 import { Hono } from 'hono'
 
@@ -8,7 +9,9 @@ const resHandlers = {
     creator: GetCreatorByUUID,
     media: GetMediaByUUID,
     asset: GetAssetByUUID,
-    relation: GetRelationByUUID
+    relation: GetRelationByUUID,
+    tag: GetTagByUUID,
+    category: GetCategoryByUUID
 };
 
 export const getInfo = new Hono();

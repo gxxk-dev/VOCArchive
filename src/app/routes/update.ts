@@ -1,5 +1,5 @@
 import {
-    UpdateCreator, UpdateWork, UpdateAsset, UpdateRelation, UpdateMedia,
+    UpdateCreator, UpdateWork, UpdateAsset, UpdateRelation, UpdateMedia, UpdateTag, UpdateCategory,
     UpdateAssetRequestBody, UpdateCreatorRequestBody, UpdateWorkRequestBody, UpdateRelationRequestBody, UpdateMediaRequestBody
 } from "../database"
 import { Hono } from 'hono'
@@ -14,7 +14,11 @@ const updateHandlers = {
     relation: async (DB: any, body: UpdateRelationRequestBody) => 
         await UpdateRelation(DB, body.relation_uuid, body),
     media: async (DB: any, body: UpdateMediaRequestBody) => 
-        await UpdateMedia(DB, body.media_uuid, body)
+        await UpdateMedia(DB, body.media_uuid, body),
+    tag: async (DB: any, body: { tag_uuid: string; name: string }) => 
+        await UpdateTag(DB, body.tag_uuid, body.name),
+    category: async (DB: any, body: { category_uuid: string; name: string; parent_uuid?: string }) => 
+        await UpdateCategory(DB, body.category_uuid, body.name, body.parent_uuid)
 };
 
 export const updateInfo = new Hono();

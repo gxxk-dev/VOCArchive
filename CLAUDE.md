@@ -53,6 +53,7 @@ The application uses a comprehensive relational schema:
 - **Relationship Tables**: `work_creator`, `work_relation`, `asset_creator`
 - **Metadata Tables**: `work_title` (multi-language), `work_wiki`, `creator_wiki`
 - **Configuration**: `footer_settings`, `work_license`
+- **Taxonomy System**: `tag`, `category`, `work_tag`, `work_category` (for work classification and tagging)
 
 ### API Design
 
@@ -63,14 +64,22 @@ The application uses a comprehensive relational schema:
 
 - **Data Query (Read)**:
   - `GET /api/list/{type}`: Get paginated list of specified type (e.g. `/api/list/works`)
-  - `GET /api/get/{type}`: Get single item details by UUID (e.g. `/api/get/work?uuid=...`)
+  - `GET /api/get/{type}/{uuid}`: Get single item details by UUID (e.g. `/api/get/work/{uuid}`)
   - `GET /api/get/file/{uuid}`: Get file redirect to download URL for media_source/asset UUID (returns 302 redirect)
-  - `GET /api/search`: Search songs by keyword (matches title field with multi-language support)
+  - `GET /api/search/{query}`: Search songs by keyword (matches title field with multi-language support)
+  - `GET /api/list/tags`: Get all tags
+  - `GET /api/list/categories`: Get category tree structure
+  - `GET /api/list/works-by-tag/{tag_uuid}/{page}/{size?}`: Get works by tag with pagination
+  - `GET /api/list/works-by-category/{category_uuid}/{page}/{size?}`: Get works by category with pagination
 
 - **Data Modification (Write)** - *Requires Authentication*:
-  - `POST /api/input/{type}`: Create new item (e.g. `/api/input/work`)
-  - `POST /api/update/{type}`: Update existing item (e.g. `/api/update/work`)
-  - `POST /api/delete/{type}`: Delete item (e.g. `/api/delete/work`)
+  - `POST /api/input/{type}`: Create new item (e.g. `/api/input/work`, `/api/input/tag`, `/api/input/category`)
+  - `POST /api/update/{type}`: Update existing item (e.g. `/api/update/work`, `/api/update/tag`, `/api/update/category`)
+  - `POST /api/delete/{type}`: Delete item (e.g. `/api/delete/work`, `/api/delete/tag`, `/api/delete/category`)
+  - `POST /api/input/work-tags`: Batch add tags to work
+  - `POST /api/input/work-categories`: Batch add categories to work
+  - `POST /api/delete/work-tags`: Batch remove tags from work  
+  - `POST /api/delete/work-categories`: Batch remove categories from work
 
 #### Management and Testing Interface
 - **Database Management** - *Requires Authentication*:
@@ -91,6 +100,26 @@ The application uses a comprehensive relational schema:
 - Main routes: `/` (song listing), `/player` (song player)
 - Supports pagination and search functionality
 - Asset access unified through `/api/get/file/{uuid}` endpoint
+
+### Tag and Category System
+The application includes a comprehensive taxonomy system for organizing works:
+
+#### Features
+- **Tags**: Flat structure for flexible labeling (e.g., "rock", "ballad", "duet")
+- **Categories**: Hierarchical structure for systematic classification (e.g., "Original Songs" > "Rock" > "Alternative Rock")
+- **Multi-assignment**: Each work can have multiple tags and categories
+- **Search Integration**: Filter works by tags or categories with pagination support
+
+#### Data Structure
+- `tag`: Simple name-based labels
+- `category`: Supports parent-child relationships for hierarchical organization  
+- `work_tag`: Many-to-many relationship between works and tags
+- `work_category`: Many-to-many relationship between works and categories
+
+#### API Integration
+- All work queries include associated tags and categories in the response
+- Dedicated endpoints for tag/category management and work filtering
+- Batch operations for efficient tag/category assignment
 
 ### Environment Configuration
 Required environment variables:

@@ -113,6 +113,33 @@ CREATE TABLE IF NOT EXISTS work_creator (
     PRIMARY KEY (work_uuid, creator_uuid, role)
 );
 
+-- 标签表
+CREATE TABLE tag (
+    uuid TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
+);
+
+-- 分类表 (支持多级分类)
+CREATE TABLE category (
+    uuid TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    parent_uuid TEXT REFERENCES category(uuid) ON DELETE CASCADE
+);
+
+-- 作品-标签关联表
+CREATE TABLE work_tag (
+    work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE,
+    tag_uuid TEXT NOT NULL REFERENCES tag(uuid) ON DELETE CASCADE,
+    PRIMARY KEY (work_uuid, tag_uuid)
+);
+
+-- 作品-分类关联表
+CREATE TABLE work_category (
+    work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE,
+    category_uuid TEXT NOT NULL REFERENCES category(uuid) ON DELETE CASCADE,
+    PRIMARY KEY (work_uuid, category_uuid)
+);
+
 
 `);
 
@@ -121,6 +148,7 @@ CREATE TABLE IF NOT EXISTS work_creator (
 const USER_TABLES = [
     'work_title', 'work_license', 'media_source', 'asset',
     'asset_creator', 'work_relation', 'work_wiki', 'work_creator',
+    'work_tag', 'work_category', 'tag', 'category',
     'work', 'creator_wiki', 'creator'
 ];
 
@@ -177,6 +205,18 @@ export async function InitDatabase(DB:D1Database):Promise<void> {
     }
 }
 
+interface Tag {
+    uuid: string;
+    name: string;
+}
+
+interface Category {
+    uuid: string;
+    name: string;
+    parent_uuid?: string;
+    children?: Category[];  // 用于树形结构
+}
+
 interface WorkInfo {
     work: Work;
     titles: WorkTitle[];
@@ -186,6 +226,8 @@ interface WorkInfo {
     creator: CreatorWithRole[];
     relation: WorkRelation[];
     wikis: WikiRef[];
+    tags?: Tag[];
+    categories?: Category[];
 }
 
 interface Work {
@@ -574,7 +616,30 @@ export async function GetWorkByUUID(DB: D1Database, workUUID: string): Promise<W
     
     const wikiResult = await wikiStmt.all<WikiRef>();
     const wikis = wikiResult.results || [];
-    // 10. 组装完整信息
+
+    // 10. 获取作品标签
+    const tagsStmt = DB.prepare(`
+        SELECT t.uuid, t.name
+        FROM tag t
+        JOIN work_tag wt ON t.uuid = wt.tag_uuid
+        WHERE wt.work_uuid = ?
+    `).bind(workUUID);
+    
+    const tagsResult = await tagsStmt.all<Tag>();
+    const tags = tagsResult.results || [];
+
+    // 11. 获取作品分类
+    const categoriesStmt = DB.prepare(`
+        SELECT c.uuid, c.name, c.parent_uuid
+        FROM category c
+        JOIN work_category wc ON c.uuid = wc.category_uuid
+        WHERE wc.work_uuid = ?
+    `).bind(workUUID);
+    
+    const categoriesResult = await categoriesStmt.all<Category>();
+    const categories = categoriesResult.results || [];
+
+    // 12. 组装完整信息
     return {
         work: workResult,
         titles,
@@ -583,7 +648,9 @@ export async function GetWorkByUUID(DB: D1Database, workUUID: string): Promise<W
         asset,
         creator,
         relation: uniqueRelations,
-        wikis
+        wikis,
+        tags,
+        categories
     };
 
 }
@@ -1437,5 +1504,321 @@ export async function DeleteFooterSetting(DB: D1Database, uuid: string): Promise
         DELETE FROM footer_settings WHERE uuid = ?
     `).bind(uuid).run();
     return result.success;
+}
+
+// Tag/Category CRUD Functions
+
+// 获取标签下的作品列表（带分页）
+export async function GetWorksByTag(DB: D1Database, tagUUID: string, page: number, pageSize: number = 20): Promise<WorkListItem[]> {
+    if (page < 1 || pageSize < 1) return [];
+    
+    const offset = (page - 1) * pageSize;
+    
+    // 获取该标签下的作品UUID
+    const workListStmt = DB.prepare(`
+        SELECT DISTINCT work_uuid 
+        FROM work_tag 
+        WHERE tag_uuid = ?
+        ORDER BY work_uuid 
+        LIMIT ? OFFSET ?
+    `).bind(tagUUID, pageSize, offset);
+    
+    const workListResult = await workListStmt.all<{ work_uuid: string }>();
+    const workUUIDs = workListResult.results || [];
+    
+    if (workUUIDs.length === 0) return [];
+    
+    // 获取创作者信息
+    const creatorStmt = DB.prepare(`
+        SELECT 
+            wc.work_uuid,
+            c.uuid as creator_uuid,
+            c.name as creator_name,
+            c.type as creator_type,
+            wc.role
+        FROM work_creator wc
+        JOIN creator c ON wc.creator_uuid = c.uuid
+        WHERE wc.work_uuid IN (${workUUIDs.map(() => '?').join(',')})
+    `).bind(...workUUIDs.map(w => w.work_uuid));
+    
+    const creatorResult = await creatorStmt.all();
+    const creatorMap = new Map<string, CreatorWithRole[]>();
+    creatorResult.results?.forEach((row: any) => {
+        if (!creatorMap.has(row.work_uuid)) {
+            creatorMap.set(row.work_uuid, []);
+        }
+        creatorMap.get(row.work_uuid)!.push({
+            creator_uuid: row.creator_uuid,
+            creator_name: row.creator_name,
+            creator_type: row.creator_type,
+            role: row.role
+        });
+    });
+    
+    // 获取作品详细信息
+    const workListPromises = workUUIDs.map(async ({ work_uuid }) => {
+        const titlesResult = await getWorkTitles(DB, work_uuid);
+        const titles = titlesResult.results || [];
+        
+        const [previewResult, nonPreviewResult] = await Promise.all([
+            DB.prepare(`
+                SELECT uuid, file_id, work_uuid, asset_type, file_name, is_previewpic, language
+                FROM asset 
+                WHERE work_uuid = ? AND asset_type = 'picture' AND is_previewpic = 1
+                ORDER BY uuid 
+                LIMIT 1
+            `).bind(work_uuid).first<Asset>(),
+            DB.prepare(`
+                SELECT uuid, file_id, work_uuid, asset_type, file_name, is_previewpic, language
+                FROM asset 
+                WHERE work_uuid = ? AND asset_type = 'picture' AND (is_previewpic = 0 OR is_previewpic IS NULL)
+                ORDER BY uuid 
+                LIMIT 1
+            `).bind(work_uuid).first<Asset>()
+        ]);
+        
+        return {
+            work_uuid: work_uuid,
+            titles,
+            preview_asset: previewResult || undefined,
+            non_preview_asset: nonPreviewResult || undefined,
+            creator: creatorMap.get(work_uuid) || []
+        };
+    });
+    
+    return await Promise.all(workListPromises);
+}
+
+// 获取分类下的作品列表（带分页）
+export async function GetWorksByCategory(DB: D1Database, categoryUUID: string, page: number, pageSize: number = 20): Promise<WorkListItem[]> {
+    if (page < 1 || pageSize < 1) return [];
+    
+    const offset = (page - 1) * pageSize;
+    
+    // 获取该分类下的作品UUID
+    const workListStmt = DB.prepare(`
+        SELECT DISTINCT work_uuid 
+        FROM work_category 
+        WHERE category_uuid = ?
+        ORDER BY work_uuid 
+        LIMIT ? OFFSET ?
+    `).bind(categoryUUID, pageSize, offset);
+    
+    const workListResult = await workListStmt.all<{ work_uuid: string }>();
+    const workUUIDs = workListResult.results || [];
+    
+    if (workUUIDs.length === 0) return [];
+    
+    // 获取创作者信息
+    const creatorStmt = DB.prepare(`
+        SELECT 
+            wc.work_uuid,
+            c.uuid as creator_uuid,
+            c.name as creator_name,
+            c.type as creator_type,
+            wc.role
+        FROM work_creator wc
+        JOIN creator c ON wc.creator_uuid = c.uuid
+        WHERE wc.work_uuid IN (${workUUIDs.map(() => '?').join(',')})
+    `).bind(...workUUIDs.map(w => w.work_uuid));
+    
+    const creatorResult = await creatorStmt.all();
+    const creatorMap = new Map<string, CreatorWithRole[]>();
+    creatorResult.results?.forEach((row: any) => {
+        if (!creatorMap.has(row.work_uuid)) {
+            creatorMap.set(row.work_uuid, []);
+        }
+        creatorMap.get(row.work_uuid)!.push({
+            creator_uuid: row.creator_uuid,
+            creator_name: row.creator_name,
+            creator_type: row.creator_type,
+            role: row.role
+        });
+    });
+    
+    // 获取作品详细信息
+    const workListPromises = workUUIDs.map(async ({ work_uuid }) => {
+        const titlesResult = await getWorkTitles(DB, work_uuid);
+        const titles = titlesResult.results || [];
+        
+        const [previewResult, nonPreviewResult] = await Promise.all([
+            DB.prepare(`
+                SELECT uuid, file_id, work_uuid, asset_type, file_name, is_previewpic, language
+                FROM asset 
+                WHERE work_uuid = ? AND asset_type = 'picture' AND is_previewpic = 1
+                ORDER BY uuid 
+                LIMIT 1
+            `).bind(work_uuid).first<Asset>(),
+            DB.prepare(`
+                SELECT uuid, file_id, work_uuid, asset_type, file_name, is_previewpic, language
+                FROM asset 
+                WHERE work_uuid = ? AND asset_type = 'picture' AND (is_previewpic = 0 OR is_previewpic IS NULL)
+                ORDER BY uuid 
+                LIMIT 1
+            `).bind(work_uuid).first<Asset>()
+        ]);
+        
+        return {
+            work_uuid: work_uuid,
+            titles,
+            preview_asset: previewResult || undefined,
+            non_preview_asset: nonPreviewResult || undefined,
+            creator: creatorMap.get(work_uuid) || []
+        };
+    });
+    
+    return await Promise.all(workListPromises);
+}
+
+// 获取所有标签
+export async function ListTags(DB: D1Database): Promise<Tag[]> {
+    const { results } = await DB.prepare("SELECT * FROM tag ORDER BY name").all<Tag>();
+    return results || [];
+}
+
+// 获取分类树形结构
+export async function ListCategories(DB: D1Database): Promise<Category[]> {
+    const { results } = await DB.prepare(`
+        SELECT * FROM category 
+        ORDER BY name
+    `).all<Category>();
+    
+    const categories = results || [];
+    
+    // 构建树形结构
+    const categoryMap = new Map<string, Category>();
+    const rootCategories: Category[] = [];
+    
+    categories.forEach(cat => {
+        categoryMap.set(cat.uuid, { ...cat, children: [] });
+    });
+    
+    categories.forEach(cat => {
+        if (cat.parent_uuid) {
+            const parent = categoryMap.get(cat.parent_uuid);
+            if (parent) {
+                parent.children!.push(categoryMap.get(cat.uuid)!);
+            }
+        } else {
+            rootCategories.push(categoryMap.get(cat.uuid)!);
+        }
+    });
+    
+    return rootCategories;
+}
+
+// 输入标签
+export async function InputTag(DB: D1Database, tag: Tag): Promise<boolean> {
+    const result = await DB.prepare(`
+        INSERT INTO tag (uuid, name) VALUES (?, ?)
+    `).bind(tag.uuid, tag.name).run();
+    return result.success;
+}
+
+// 输入分类
+export async function InputCategory(DB: D1Database, category: Category): Promise<boolean> {
+    const result = await DB.prepare(`
+        INSERT INTO category (uuid, name, parent_uuid) 
+        VALUES (?, ?, ?)
+    `).bind(
+        category.uuid, 
+        category.name, 
+        category.parent_uuid || null
+    ).run();
+    return result.success;
+}
+
+// 删除标签
+export async function DeleteTag(DB: D1Database, tagUUID: string): Promise<boolean> {
+    if (!(await UUIDCheck(tagUUID))) return false;
+    const result = await DB.prepare(`
+        DELETE FROM tag WHERE uuid = ?
+    `).bind(tagUUID).run();
+    return result.success && (result.meta.changes as number) > 0;
+}
+
+// 删除分类
+export async function DeleteCategory(DB: D1Database, categoryUUID: string): Promise<boolean> {
+    if (!(await UUIDCheck(categoryUUID))) return false;
+    const result = await DB.prepare(`
+        DELETE FROM category WHERE uuid = ?
+    `).bind(categoryUUID).run();
+    return result.success && (result.meta.changes as number) > 0;
+}
+
+// 更新标签
+export async function UpdateTag(DB: D1Database, tagUUID: string, name: string): Promise<boolean> {
+    if (!(await UUIDCheck(tagUUID))) return false;
+    const result = await DB.prepare(`
+        UPDATE tag SET name = ? WHERE uuid = ?
+    `).bind(name, tagUUID).run();
+    return result.success;
+}
+
+// 更新分类
+export async function UpdateCategory(DB: D1Database, categoryUUID: string, name: string, parentUUID?: string): Promise<boolean> {
+    if (!(await UUIDCheck(categoryUUID))) return false;
+    const result = await DB.prepare(`
+        UPDATE category SET name = ?, parent_uuid = ? WHERE uuid = ?
+    `).bind(name, parentUUID || null, categoryUUID).run();
+    return result.success;
+}
+
+// 批量添加作品标签
+export async function AddWorkTags(DB: D1Database, workUUID: string, tagUUIDs: string[]): Promise<boolean> {
+    const statements = tagUUIDs.map(tagUUID => 
+        DB.prepare(`
+            INSERT OR IGNORE INTO work_tag (work_uuid, tag_uuid) 
+            VALUES (?, ?)
+        `).bind(workUUID, tagUUID)
+    );
+    const results = await DB.batch(statements);
+    return results.every(r => r.success);
+}
+
+// 批量删除作品标签
+export async function RemoveWorkTags(DB: D1Database, workUUID: string, tagUUIDs: string[]): Promise<boolean> {
+    const statements = tagUUIDs.map(tagUUID => 
+        DB.prepare(`
+            DELETE FROM work_tag WHERE work_uuid = ? AND tag_uuid = ?
+        `).bind(workUUID, tagUUID)
+    );
+    const results = await DB.batch(statements);
+    return results.every(r => r.success);
+}
+
+// 批量添加作品分类
+export async function AddWorkCategories(DB: D1Database, workUUID: string, categoryUUIDs: string[]): Promise<boolean> {
+    const statements = categoryUUIDs.map(categoryUUID => 
+        DB.prepare(`
+            INSERT OR IGNORE INTO work_category (work_uuid, category_uuid) 
+            VALUES (?, ?)
+        `).bind(workUUID, categoryUUID)
+    );
+    const results = await DB.batch(statements);
+    return results.every(r => r.success);
+}
+
+// 批量删除作品分类
+export async function RemoveWorkCategories(DB: D1Database, workUUID: string, categoryUUIDs: string[]): Promise<boolean> {
+    const statements = categoryUUIDs.map(categoryUUID => 
+        DB.prepare(`
+            DELETE FROM work_category WHERE work_uuid = ? AND category_uuid = ?
+        `).bind(workUUID, categoryUUID)
+    );
+    const results = await DB.batch(statements);
+    return results.every(r => r.success);
+}
+
+// 获取标签详情
+export async function GetTagByUUID(DB: D1Database, tagUUID: string): Promise<Tag | null> {
+    if (!(await UUIDCheck(tagUUID))) return null;
+    return await DB.prepare(`SELECT * FROM tag WHERE uuid = ?`).bind(tagUUID).first<Tag>();
+}
+
+// 获取分类详情
+export async function GetCategoryByUUID(DB: D1Database, categoryUUID: string): Promise<Category | null> {
+    if (!(await UUIDCheck(categoryUUID))) return null;
+    return await DB.prepare(`SELECT * FROM category WHERE uuid = ?`).bind(categoryUUID).first<Category>();
 }
 

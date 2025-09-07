@@ -12,3 +12,15 @@ CREATE TABLE work_wiki ( work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE
 CREATE TABLE work_creator ( work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE, creator_uuid TEXT NOT NULL REFERENCES creator(uuid) ON DELETE CASCADE, role TEXT NOT NULL, PRIMARY KEY (work_uuid, creator_uuid, role) );
 
 CREATE TABLE footer_settings ( uuid TEXT PRIMARY KEY, item_type TEXT NOT NULL CHECK(item_type IN ('link', 'social', 'copyright')), text TEXT NOT NULL, url TEXT, icon_class TEXT );
+
+-- 标签表
+CREATE TABLE tag ( uuid TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE );
+
+-- 分类表 (支持多级分类)
+CREATE TABLE category ( uuid TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE, parent_uuid TEXT REFERENCES category(uuid) ON DELETE CASCADE );
+
+-- 作品-标签关联表
+CREATE TABLE work_tag ( work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE, tag_uuid TEXT NOT NULL REFERENCES tag(uuid) ON DELETE CASCADE, PRIMARY KEY (work_uuid, tag_uuid) );
+
+-- 作品-分类关联表
+CREATE TABLE work_category ( work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE, category_uuid TEXT NOT NULL REFERENCES category(uuid) ON DELETE CASCADE, PRIMARY KEY (work_uuid, category_uuid) );
