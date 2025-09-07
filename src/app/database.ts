@@ -1729,3 +1729,31 @@ export async function GetCategoryByUUID(DB: D1Database, categoryUUID: string): P
     return await DB.prepare(`SELECT * FROM category WHERE uuid = ?`).bind(categoryUUID).first<Category>();
 }
 
+// 获取总作品数量
+export async function GetTotalWorkCount(DB: D1Database): Promise<number> {
+    const result = await DB.prepare(`SELECT COUNT(*) as count FROM work`).first<{ count: number }>();
+    return result?.count || 0;
+}
+
+// 获取标签下作品总数量
+export async function GetWorkCountByTag(DB: D1Database, tagUUID: string): Promise<number> {
+    if (!(await UUIDCheck(tagUUID))) return 0;
+    const result = await DB.prepare(`
+        SELECT COUNT(DISTINCT work_uuid) as count 
+        FROM work_tag 
+        WHERE tag_uuid = ?
+    `).bind(tagUUID).first<{ count: number }>();
+    return result?.count || 0;
+}
+
+// 获取分类下作品总数量
+export async function GetWorkCountByCategory(DB: D1Database, categoryUUID: string): Promise<number> {
+    if (!(await UUIDCheck(categoryUUID))) return 0;
+    const result = await DB.prepare(`
+        SELECT COUNT(DISTINCT work_uuid) as count 
+        FROM work_category 
+        WHERE category_uuid = ?
+    `).bind(categoryUUID).first<{ count: number }>();
+    return result?.count || 0;
+}
+

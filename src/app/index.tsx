@@ -13,7 +13,7 @@ import { jwt } from 'hono/jwt'
 
 import { IndexPage } from './pages/index'
 import { PlayerPage } from './pages/player'
-import { GetFooterSettings, GetWorkByUUID, GetWorkListWithPagination, SearchWorks, GetWorksByTag, GetWorksByCategory } from './database'
+import { GetFooterSettings, GetWorkByUUID, GetWorkListWithPagination, SearchWorks, GetWorksByTag, GetWorksByCategory, GetTagByUUID, GetCategoryByUUID, GetTotalWorkCount, GetWorkCountByTag, GetWorkCountByCategory } from './database'
 
 const apiApp = new Hono<{ Bindings: Cloudflare }>()
 
@@ -79,20 +79,53 @@ app.route('/api', apiApp)
 app.get('/', async (c) => {
   const { search, page, type, tag, category } = c.req.query()
   console.log(search, page, type, tag, category)
+  
   let works;
+  let totalCount = 0;
+  let filterInfo = null;
+  const currentPage = parseInt(page) || 1;
+  const pageSize = 10;
   
   if (search) {
     works = await SearchWorks(c.env.DB, search, type as 'title' | 'creator' | 'all' || 'all')
+    totalCount = works.length; // Search returns all results
   } else if (tag) {
-    works = await GetWorksByTag(c.env.DB, tag, parseInt(page) || 1, 10)
+    works = await GetWorksByTag(c.env.DB, tag, currentPage, pageSize)
+    totalCount = await GetWorkCountByTag(c.env.DB, tag)
+    const tagInfo = await GetTagByUUID(c.env.DB, tag)
+    if (tagInfo) {
+      filterInfo = {
+        type: 'tag',
+        name: tagInfo.name,
+        uuid: tag
+      }
+    }
   } else if (category) {
-    works = await GetWorksByCategory(c.env.DB, category, parseInt(page) || 1, 10)
+    works = await GetWorksByCategory(c.env.DB, category, currentPage, pageSize)
+    totalCount = await GetWorkCountByCategory(c.env.DB, category)
+    const categoryInfo = await GetCategoryByUUID(c.env.DB, category)
+    if (categoryInfo) {
+      filterInfo = {
+        type: 'category', 
+        name: categoryInfo.name,
+        uuid: category
+      }
+    }
   } else {
-    works = await GetWorkListWithPagination(c.env.DB, parseInt(page) || 1, 10)
+    works = await GetWorkListWithPagination(c.env.DB, currentPage, pageSize)
+    totalCount = await GetTotalWorkCount(c.env.DB)
   }
   
   const footerSettings = await GetFooterSettings(c.env.DB)
-  return c.html(<IndexPage works={works} footerSettings={footerSettings} />)
+  return c.html(<IndexPage 
+    works={works} 
+    footerSettings={footerSettings}
+    currentPage={currentPage}
+    totalCount={totalCount}
+    pageSize={pageSize}
+    filterInfo={filterInfo}
+    searchQuery={search || ''}
+  />)
 })
 
 app.get('/player', async (c) => {

@@ -11,13 +11,6 @@ function setupEventListeners() {
     workList.addEventListener('click', function(e) {
         const workItem = e.target.closest('.work-item');
         if (workItem) {
-            // Check if clicked on tag/category chips or more button
-            if (e.target.closest('.tag-chip') || e.target.closest('.category-chip') || e.target.closest('.tags-more')) {
-                e.stopPropagation();
-                handleTagCategoryClick(e);
-                return;
-            }
-            
             const songId = workItem.dataset.id;
             window.location.href = \`/player?uuid=\${songId}\`;
         }
@@ -72,49 +65,31 @@ function searchMusic() {
     const query = searchInput.value.trim();
     const type = searchType.value;
     if (query) {
+        // Clear any existing filters when searching
         window.location.href = \`/?search=\${encodeURIComponent(query)}&type=\${encodeURIComponent(type)}\`;
     }
 }
 
-function handleTagCategoryClick(e) {
-    const target = e.target.closest('.tag-chip, .category-chip, .tags-more');
+function clearFilter() {
+    // Remove tag and category parameters but preserve search and page
+    const params = new URLSearchParams(window.location.search);
+    params.delete('tag');
+    params.delete('category');
+    params.delete('page'); // Reset to first page when clearing filter
     
-    if (target.classList.contains('tag-chip')) {
-        const tagUuid = target.dataset.tag;
-        if (tagUuid) {
-            window.location.href = \`/?tag=\${encodeURIComponent(tagUuid)}\`;
-        }
-    } else if (target.classList.contains('category-chip')) {
-        const categoryUuid = target.dataset.category;
-        if (categoryUuid) {
-            window.location.href = \`/?category=\${encodeURIComponent(categoryUuid)}\`;
-        }
-    } else if (target.classList.contains('tags-more')) {
-        expandTags(target);
-    }
+    const newUrl = params.toString() ? \`/?\${params.toString()}\` : '/';
+    window.location.href = newUrl;
 }
 
-function expandTags(moreButton) {
-    const workId = moreButton.dataset.work;
-    const workItem = document.querySelector(\`[data-id="\${workId}"]\`);
-    if (!workItem) return;
+function clearSearch() {
+    // Remove search parameters but preserve filter and reset page
+    const params = new URLSearchParams(window.location.search);
+    params.delete('search');
+    params.delete('type');
+    params.delete('page'); // Reset to first page when clearing search
     
-    const tagsContainer = workItem.querySelector('.work-tags');
-    if (!tagsContainer) return;
-    
-    // Get all hidden tags from the works data
-    const workData = ${JSON.stringify(props.works)};
-    const work = workData.find(w => w.work_uuid === workId);
-    if (!work || !work.tags) return;
-    
-    // Show all hidden tags
-    const hiddenTags = work.tags.slice(3);
-    const tagsHtml = hiddenTags.map(tag => 
-        \`<span class="tag-chip" data-tag="\${tag.uuid}">\${tag.name}</span>\`
-    ).join('');
-    
-    // Replace the "more" button with the hidden tags
-    moreButton.outerHTML = tagsHtml;
+    const newUrl = params.toString() ? \`/?\${params.toString()}\` : '/';
+    window.location.href = newUrl;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
