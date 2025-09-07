@@ -1,0 +1,4 @@
+CREATE TABLE tag ( uuid TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE );
+CREATE TABLE category ( uuid TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE, parent_uuid TEXT REFERENCES category(uuid) ON DELETE CASCADE );
+CREATE TABLE work_tag ( work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE, tag_uuid TEXT NOT NULL REFERENCES tag(uuid) ON DELETE CASCADE, PRIMARY KEY (work_uuid, tag_uuid) );
+CREATE TABLE work_category ( work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE, category_uuid TEXT NOT NULL REFERENCES category(uuid) ON DELETE CASCADE, PRIMARY KEY (work_uuid, category_uuid) );

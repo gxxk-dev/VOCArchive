@@ -155,8 +155,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function loadContent(target) {
         content.innerHTML = '<h2>Loading...</h2>';
         try {
-            const endpoint = target === 'footer' ? '/footer' : `/list/${target}/1?pageSize=999`;
-            const data = await apiFetch(endpoint);
+            let endpoint, data;
+            if (target === 'footer') {
+                endpoint = '/footer';
+                data = await apiFetch(endpoint);
+            } else if (target === 'tag') {
+                endpoint = '/list/tags';
+                data = await apiFetch(endpoint);
+            } else if (target === 'category') {
+                endpoint = '/list/categories';
+                data = await apiFetch(endpoint);
+            } else {
+                endpoint = `/list/${target}/1?pageSize=999`;
+                data = await apiFetch(endpoint);
+            }
             renderTable(target, data);
         } catch (error) {
             content.innerHTML = `<p class="error-message">Failed to load ${target}: ${error.message}</p>`;
@@ -200,6 +212,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             renderWorksGrid(target, data);
             return;
         }
+        
+        if (target === 'tag') {
+            renderTagsTable(data);
+            return;
+        }
+        
+        if (target === 'category') {
+            renderCategoriesTable(data);
+            return;
+        }
+        
         const headers = data && data.length > 0 ? Object.keys(data[0]) : [];
         const capTarget = target.charAt(0).toUpperCase() + target.slice(1);
         content.innerHTML = `
@@ -231,6 +254,71 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </table>
             </div>`}
         `;
+    }
+
+    function renderTagsTable(data) {
+        content.innerHTML = `
+            <div class="controls">
+                <h2>标签 (Tags)</h2>
+                <button class="create-button" data-target="tag">创建新标签</button>
+            </div>
+            ${!data || data.length === 0 ? `<p>暂无标签。</p>` : `
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>UUID</th>
+                            <th>名称</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(tag => `
+                            <tr data-uuid="${tag.uuid}">
+                                <td><span class="uuid" title="${tag.uuid}">${tag.uuid.substring(0, 8)}...</span></td>
+                                <td class="tag-name">${tag.name}</td>
+                                <td>
+                                    <button class="edit-button" data-uuid="${tag.uuid}" data-target="tag">编辑</button>
+                                    <button class="delete-button" data-uuid="${tag.uuid}" data-target="tag">删除</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>`}
+        `;
+    }
+
+    function renderCategoriesTable(data) {
+        content.innerHTML = `
+            <div class="controls">
+                <h2>分类 (Categories)</h2>
+                <button class="create-button" data-target="category">创建新分类</button>
+            </div>
+            ${!data || data.length === 0 ? `<p>暂无分类。</p>` : `
+            <div class="category-tree">
+                ${renderCategoryTree(data)}
+            </div>`}
+        `;
+    }
+
+    function renderCategoryTree(categories, level = 0) {
+        return categories.map(category => {
+            const hasChildren = category.children && category.children.length > 0;
+            return `
+                <div class="category-node" style="margin-left: ${level * 20}px;" data-uuid="${category.uuid}">
+                    <div class="category-item">
+                        <span class="category-name">${category.name}</span>
+                        <span class="uuid" title="${category.uuid}">${category.uuid.substring(0, 8)}...</span>
+                        <div class="category-actions">
+                            <button class="edit-button" data-uuid="${category.uuid}" data-target="category">编辑</button>
+                            <button class="delete-button" data-uuid="${category.uuid}" data-target="category">删除</button>
+                        </div>
+                    </div>
+                    ${hasChildren ? renderCategoryTree(category.children, level + 1) : ''}
+                </div>
+            `;
+        }).join('');
     }
 
     function renderWorksGrid(target, data) {
@@ -320,7 +408,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             creator: 'creator_uuid',
             media: 'media_uuid',
             asset: 'asset_uuid',
-            relation: 'relation_uuid'
+            relation: 'relation_uuid',
+            tag: 'tag_uuid',
+            category: 'category_uuid'
         };
         const endpointMap = { creator: 'creator', work: 'work' };
         const uuidKey = uuidKeyMap[target];
@@ -345,6 +435,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         formError.textContent = '';
 
         // Pre-fetch data needed for selectors
+        const options = {};
         try {
             if (['work', 'asset'].includes(target)) {
                 allCreators = await apiFetch(`/list/creator/1?pageSize=999`);
@@ -352,12 +443,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (['media', 'asset', 'relation'].includes(target)) {
                 allWorks = await apiFetch(`/list/work/1?pageSize=999`);
             }
+            if (target === 'category') {
+                options.categories = await apiFetch(`/list/categories`);
+            }
+            if (target === 'work') {
+                // Load tags and categories for work editing
+                options.tags = await apiFetch(`/list/tags`);
+                options.categories = await apiFetch(`/list/categories`);
+            }
         } catch (error) {
             formError.textContent = `Failed to load selection data: ${error.message}`;
             // Decide if we should stop or continue with empty selectors
         }
         
-        modalForm.innerHTML = generateFormFields(target, data, { creators: allCreators, works: allWorks });
+        modalForm.innerHTML = generateFormFields(target, data, { creators: allCreators, works: allWorks, categories: options.categories, tags: options.tags });
         modalForm.onsubmit = (e) => handleFormSubmit(e, target, !!data);
         modal.classList.remove('hidden');
 
@@ -515,6 +614,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                     <button type="button" id="add-wiki-button" class="add-row-button">Add Wiki</button>
                 </div>
+                
+                <div class="form-section">
+                    <h4>标签 (Tags)</h4>
+                    <div id="tags-selector" class="tag-selector">
+                        ${createTagSelector(options.tags, data?.tags)}
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h4>分类 (Categories)</h4>
+                    <div id="categories-selector" class="category-selector">
+                        ${createCategorySelector(options.categories, data?.categories)}
+                    </div>
+                </div>
             `,
             footer: `
                 <input type="hidden" name="uuid" value="${data?.uuid || ''}">
@@ -530,6 +643,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <input type="url" id="url" name="url" value="${data?.url || ''}">
                 <label for="icon_class">Icon Class (optional):</label>
                 <input type="text" id="icon_class" name="icon_class" value="${data?.icon_class || ''}">
+            `,
+            tag: `
+                <input type="hidden" name="tag_uuid" value="${data?.uuid || ''}">
+                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
+                <label for="name">标签名称:</label><input type="text" id="name" name="name" required value="${data?.name || ''}" placeholder="例如: Rock, Ballad, Duet">
+            `,
+            category: `
+                <input type="hidden" name="category_uuid" value="${data?.uuid || ''}">
+                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
+                <label for="name">分类名称:</label><input type="text" id="name" name="name" required value="${data?.name || ''}" placeholder="例如: 原创歌曲, 摇滚音乐">
+                <label for="parent_uuid">父分类 (可选):</label>
+                <div class="input-with-quick-select">
+                    <input type="text" id="parent_uuid" name="parent_uuid" value="${data?.parent_uuid || ''}" class="uuid" placeholder="留空表示顶级分类">
+                    ${options.categories ? createCategoryQuickSelect('parent-category-quick-select', 'parent-category-quick-select-name', options.categories, data?.parent_uuid, 'parent_uuid') : ''}
+                </div>
             `
         };
         return (fields[target] || '<p>Form not implemented for this type.</p>') + '<button type="submit">Submit</button>';
@@ -559,6 +687,101 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <option value="">--快速选择--</option>
                 ${options}
             </select>
+        `;
+    }
+
+    function createCategoryQuickSelect(id, name, categories, selectedValue, targetInputId) {
+        if (!categories || categories.length === 0) return '';
+
+        const flattenCategories = (cats, level = 0) => {
+            let result = [];
+            cats.forEach(cat => {
+                result.push({ ...cat, level });
+                if (cat.children && cat.children.length > 0) {
+                    result.push(...flattenCategories(cat.children, level + 1));
+                }
+            });
+            return result;
+        };
+
+        const flatCategories = flattenCategories(categories);
+        const options = flatCategories.map(cat => {
+            const prefix = '　'.repeat(cat.level); // 使用全角空格缩进
+            const isSelected = cat.uuid === selectedValue ? 'selected' : '';
+            return `<option value="${cat.uuid}" ${isSelected}>${prefix}${cat.name} (${cat.uuid.substring(0, 8)}...)</option>`;
+        }).join('');
+
+        return `
+            <select id="${id}" name="${name}" class="quick-select" data-target-input="${targetInputId}">
+                <option value="">--选择父分类--</option>
+                ${options}
+            </select>
+        `;
+    }
+
+    function createTagSelector(tags = [], selectedTags = []) {
+        if (!tags || tags.length === 0) {
+            return '<p>暂无可用标签</p>';
+        }
+
+        const selectedTagIds = selectedTags.map(tag => tag.uuid || tag.tag_uuid);
+        const tagCheckboxes = tags.map(tag => {
+            const isChecked = selectedTagIds.includes(tag.uuid) ? 'checked' : '';
+            return `
+                <label class="tag-checkbox">
+                    <input type="checkbox" name="selected_tags" value="${tag.uuid}" ${isChecked}>
+                    <span class="tag-chip ${isChecked ? 'selected' : ''}">${tag.name}</span>
+                </label>
+            `;
+        }).join('');
+
+        return `
+            <div class="tag-list">
+                <input type="text" id="tag-filter" placeholder="搜索标签..." oninput="filterTags(this.value)">
+                <div id="tag-checkboxes">
+                    ${tagCheckboxes}
+                </div>
+            </div>
+        `;
+    }
+
+    function createCategorySelector(categories = [], selectedCategories = []) {
+        if (!categories || categories.length === 0) {
+            return '<p>暂无可用分类</p>';
+        }
+
+        const selectedCategoryIds = selectedCategories.map(cat => cat.uuid || cat.category_uuid);
+        
+        const flattenCategories = (cats, level = 0) => {
+            let result = [];
+            cats.forEach(cat => {
+                result.push({ ...cat, level });
+                if (cat.children && cat.children.length > 0) {
+                    result.push(...flattenCategories(cat.children, level + 1));
+                }
+            });
+            return result;
+        };
+
+        const flatCategories = flattenCategories(categories);
+        const categoryCheckboxes = flatCategories.map(cat => {
+            const isChecked = selectedCategoryIds.includes(cat.uuid) ? 'checked' : '';
+            const prefix = '　'.repeat(cat.level);
+            return `
+                <label class="category-checkbox" style="margin-left: ${cat.level * 20}px;">
+                    <input type="checkbox" name="selected_categories" value="${cat.uuid}" ${isChecked}>
+                    <span class="category-name">${prefix}${cat.name}</span>
+                </label>
+            `;
+        }).join('');
+
+        return `
+            <div class="category-list">
+                <input type="text" id="category-filter" placeholder="搜索分类..." oninput="filterCategories(this.value)">
+                <div id="category-checkboxes" class="category-tree">
+                    ${categoryCheckboxes}
+                </div>
+            </div>
         `;
     }
 
@@ -724,6 +947,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                         });
                     });
 
+                    // Collect selected tags and categories
+                    const selectedTags = [];
+                    document.querySelectorAll('input[name="selected_tags"]:checked').forEach(checkbox => {
+                        selectedTags.push(checkbox.value);
+                    });
+
+                    const selectedCategories = [];
+                    document.querySelectorAll('input[name="selected_categories"]:checked').forEach(checkbox => {
+                        selectedCategories.push(checkbox.value);
+                    });
+
                     const work_uuid = formData.get('work_uuid_field');
                     body = {
                         work: {
@@ -740,6 +974,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                         body.work_uuid = work_uuid;
                     }
                     console.log("Request Body:", JSON.stringify(body, null, 2));
+                    break;
+                case 'tag':
+                    body = {
+                        uuid: formData.get('uuid'),
+                        name: formData.get('name'),
+                    };
+                    if (isUpdate) {
+                        body.tag_uuid = formData.get('tag_uuid');
+                    }
+                    break;
+                case 'category':
+                    body = {
+                        uuid: formData.get('uuid'),
+                        name: formData.get('name'),
+                        parent_uuid: formData.get('parent_uuid') || null,
+                    };
+                    if (isUpdate) {
+                        body.category_uuid = formData.get('category_uuid');
+                    }
                     break;
                 case 'footer':
                     body = {
@@ -772,12 +1025,61 @@ document.addEventListener('DOMContentLoaded', async () => {
                 body: JSON.stringify(body),
             });
 
+            // Handle tags and categories for work
+            if (target === 'work' && typeof selectedTags !== 'undefined' && typeof selectedCategories !== 'undefined') {
+                try {
+                    // Handle tags
+                    if (selectedTags.length > 0) {
+                        await apiFetch('/input/work-tags', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                work_uuid: work_uuid,
+                                tag_uuids: selectedTags
+                            }),
+                        });
+                    }
+
+                    // Handle categories
+                    if (selectedCategories.length > 0) {
+                        await apiFetch('/input/work-categories', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                work_uuid: work_uuid,
+                                category_uuids: selectedCategories
+                            }),
+                        });
+                    }
+                } catch (tagCategoryError) {
+                    console.warn('Tags/categories update failed:', tagCategoryError);
+                    // Don't fail the entire operation for tag/category errors
+                }
+            }
+
             modal.classList.add('hidden');
             loadContent(currentTab); // Refresh the table
         } catch (error) {
             formError.textContent = `Failed to ${isUpdate ? 'update' : 'create'} item: ${error.message}. Check JSON format.`;
         }
     }
+
+    // --- Tag and Category Filter Functions ---
+    window.filterTags = function(searchTerm) {
+        const checkboxes = document.querySelectorAll('#tag-checkboxes .tag-checkbox');
+        checkboxes.forEach(checkbox => {
+            const tagName = checkbox.querySelector('.tag-chip').textContent.toLowerCase();
+            const matches = tagName.includes(searchTerm.toLowerCase());
+            checkbox.style.display = matches ? 'flex' : 'none';
+        });
+    };
+
+    window.filterCategories = function(searchTerm) {
+        const checkboxes = document.querySelectorAll('#category-checkboxes .category-checkbox');
+        checkboxes.forEach(checkbox => {
+            const categoryName = checkbox.querySelector('.category-name').textContent.toLowerCase();
+            const matches = categoryName.includes(searchTerm.toLowerCase());
+            checkbox.style.display = matches ? 'flex' : 'none';
+        });
+    };
 
     // --- Initial Check ---
     if (jwtToken) {

@@ -1,5 +1,5 @@
 import { 
-    InputAsset, InitDatabase, InputCreator, InputMedia, InputRelation, InputWork,
+    InputAsset, InputCreator, InputMedia, InputRelation, InputWork,
     InputAssetRequestBody, InputCreatorRequestBody, InputMediaRequestBody, InputRelationRequestBody, InputWorkRequestBody,
     InputTag, InputCategory, AddWorkTags, AddWorkCategories
 } from "../database";
@@ -34,10 +34,6 @@ const inputHandlers = {
         await InputCategory(DB, body);
         return "Category added successfully.";
     },
-    dbinit: async (DB: any, _: any) => {
-        await InitDatabase(DB);
-        return "OK.";
-    }
 };
 
 export const inputInfo = new Hono();
