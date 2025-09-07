@@ -580,4 +580,96 @@ a {
         transform: translateY(0);
     }
 }
+
+/* Work Header Meta (Tags and Categories) */
+.work-meta {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.work-meta-tags, .work-meta-categories {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 0.9rem;
+}
+
+.work-meta-tags i, .work-meta-categories i {
+    color: var(--md-sys-color-on-surface-variant);
+    font-size: 1rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.meta-label {
+    color: var(--md-sys-color-on-surface-variant);
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.tags-container, .categories-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.tag-chip.clickable, .category-chip.clickable {
+    background: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.2, 0.0, 0, 1.0);
+    border: none;
+    text-decoration: none;
+}
+
+.tag-chip.clickable:hover, .category-chip.clickable:hover {
+    background: var(--md-sys-color-tertiary-container);
+    color: var(--md-sys-color-on-tertiary-container);
+    transform: translateY(-2px);
+    box-shadow: var(--md-sys-elevation-level1);
+}
+
+.tags-expand {
+    color: var(--md-sys-color-on-surface-variant);
+    font-size: 0.8rem;
+    font-style: italic;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.tags-expand:hover {
+    background: var(--md-sys-color-surface-container-high);
+    color: var(--md-sys-color-on-surface);
+}
+
+.category-separator {
+    color: var(--md-sys-color-on-surface-variant);
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+/* Responsive adjustments for meta section */
+@media (max-width: 768px) {
+    .work-meta-tags, .work-meta-categories {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .tags-container, .categories-container {
+        width: 100%;
+    }
+}
 `

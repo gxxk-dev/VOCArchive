@@ -34,6 +34,52 @@ export const WorkHeader = (props: WorkHeaderProps) => {
 
     const creatorNames = workInfo.creator ? workInfo.creator.map((c: any) => c.creator_name).join(', ') : '';
 
+    // 处理标签显示
+    const renderTags = () => {
+        if (!workInfo.tags || workInfo.tags.length === 0) return null;
+        
+        const maxTags = 5;
+        const visibleTags = workInfo.tags.slice(0, maxTags);
+        const hiddenTags = workInfo.tags.slice(maxTags);
+        
+        return (
+            <div class="work-meta-tags">
+                <i class="fas fa-tags"></i>
+                <span class="meta-label">标签:</span>
+                <div class="tags-container">
+                    {visibleTags.map(tag => 
+                        <span class="tag-chip clickable" data-tag={tag.uuid}>{tag.name}</span>
+                    )}
+                    {hiddenTags.length > 0 && (
+                        <span class="tags-expand" data-work={workInfo.work.uuid}>
+                            +{hiddenTags.length} more
+                        </span>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    // 处理分类显示
+    const renderCategories = () => {
+        if (!workInfo.categories || workInfo.categories.length === 0) return null;
+        
+        return (
+            <div class="work-meta-categories">
+                <i class="fas fa-folder"></i>
+                <span class="meta-label">分类:</span>
+                <div class="categories-container">
+                    {workInfo.categories.map((category: any, index: number) => (
+                        <>
+                            {index > 0 && <span class="category-separator"> &gt; </span>}
+                            <span class="category-chip clickable" data-category={category.uuid}>{category.name}</span>
+                        </>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div class="work-header">
             <div class="work-title">
@@ -47,6 +93,10 @@ export const WorkHeader = (props: WorkHeaderProps) => {
                 )}
             </div>
             <div class="work-creator">{creatorNames}</div>
+            <div class="work-meta">
+                {renderTags()}
+                {renderCategories()}
+            </div>
         </div>
     );
 }

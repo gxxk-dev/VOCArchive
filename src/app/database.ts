@@ -177,6 +177,8 @@ interface WorkListItem {
     preview_asset?: Asset;
     non_preview_asset?: Asset;
     creator: CreatorWithRole[];  // 添加作者信息
+    tags: Tag[];                 // 添加标签信息
+    categories: Category[];      // 添加分类信息
 }
 
 
@@ -267,12 +269,32 @@ export async function GetWorkListWithPagination(DB: D1Database, page: number, pa
             `).bind(uuid).first<Asset>()
         ]);
         
+        // 获取标签
+        const tagsResult = await DB.prepare(`
+            SELECT t.uuid, t.name
+            FROM tag t
+            JOIN work_tag wt ON t.uuid = wt.tag_uuid
+            WHERE wt.work_uuid = ?
+        `).bind(uuid).all<Tag>();
+        const tags = tagsResult.results || [];
+        
+        // 获取分类
+        const categoriesResult = await DB.prepare(`
+            SELECT c.uuid, c.name, c.parent_uuid
+            FROM category c
+            JOIN work_category wc ON c.uuid = wc.category_uuid
+            WHERE wc.work_uuid = ?
+        `).bind(uuid).all<Category>();
+        const categories = categoriesResult.results || [];
+
         return {
             work_uuid: uuid,
             titles,
             preview_asset: previewResult || undefined,
             non_preview_asset: nonPreviewResult || undefined,
-            creator: creatorMap.get(uuid) || []
+            creator: creatorMap.get(uuid) || [],
+            tags,
+            categories
         };
     });
     

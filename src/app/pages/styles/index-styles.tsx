@@ -246,6 +246,59 @@ body {
     line-height: 1.2;
 }
 
+/* 标签和分类样式 */
+.work-tags, .work-categories {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+}
+
+.work-tags i, .work-categories i {
+    color: #999;
+    font-size: 0.8rem;
+}
+
+.tag-chip, .category-chip {
+    background: rgba(120, 119, 198, 0.2);
+    color: #bbb;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(120, 119, 198, 0.3);
+}
+
+.tag-chip:hover, .category-chip:hover {
+    background: rgba(120, 119, 198, 0.3);
+    color: #ddd;
+    transform: translateY(-1px);
+}
+
+.tags-more {
+    color: #888;
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-style: italic;
+    padding: 2px 4px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.tags-more:hover {
+    color: #bbb;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.category-separator {
+    color: #666;
+    font-size: 0.7rem;
+}
+
 .work-play-btn {
     width: 48px;
     height: 48px;

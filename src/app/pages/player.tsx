@@ -9,12 +9,14 @@ import { RelatedWorksSection } from './components/player/related-works-section'
 import { FooterSetting } from '../database'
 import { PlayerStyles } from './styles/player-styles'
 import { CommonStyles } from './styles/common-styles'
+import { PlayerScripts } from './scripts/player-scripts'
 
 export const PlayerPage = (props: { workInfo: any, footerSettings: FooterSetting[] }) => {
     const { workInfo, footerSettings } = props;
     const userLang = "zh-cn";
 
     const additionalStyles = `${CommonStyles}${PlayerStyles}`;
+    const additionalScripts = PlayerScripts(props);
 
     const pageContent = (
         <div class="player-container">
@@ -31,6 +33,7 @@ export const PlayerPage = (props: { workInfo: any, footerSettings: FooterSetting
         title: "VOCArchive - 作品页面",
         footerSettings: footerSettings,
         additionalStyles: additionalStyles,
+        additionalScripts: additionalScripts,
         children: pageContent
     });
 }
