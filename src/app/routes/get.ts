@@ -4,18 +4,9 @@ import {
 } from "../database"
 import { Hono } from 'hono'
 
-const resHandlers = {
-    work: GetWorkByUUID,
-    creator: GetCreatorByUUID,
-    media: GetMediaByUUID,
-    asset: GetAssetByUUID,
-    relation: GetRelationByUUID,
-    tag: GetTagByUUID,
-    category: GetCategoryByUUID
-};
-
 export const getInfo = new Hono();
 
+// 获取文件重定向
 getInfo.get('/file/:uuid', async (c: any) => {
     const fileUUID = c.req.param('uuid');
     const assetURL = c.env.ASSET_URL as string;
@@ -33,15 +24,44 @@ getInfo.get('/file/:uuid', async (c: any) => {
     return c.redirect(fileURL, 302);
 });
 
+// 获取作品详情
+getInfo.get('/work/:uuid', async (c: any) => {
+    const result = await GetWorkByUUID(c.env.DB, c.req.param('uuid'));
+    return c.json(result);
+});
 
-getInfo.get('/:resType/:uuid', async (c: any) => {
-    const resType = c.req.param('resType');
-    const handler = resHandlers[resType as keyof typeof resHandlers];
-    
-    if (!handler) {
-        return c.json({ error: 'Invalid resource type' }, 400);
-    }
-    
-    const result = await handler(c.env.DB, c.req.param('uuid'));
+// 获取创作者详情
+getInfo.get('/creator/:uuid', async (c: any) => {
+    const result = await GetCreatorByUUID(c.env.DB, c.req.param('uuid'));
+    return c.json(result);
+});
+
+// 获取媒体详情
+getInfo.get('/media/:uuid', async (c: any) => {
+    const result = await GetMediaByUUID(c.env.DB, c.req.param('uuid'));
+    return c.json(result);
+});
+
+// 获取资产详情
+getInfo.get('/asset/:uuid', async (c: any) => {
+    const result = await GetAssetByUUID(c.env.DB, c.req.param('uuid'));
+    return c.json(result);
+});
+
+// 获取关系详情
+getInfo.get('/relation/:uuid', async (c: any) => {
+    const result = await GetRelationByUUID(c.env.DB, c.req.param('uuid'));
+    return c.json(result);
+});
+
+// 获取标签详情
+getInfo.get('/tag/:uuid', async (c: any) => {
+    const result = await GetTagByUUID(c.env.DB, c.req.param('uuid'));
+    return c.json(result);
+});
+
+// 获取分类详情
+getInfo.get('/category/:uuid', async (c: any) => {
+    const result = await GetCategoryByUUID(c.env.DB, c.req.param('uuid'));
     return c.json(result);
 });

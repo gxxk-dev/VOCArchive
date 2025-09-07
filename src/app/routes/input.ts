@@ -5,51 +5,83 @@ import {
 } from "../database";
 import { Hono } from "hono";
 
-const inputHandlers = {
-    work: async (DB: any, body: InputWorkRequestBody) => {
-        await InputWork(DB, body.work, body.titles || [], body.license || null, body.creator || [], body.wikis || []);
-        return "Work added successfully.";
-    },
-    creator: async (DB: any, body: InputCreatorRequestBody) => {
-        await InputCreator(DB, body.creator, body.wikis || []);
-        return "Creator added successfully.";
-    },
-    asset: async (DB: any, body: InputAssetRequestBody) => {
-        await InputAsset(DB, body.asset, body.creator || []);
-        return "Asset added successfully.";
-    },
-    relation: async (DB: any, body: InputRelationRequestBody) => {
-        await InputRelation(DB, body);
-        return "Work relation added successfully.";
-    },
-    media: async (DB: any, body: InputMediaRequestBody) => {
-        await InputMedia(DB, body);
-        return "Media source added successfully.";
-    },
-    tag: async (DB: any, body: { uuid: string; name: string }) => {
-        await InputTag(DB, body);
-        return "Tag added successfully.";
-    },
-    category: async (DB: any, body: { uuid: string; name: string; parent_uuid?: string }) => {
-        await InputCategory(DB, body);
-        return "Category added successfully.";
-    },
-};
-
 export const inputInfo = new Hono();
 
-inputInfo.post('/:resType', async (c: any) => {
-    const resType = c.req.param('resType');
-    const handler = inputHandlers[resType as keyof typeof inputHandlers];
-    
-    if (!handler) {
-        return c.json({ error: 'Invalid resource type' }, 400);
+// 添加作品
+inputInfo.post('/work', async (c: any) => {
+    try {
+        const body: InputWorkRequestBody = await c.req.json();
+        await InputWork(c.env.DB, body.work, body.titles || [], body.license || null, body.creator || [], body.wikis || []);
+        return c.json({ message: "Work added successfully." }, 200);
+    } catch (error) {
+        return c.json({ error: 'Internal server error' }, 500);
     }
-    
-    const body = await c.req.json();
-    const result = await handler(c.env.DB, body);
-    
-    return c.json({ message: result }, 200);
+});
+
+// 添加创作者
+inputInfo.post('/creator', async (c: any) => {
+    try {
+        const body: InputCreatorRequestBody = await c.req.json();
+        await InputCreator(c.env.DB, body.creator, body.wikis || []);
+        return c.json({ message: "Creator added successfully." }, 200);
+    } catch (error) {
+        return c.json({ error: 'Internal server error' }, 500);
+    }
+});
+
+// 添加资产
+inputInfo.post('/asset', async (c: any) => {
+    try {
+        const body: InputAssetRequestBody = await c.req.json();
+        await InputAsset(c.env.DB, body.asset, body.creator || []);
+        return c.json({ message: "Asset added successfully." }, 200);
+    } catch (error) {
+        return c.json({ error: 'Internal server error' }, 500);
+    }
+});
+
+// 添加关系
+inputInfo.post('/relation', async (c: any) => {
+    try {
+        const body: InputRelationRequestBody = await c.req.json();
+        await InputRelation(c.env.DB, body);
+        return c.json({ message: "Work relation added successfully." }, 200);
+    } catch (error) {
+        return c.json({ error: 'Internal server error' }, 500);
+    }
+});
+
+// 添加媒体
+inputInfo.post('/media', async (c: any) => {
+    try {
+        const body: InputMediaRequestBody = await c.req.json();
+        await InputMedia(c.env.DB, body);
+        return c.json({ message: "Media source added successfully." }, 200);
+    } catch (error) {
+        return c.json({ error: 'Internal server error' }, 500);
+    }
+});
+
+// 添加标签
+inputInfo.post('/tag', async (c: any) => {
+    try {
+        const body: { uuid: string; name: string } = await c.req.json();
+        await InputTag(c.env.DB, body);
+        return c.json({ message: "Tag added successfully." }, 200);
+    } catch (error) {
+        return c.json({ error: 'Internal server error' }, 500);
+    }
+});
+
+// 添加分类
+inputInfo.post('/category', async (c: any) => {
+    try {
+        const body: { uuid: string; name: string; parent_uuid?: string } = await c.req.json();
+        await InputCategory(c.env.DB, body);
+        return c.json({ message: "Category added successfully." }, 200);
+    } catch (error) {
+        return c.json({ error: 'Internal server error' }, 500);
+    }
 });
 
 // 批量添加作品标签

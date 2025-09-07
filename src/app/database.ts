@@ -1676,6 +1676,15 @@ export async function RemoveWorkTags(DB: D1Database, workUUID: string, tagUUIDs:
     return results.every(r => r.success);
 }
 
+// 删除作品的所有标签
+export async function RemoveAllWorkTags(DB: D1Database, workUUID: string): Promise<boolean> {
+    const stmt = DB.prepare(`
+        DELETE FROM work_tag WHERE work_uuid = ?
+    `).bind(workUUID);
+    const result = await stmt.run();
+    return result.success;
+}
+
 // 批量添加作品分类
 export async function AddWorkCategories(DB: D1Database, workUUID: string, categoryUUIDs: string[]): Promise<boolean> {
     const statements = categoryUUIDs.map(categoryUUID => 
@@ -1697,6 +1706,15 @@ export async function RemoveWorkCategories(DB: D1Database, workUUID: string, cat
     );
     const results = await DB.batch(statements);
     return results.every(r => r.success);
+}
+
+// 删除作品的所有分类
+export async function RemoveAllWorkCategories(DB: D1Database, workUUID: string): Promise<boolean> {
+    const stmt = DB.prepare(`
+        DELETE FROM work_category WHERE work_uuid = ?
+    `).bind(workUUID);
+    const result = await stmt.run();
+    return result.success;
 }
 
 // 获取标签详情

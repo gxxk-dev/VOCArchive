@@ -856,6 +856,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         let wikis = [];
         let titles = [];
         let creator = [];
+        let selectedTags = [];
+        let selectedCategories = [];
+        let work_uuid = '';
+        
         try {
             // Construct the request body based on the target type
             switch (target) {
@@ -948,17 +952,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                     });
 
                     // Collect selected tags and categories
-                    const selectedTags = [];
                     document.querySelectorAll('input[name="selected_tags"]:checked').forEach(checkbox => {
                         selectedTags.push(checkbox.value);
                     });
 
-                    const selectedCategories = [];
                     document.querySelectorAll('input[name="selected_categories"]:checked').forEach(checkbox => {
                         selectedCategories.push(checkbox.value);
                     });
 
-                    const work_uuid = formData.get('work_uuid_field');
+                    work_uuid = formData.get('work_uuid_field');
                     body = {
                         work: {
                             uuid: work_uuid,
@@ -1028,7 +1030,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Handle tags and categories for work
             if (target === 'work' && typeof selectedTags !== 'undefined' && typeof selectedCategories !== 'undefined') {
                 try {
-                    // Handle tags
+                    // For updates, first clear existing associations
+                    if (isUpdate) {
+                        // Remove all existing tags
+                        await apiFetch('/delete/work-tags-all', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                work_uuid: work_uuid
+                            }),
+                        });
+                        
+                        // Remove all existing categories
+                        await apiFetch('/delete/work-categories-all', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                work_uuid: work_uuid
+                            }),
+                        });
+                    }
+                    
+                    // Add selected tags
                     if (selectedTags.length > 0) {
                         await apiFetch('/input/work-tags', {
                             method: 'POST',
@@ -1039,7 +1060,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         });
                     }
 
-                    // Handle categories
+                    // Add selected categories
                     if (selectedCategories.length > 0) {
                         await apiFetch('/input/work-categories', {
                             method: 'POST',

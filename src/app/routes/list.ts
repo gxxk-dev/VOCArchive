@@ -4,27 +4,41 @@ import {
 } from "../database"
 import { Hono } from 'hono'
 
-const resHandlers = {
-    creator: ListCreators,
-    media: ListMedia,
-    asset: ListAssets,
-    relation: ListRelations,
-    work: GetWorkListWithPagination
-};
-
 export const listInfo = new Hono();
 
-listInfo.get('/:resType/:pageNum/:pageSize?', async (c:any) => {
-    const resType = c.req.param("resType");
+// 获取创作者列表
+listInfo.get('/creator/:pageNum/:pageSize?', async (c: any) => {
     const pageNum = Number(c.req.param("pageNum")) || 1;
     const pageSize = Number(c.req.param("pageSize")) || 10;
-    const handler = resHandlers[resType as keyof typeof resHandlers];
-    
-    if (!handler) {
-        return c.json({ error: 'Invalid resource type' }, 400);
-    }
-    
-    return c.json(await handler(c.env.DB, pageNum, pageSize));
+    return c.json(await ListCreators(c.env.DB, pageNum, pageSize));
+});
+
+// 获取媒体列表
+listInfo.get('/media/:pageNum/:pageSize?', async (c: any) => {
+    const pageNum = Number(c.req.param("pageNum")) || 1;
+    const pageSize = Number(c.req.param("pageSize")) || 10;
+    return c.json(await ListMedia(c.env.DB, pageNum, pageSize));
+});
+
+// 获取资产列表
+listInfo.get('/asset/:pageNum/:pageSize?', async (c: any) => {
+    const pageNum = Number(c.req.param("pageNum")) || 1;
+    const pageSize = Number(c.req.param("pageSize")) || 10;
+    return c.json(await ListAssets(c.env.DB, pageNum, pageSize));
+});
+
+// 获取关系列表
+listInfo.get('/relation/:pageNum/:pageSize?', async (c: any) => {
+    const pageNum = Number(c.req.param("pageNum")) || 1;
+    const pageSize = Number(c.req.param("pageSize")) || 10;
+    return c.json(await ListRelations(c.env.DB, pageNum, pageSize));
+});
+
+// 获取作品列表
+listInfo.get('/work/:pageNum/:pageSize?', async (c: any) => {
+    const pageNum = Number(c.req.param("pageNum")) || 1;
+    const pageSize = Number(c.req.param("pageSize")) || 10;
+    return c.json(await GetWorkListWithPagination(c.env.DB, pageNum, pageSize));
 });
 
 // 获取所有标签列表
