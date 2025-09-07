@@ -2,14 +2,17 @@ import { jsx } from 'hono/jsx'
 
 export interface WorkListProps {
     works: any[]
+    preferredLanguage?: string
 }
 
 export const WorkList = (props: WorkListProps) => {
-    const renderWorkItem = (item: any) => {
-        const userLang = "zh-cn"
+    const getDisplayTitle = (item: any, userLang: string = 'auto') => {
         let mainTitle = '[Untitled]';
-        if (item.titles && item.titles.length > 0) {
-            const userLangTitle = item.titles.find((t: any) => t.language === userLang);
+        if (!item.titles || item.titles.length === 0) return mainTitle;
+
+        // 如果是自动选择，使用原有逻辑
+        if (userLang === 'auto') {
+            const userLangTitle = item.titles.find((t: any) => t.language === 'zh-cn');
             if (userLangTitle) {
                 mainTitle = userLangTitle.title;
             } else {
@@ -20,7 +23,27 @@ export const WorkList = (props: WorkListProps) => {
                     mainTitle = item.titles[0].title;
                 }
             }
+        } else {
+            // 优先查找指定语言的标题
+            const specificLangTitle = item.titles.find((t: any) => t.language === userLang);
+            if (specificLangTitle) {
+                mainTitle = specificLangTitle.title;
+            } else {
+                // 找不到指定语言，按优先级fallback
+                const officialTitle = item.titles.find((t: any) => t.is_official);
+                if (officialTitle) {
+                    mainTitle = officialTitle.title;
+                } else {
+                    mainTitle = item.titles[0].title;
+                }
+            }
         }
+        return mainTitle;
+    };
+
+    const renderWorkItem = (item: any) => {
+        const userLang = props.preferredLanguage || 'auto';
+        const mainTitle = getDisplayTitle(item, userLang);
 
         let artistName = '[Unknown Artist]';
         if (item.creator && item.creator.length > 0) {

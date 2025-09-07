@@ -35,7 +35,12 @@ src/app/
 ├── pages/            # SSR page components
 │   ├── index.tsx     # Song listing page
 │   ├── player.tsx    # Song player page
-│   └── footer.tsx    # Footer component
+│   ├── footer.tsx    # Footer component
+│   └── components/   # Reusable UI components
+│       ├── work-list.tsx      # Work list display component
+│       ├── pagination.tsx     # Pagination controls
+│       ├── floating-search.tsx # Search interface
+│       └── language-selector.tsx # Language selection dropdown
 └── routes/           # API route handlers
     ├── auth.ts       # Authentication endpoints
     ├── get.ts        # Data retrieval endpoints
@@ -101,6 +106,21 @@ The application uses a comprehensive relational schema:
 - Supports pagination and search functionality
 - Asset access unified through `/api/get/file/{uuid}` endpoint
 
+#### User Interface Features
+- **Multi-language Title Display**: Intelligent title selection based on user preference with automatic fallback
+- **Tag/Category Filtering**: Clean interface with inline filter indicators in section headers
+- **Language Selection**: Fixed position language selector (bottom-right corner) with dropdown menu
+- **Responsive Pagination**: Context-aware pagination that preserves filter and language parameters
+- **Search Integration**: Full-text search with type selection (title/creator/all)
+
+#### URL Parameters
+- `page`: Pagination (default: 1)
+- `search`: Search query string
+- `type`: Search type ('title'|'creator'|'all', default: 'all')
+- `tag`: Filter by tag UUID
+- `category`: Filter by category UUID  
+- `lang`: Display language preference ('auto'|'zh-cn'|'zh-tw'|'ja'|'en'|'ko', default: 'auto')
+
 ### Tag and Category System
 The application includes a comprehensive taxonomy system for organizing works:
 
@@ -109,6 +129,7 @@ The application includes a comprehensive taxonomy system for organizing works:
 - **Categories**: Hierarchical structure for systematic classification (e.g., "Original Songs" > "Rock" > "Alternative Rock")
 - **Multi-assignment**: Each work can have multiple tags and categories
 - **Search Integration**: Filter works by tags or categories with pagination support
+- **Clean UI**: Simplified main page without tag/category clutter, filter status shown inline with section headers
 
 #### Data Structure
 - `tag`: Simple name-based labels
@@ -120,6 +141,24 @@ The application includes a comprehensive taxonomy system for organizing works:
 - All work queries include associated tags and categories in the response
 - Dedicated endpoints for tag/category management and work filtering
 - Batch operations for efficient tag/category assignment
+
+### Multi-language Support System
+The application provides comprehensive multi-language title support with dynamic language detection:
+
+#### Language Selection Logic
+- **Auto Mode**: Prioritizes Chinese (Simplified) → Official title → First available title
+- **Specific Language Mode**: Prioritizes selected language → Official title → First available title
+- **Dynamic Language Detection**: Only displays languages that actually exist in the database
+- **Language Mapping**: Supports common language codes with proper display names
+
+#### Implementation
+- Language options dynamically generated from `work_title.language` field
+- Language preference stored in URL parameter (`?lang=<code>`)
+- Real-time switching with page refresh
+- Fallback mechanism ensures titles always display
+- Compatible with filtering, searching, and pagination
+- Fixed language selector positioned at bottom-right corner
+- Unknown language codes display as uppercase (e.g., 'fr' → 'FR')
 
 ### Environment Configuration
 Required environment variables:

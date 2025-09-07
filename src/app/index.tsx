@@ -13,7 +13,7 @@ import { jwt } from 'hono/jwt'
 
 import { IndexPage } from './pages/index'
 import { PlayerPage } from './pages/player'
-import { GetFooterSettings, GetWorkByUUID, GetWorkListWithPagination, SearchWorks, GetWorksByTag, GetWorksByCategory, GetTagByUUID, GetCategoryByUUID, GetTotalWorkCount, GetWorkCountByTag, GetWorkCountByCategory } from './database'
+import { GetFooterSettings, GetWorkByUUID, GetWorkListWithPagination, SearchWorks, GetWorksByTag, GetWorksByCategory, GetTagByUUID, GetCategoryByUUID, GetTotalWorkCount, GetWorkCountByTag, GetWorkCountByCategory, GetAvailableLanguages } from './database'
 
 const apiApp = new Hono<{ Bindings: Cloudflare }>()
 
@@ -77,14 +77,15 @@ const app = new Hono<{ Bindings: Cloudflare }>()
 app.route('/api', apiApp)
 
 app.get('/', async (c) => {
-  const { search, page, type, tag, category } = c.req.query()
-  console.log(search, page, type, tag, category)
+  const { search, page, type, tag, category, lang } = c.req.query()
+  console.log(search, page, type, tag, category, lang)
   
   let works;
   let totalCount = 0;
   let filterInfo = null;
   const currentPage = parseInt(page) || 1;
   const pageSize = 10;
+  const preferredLanguage = lang || 'auto';
   
   if (search) {
     works = await SearchWorks(c.env.DB, search, type as 'title' | 'creator' | 'all' || 'all')
@@ -117,6 +118,7 @@ app.get('/', async (c) => {
   }
   
   const footerSettings = await GetFooterSettings(c.env.DB)
+  const availableLanguages = await GetAvailableLanguages(c.env.DB)
   return c.html(<IndexPage 
     works={works} 
     footerSettings={footerSettings}
@@ -125,6 +127,8 @@ app.get('/', async (c) => {
     pageSize={pageSize}
     filterInfo={filterInfo}
     searchQuery={search || ''}
+    preferredLanguage={preferredLanguage}
+    availableLanguages={availableLanguages}
   />)
 })
 

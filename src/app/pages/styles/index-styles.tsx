@@ -104,6 +104,101 @@ body {
     box-shadow: 0 4px 15px rgba(124, 119, 198, 0.4);
 }
 
+/* 语言选择器 */
+.language-selector-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.language-selector {
+    position: relative;
+    display: inline-block;
+}
+
+.language-selector-btn {
+    background: rgba(40, 40, 40, 0.9);
+    border: 1px solid rgba(124, 119, 198, 0.3);
+    border-radius: var(--element-radius);
+    color: var(--text-primary);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    white-space: nowrap;
+}
+
+.language-selector-btn:hover {
+    background: rgba(60, 60, 60, 0.9);
+    border-color: rgba(124, 119, 198, 0.5);
+    transform: translateY(-1px);
+}
+
+.language-selector-btn i:first-child {
+    color: #7c77c6;
+    font-size: 0.9em;
+}
+
+.language-text {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.language-dropdown {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    margin-bottom: 5px;
+    background: rgba(40, 40, 40, 0.95);
+    border: 1px solid rgba(124, 119, 198, 0.3);
+    border-radius: var(--element-radius);
+    backdrop-filter: blur(15px);
+    min-width: 150px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.language-dropdown.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.language-option {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.85rem;
+}
+
+.language-option:hover {
+    background: rgba(124, 119, 198, 0.2);
+    color: var(--text-primary);
+}
+
+.language-option.active {
+    background: rgba(124, 119, 198, 0.3);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.language-option:first-child {
+    border-radius: var(--element-radius) var(--element-radius) 0 0;
+}
+
+.language-option:last-child {
+    border-radius: 0 0 var(--element-radius) var(--element-radius);
+}
+
 /* 头部区域 */
 .page-header {
     text-align: center;

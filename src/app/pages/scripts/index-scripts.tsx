@@ -6,6 +6,8 @@ const searchType = document.getElementById('searchType');
 const prevPageBtn = document.getElementById('prevPage');
 const nextPageBtn = document.getElementById('nextPage');
 const paginationContainer = document.getElementById('pagination');
+const languageSelectorBtn = document.getElementById('languageSelectorBtn');
+const languageDropdown = document.getElementById('languageDropdown');
 
 function setupEventListeners() {
     workList.addEventListener('click', function(e) {
@@ -43,6 +45,29 @@ function setupEventListeners() {
             searchMusic();
         }
     });
+
+    // Language selector events
+    if (languageSelectorBtn && languageDropdown) {
+        languageSelectorBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            languageDropdown.classList.toggle('open');
+        });
+
+        languageDropdown.addEventListener('click', function(e) {
+            const option = e.target.closest('.language-option');
+            if (option) {
+                const selectedLang = option.dataset.lang;
+                changeLanguage(selectedLang);
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.language-selector')) {
+                languageDropdown.classList.remove('open');
+            }
+        });
+    }
 }
 
 function changePage(direction) {
@@ -87,6 +112,18 @@ function clearSearch() {
     params.delete('search');
     params.delete('type');
     params.delete('page'); // Reset to first page when clearing search
+    
+    const newUrl = params.toString() ? \`/?\${params.toString()}\` : '/';
+    window.location.href = newUrl;
+}
+
+function changeLanguage(language) {
+    const params = new URLSearchParams(window.location.search);
+    if (language === 'auto') {
+        params.delete('lang');
+    } else {
+        params.set('lang', language);
+    }
     
     const newUrl = params.toString() ? \`/?\${params.toString()}\` : '/';
     window.location.href = newUrl;

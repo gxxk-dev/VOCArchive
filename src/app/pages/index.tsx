@@ -3,6 +3,7 @@ import { BaseLayout } from './layouts/base-layout'
 import { WorkList } from './components/work-list'
 import { FloatingSearch } from './components/floating-search'
 import { Pagination } from './components/pagination'
+import { LanguageSelector } from './components/language-selector'
 import { FooterSetting } from '../database'
 import { CommonStyles } from './styles/common-styles'
 import { IndexStyles } from './styles/index-styles'
@@ -19,7 +20,9 @@ export const IndexPage = (props: {
         name: string,
         uuid: string
     } | null,
-    searchQuery: string
+    searchQuery: string,
+    preferredLanguage?: string,
+    availableLanguages: string[]
 }) => {
     const additionalStyles = `${CommonStyles}${IndexStyles}`;
     
@@ -33,6 +36,13 @@ export const IndexPage = (props: {
             </div>
 
             {FloatingSearch()}
+            
+            <div class="language-selector-container">
+                {LanguageSelector({ 
+                    currentLanguage: props.preferredLanguage || 'auto',
+                    availableLanguages: props.availableLanguages 
+                })}
+            </div>
 
             <div class="page-container" id="pageContainer">
                 <header class="page-header">
@@ -70,7 +80,7 @@ export const IndexPage = (props: {
                     </h2>
 
                     <div class="work-list" id="workList">
-                        {WorkList({ works: props.works })}
+                        {WorkList({ works: props.works, preferredLanguage: props.preferredLanguage })}
                     </div>
 
                     {Pagination({ 

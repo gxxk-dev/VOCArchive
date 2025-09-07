@@ -1757,3 +1757,13 @@ export async function GetWorkCountByCategory(DB: D1Database, categoryUUID: strin
     return result?.count || 0;
 }
 
+// 获取数据库中所有可用的标题语言
+export async function GetAvailableLanguages(DB: D1Database): Promise<string[]> {
+    const result = await DB.prepare(`
+        SELECT DISTINCT language 
+        FROM work_title 
+        ORDER BY language
+    `).all<{ language: string }>();
+    return result.results?.map(row => row.language) || [];
+}
+
