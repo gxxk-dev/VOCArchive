@@ -640,7 +640,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <label for="text">Text:</label>
                 <input type="text" id="text" name="text" required value="${data?.text || ''}">
                 <label for="url">URL (optional):</label>
-                <input type="url" id="url" name="url" value="${data?.url || ''}">
+                <input type="text" id="url" name="url" value="${data?.url || ''}">
                 <label for="icon_class">Icon Class (optional):</label>
                 <input type="text" id="icon_class" name="icon_class" value="${data?.icon_class || ''}">
             `,

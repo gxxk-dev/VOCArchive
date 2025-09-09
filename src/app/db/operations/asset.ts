@@ -118,29 +118,28 @@ export async function inputAsset(
   assetData: Asset,
   creators?: CreatorWithRole[]
 ): Promise<void> {
-  await db.transaction(async (tx) => {
-    // Insert asset
-    await tx.insert(asset).values({
-      uuid: assetData.uuid,
-      fileId: assetData.file_id,
-      workUuid: assetData.work_uuid,
-      assetType: assetData.asset_type,
-      fileName: assetData.file_name,
-      isPreviewpic: assetData.is_previewpic || null,
-      language: assetData.language || null,
-    });
-
-    // Insert asset creators
-    if (creators && creators.length > 0) {
-      await tx.insert(assetCreator).values(
-        creators.map(creator => ({
-          assetUuid: assetData.uuid,
-          creatorUuid: creator.creator_uuid,
-          role: creator.role,
-        }))
-      );
-    }
+  // For D1 compatibility, execute operations sequentially without transactions
+  // Insert asset
+  await db.insert(asset).values({
+    uuid: assetData.uuid,
+    fileId: assetData.file_id,
+    workUuid: assetData.work_uuid,
+    assetType: assetData.asset_type,
+    fileName: assetData.file_name,
+    isPreviewpic: assetData.is_previewpic || null,
+    language: assetData.language || null,
   });
+
+  // Insert asset creators
+  if (creators && creators.length > 0) {
+    await db.insert(assetCreator).values(
+      creators.map(creator => ({
+        assetUuid: assetData.uuid,
+        creatorUuid: creator.creator_uuid,
+        role: creator.role,
+      }))
+    );
+  }
 }
 
 /**
@@ -155,36 +154,35 @@ export async function updateAsset(
   if (!validateUUID(assetUuid)) return false;
 
   try {
-    await db.transaction(async (tx) => {
-      // Update asset
-      await tx
-        .update(asset)
-        .set({
-          fileId: assetData.file_id,
-          workUuid: assetData.work_uuid,
-          assetType: assetData.asset_type,
-          fileName: assetData.file_name,
-          isPreviewpic: assetData.is_previewpic || null,
-          language: assetData.language || null,
-        })
-        .where(eq(asset.uuid, assetUuid));
+    // For D1 compatibility, execute operations sequentially without transactions
+    // Update asset
+    await db
+      .update(asset)
+      .set({
+        fileId: assetData.file_id,
+        workUuid: assetData.work_uuid,
+        assetType: assetData.asset_type,
+        fileName: assetData.file_name,
+        isPreviewpic: assetData.is_previewpic || null,
+        language: assetData.language || null,
+      })
+      .where(eq(asset.uuid, assetUuid));
 
-      // Delete old asset creators
-      await tx
-        .delete(assetCreator)
-        .where(eq(assetCreator.assetUuid, assetUuid));
+    // Delete old asset creators
+    await db
+      .delete(assetCreator)
+      .where(eq(assetCreator.assetUuid, assetUuid));
 
-      // Insert new asset creators
-      if (creators && creators.length > 0) {
-        await tx.insert(assetCreator).values(
-          creators.map(creator => ({
-            assetUuid: assetUuid,
-            creatorUuid: creator.creator_uuid,
-            role: creator.role,
-          }))
-        );
-      }
-    });
+    // Insert new asset creators
+    if (creators && creators.length > 0) {
+      await db.insert(assetCreator).values(
+        creators.map(creator => ({
+          assetUuid: assetUuid,
+          creatorUuid: creator.creator_uuid,
+          role: creator.role,
+        }))
+      );
+    }
 
     return true;
   } catch (error) {

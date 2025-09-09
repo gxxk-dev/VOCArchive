@@ -96,25 +96,24 @@ export async function inputCreator(
   creatorData: Creator,
   wikis?: WikiRef[]
 ): Promise<void> {
-  await db.transaction(async (tx) => {
-    // Insert creator
-    await tx.insert(creator).values({
-      uuid: creatorData.uuid,
-      name: creatorData.name,
-      type: creatorData.type,
-    });
-    
-    // Insert wiki references
-    if (wikis && wikis.length > 0) {
-      await tx.insert(creatorWiki).values(
-        wikis.map(wiki => ({
-          creatorUuid: creatorData.uuid,
-          platform: wiki.platform,
-          identifier: wiki.identifier,
-        }))
-      );
-    }
+  // For D1 compatibility, execute operations sequentially without transactions
+  // Insert creator
+  await db.insert(creator).values({
+    uuid: creatorData.uuid,
+    name: creatorData.name,
+    type: creatorData.type,
   });
+  
+  // Insert wiki references
+  if (wikis && wikis.length > 0) {
+    await db.insert(creatorWiki).values(
+      wikis.map(wiki => ({
+        creatorUuid: creatorData.uuid,
+        platform: wiki.platform,
+        identifier: wiki.identifier,
+      }))
+    );
+  }
 }
 
 /**
@@ -129,32 +128,31 @@ export async function updateCreator(
   if (!validateUUID(creatorUuid)) return false;
 
   try {
-    await db.transaction(async (tx) => {
-      // Update creator
-      await tx
-        .update(creator)
-        .set({
-          name: creatorData.name,
-          type: creatorData.type,
-        })
-        .where(eq(creator.uuid, creatorUuid));
+    // For D1 compatibility, execute operations sequentially without transactions
+    // Update creator
+    await db
+      .update(creator)
+      .set({
+        name: creatorData.name,
+        type: creatorData.type,
+      })
+      .where(eq(creator.uuid, creatorUuid));
 
-      // Delete old wiki entries
-      await tx
-        .delete(creatorWiki)
-        .where(eq(creatorWiki.creatorUuid, creatorUuid));
+    // Delete old wiki entries
+    await db
+      .delete(creatorWiki)
+      .where(eq(creatorWiki.creatorUuid, creatorUuid));
 
-      // Insert new wiki entries
-      if (wikis && wikis.length > 0) {
-        await tx.insert(creatorWiki).values(
-          wikis.map(wiki => ({
-            creatorUuid: creatorUuid,
-            platform: wiki.platform,
-            identifier: wiki.identifier,
-          }))
-        );
-      }
-    });
+    // Insert new wiki entries
+    if (wikis && wikis.length > 0) {
+      await db.insert(creatorWiki).values(
+        wikis.map(wiki => ({
+          creatorUuid: creatorUuid,
+          platform: wiki.platform,
+          identifier: wiki.identifier,
+        }))
+      );
+    }
 
     return true;
   } catch (error) {

@@ -562,55 +562,54 @@ export async function inputWork(
   creators: CreatorWithRole[],
   wikis?: WikiRef[]
 ): Promise<void> {
-  await db.transaction(async (tx) => {
-    // Insert work
-    await tx.insert(work).values({
-      uuid: workData.uuid,
-      copyrightBasis: workData.copyright_basis,
-    });
-    
-    // Insert titles
-    if (titles.length > 0) {
-      await tx.insert(workTitle).values(
-        titles.map(title => ({
-          workUuid: workData.uuid,
-          isOfficial: title.is_official,
-          language: title.language,
-          title: title.title,
-        }))
-      );
-    }
-    
-    // Insert license if needed
-    if (license && workData.copyright_basis === 'license') {
-      await tx.insert(workLicense).values({
-        workUuid: workData.uuid,
-        licenseType: license,
-      });
-    }
-    
-    // Insert work-creator relationships
-    if (creators.length > 0) {
-      await tx.insert(workCreator).values(
-        creators.map(creator => ({
-          workUuid: workData.uuid,
-          creatorUuid: creator.creator_uuid,
-          role: creator.role,
-        }))
-      );
-    }
-    
-    // Insert wiki references
-    if (wikis && wikis.length > 0) {
-      await tx.insert(workWiki).values(
-        wikis.map(wiki => ({
-          workUuid: workData.uuid,
-          platform: wiki.platform,
-          identifier: wiki.identifier,
-        }))
-      );
-    }
+  // For D1 compatibility, execute operations sequentially without transactions
+  // Insert work
+  await db.insert(work).values({
+    uuid: workData.uuid,
+    copyrightBasis: workData.copyright_basis,
   });
+  
+  // Insert titles
+  if (titles.length > 0) {
+    await db.insert(workTitle).values(
+      titles.map(title => ({
+        workUuid: workData.uuid,
+        isOfficial: title.is_official,
+        language: title.language,
+        title: title.title,
+      }))
+    );
+  }
+  
+  // Insert license if needed
+  if (license && workData.copyright_basis === 'license') {
+    await db.insert(workLicense).values({
+      workUuid: workData.uuid,
+      licenseType: license,
+    });
+  }
+  
+  // Insert work-creator relationships
+  if (creators.length > 0) {
+    await db.insert(workCreator).values(
+      creators.map(creator => ({
+        workUuid: workData.uuid,
+        creatorUuid: creator.creator_uuid,
+        role: creator.role,
+      }))
+    );
+  }
+  
+  // Insert wiki references
+  if (wikis && wikis.length > 0) {
+    await db.insert(workWiki).values(
+      wikis.map(wiki => ({
+        workUuid: workData.uuid,
+        platform: wiki.platform,
+        identifier: wiki.identifier,
+      }))
+    );
+  }
 }
 
 /**
@@ -628,61 +627,60 @@ export async function updateWork(
   if (!validateUUID(workUuid)) return false;
   
   try {
-    await db.transaction(async (tx) => {
-      // Update work
-      await tx
-        .update(work)
-        .set({ copyrightBasis: workData.copyright_basis })
-        .where(eq(work.uuid, workUuid));
-      
-      // Delete and re-insert titles
-      await tx.delete(workTitle).where(eq(workTitle.workUuid, workUuid));
-      if (titles.length > 0) {
-        await tx.insert(workTitle).values(
-          titles.map(title => ({
-            workUuid: workUuid,
-            isOfficial: title.is_official,
-            language: title.language,
-            title: title.title,
-          }))
-        );
-      }
-      
-      // Handle license
-      await tx.delete(workLicense).where(eq(workLicense.workUuid, workUuid));
-      if (license && workData.copyright_basis === 'license') {
-        await tx.insert(workLicense).values({
+    // For D1 compatibility, execute operations sequentially without transactions
+    // Update work
+    await db
+      .update(work)
+      .set({ copyrightBasis: workData.copyright_basis })
+      .where(eq(work.uuid, workUuid));
+    
+    // Delete and re-insert titles
+    await db.delete(workTitle).where(eq(workTitle.workUuid, workUuid));
+    if (titles.length > 0) {
+      await db.insert(workTitle).values(
+        titles.map(title => ({
           workUuid: workUuid,
-          licenseType: license,
-        });
-      }
-      
-      // Handle creators
-      if (creators) {
-        await tx.delete(workCreator).where(eq(workCreator.workUuid, workUuid));
-        if (creators.length > 0) {
-          await tx.insert(workCreator).values(
-            creators.map(creator => ({
-              workUuid: workUuid,
-              creatorUuid: creator.creator_uuid,
-              role: creator.role,
-            }))
-          );
-        }
-      }
-      
-      // Handle wikis
-      await tx.delete(workWiki).where(eq(workWiki.workUuid, workUuid));
-      if (wikis && wikis.length > 0) {
-        await tx.insert(workWiki).values(
-          wikis.map(wiki => ({
+          isOfficial: title.is_official,
+          language: title.language,
+          title: title.title,
+        }))
+      );
+    }
+    
+    // Handle license
+    await db.delete(workLicense).where(eq(workLicense.workUuid, workUuid));
+    if (license && workData.copyright_basis === 'license') {
+      await db.insert(workLicense).values({
+        workUuid: workUuid,
+        licenseType: license,
+      });
+    }
+    
+    // Handle creators
+    if (creators) {
+      await db.delete(workCreator).where(eq(workCreator.workUuid, workUuid));
+      if (creators.length > 0) {
+        await db.insert(workCreator).values(
+          creators.map(creator => ({
             workUuid: workUuid,
-            platform: wiki.platform,
-            identifier: wiki.identifier,
+            creatorUuid: creator.creator_uuid,
+            role: creator.role,
           }))
         );
       }
-    });
+    }
+    
+    // Handle wikis
+    await db.delete(workWiki).where(eq(workWiki.workUuid, workUuid));
+    if (wikis && wikis.length > 0) {
+      await db.insert(workWiki).values(
+        wikis.map(wiki => ({
+          workUuid: workUuid,
+          platform: wiki.platform,
+          identifier: wiki.identifier,
+        }))
+      );
+    }
     
     return true;
   } catch (error) {
@@ -758,29 +756,28 @@ export async function inputAsset(
   }
 
   try {
-    await db.transaction(async (tx) => {
-      // Insert asset
-      await tx.insert(asset).values({
-        uuid: assetData.uuid,
-        fileId: assetData.file_id,
-        workUuid: assetData.work_uuid,
-        assetType: assetData.asset_type,
-        fileName: assetData.file_name,
-        isPreviewpic: assetData.is_previewpic || null,
-        language: assetData.language || null,
-      });
-
-      // Insert asset creators
-      if (creators.length > 0) {
-        await tx.insert(assetCreator).values(
-          creators.map(creator => ({
-            assetUuid: assetData.uuid,
-            creatorUuid: creator.creator_uuid,
-            role: creator.role,
-          }))
-        );
-      }
+    // For D1 compatibility, execute operations sequentially without transactions
+    // Insert asset
+    await db.insert(asset).values({
+      uuid: assetData.uuid,
+      fileId: assetData.file_id,
+      workUuid: assetData.work_uuid,
+      assetType: assetData.asset_type,
+      fileName: assetData.file_name,
+      isPreviewpic: assetData.is_previewpic || null,
+      language: assetData.language || null,
     });
+
+    // Insert asset creators
+    if (creators.length > 0) {
+      await db.insert(assetCreator).values(
+        creators.map(creator => ({
+          assetUuid: assetData.uuid,
+          creatorUuid: creator.creator_uuid,
+          role: creator.role,
+        }))
+      );
+    }
     return true;
   } catch (error) {
     console.error('Error creating asset:', error);
@@ -800,34 +797,33 @@ export async function updateAsset(
   if (!validateUUID(assetUuid)) return false;
 
   try {
-    await db.transaction(async (tx) => {
-      // Update asset
-      await tx
-        .update(asset)
-        .set({
-          fileId: assetData.file_id,
-          workUuid: assetData.work_uuid,
-          assetType: assetData.asset_type,
-          fileName: assetData.file_name,
-          isPreviewpic: assetData.is_previewpic || null,
-          language: assetData.language || null,
-        })
-        .where(eq(asset.uuid, assetUuid));
+    // For D1 compatibility, execute operations sequentially without transactions
+    // Update asset
+    await db
+      .update(asset)
+      .set({
+        fileId: assetData.file_id,
+        workUuid: assetData.work_uuid,
+        assetType: assetData.asset_type,
+        fileName: assetData.file_name,
+        isPreviewpic: assetData.is_previewpic || null,
+        language: assetData.language || null,
+      })
+      .where(eq(asset.uuid, assetUuid));
 
-      // Handle creators
-      if (creators) {
-        await tx.delete(assetCreator).where(eq(assetCreator.assetUuid, assetUuid));
-        if (creators.length > 0) {
-          await tx.insert(assetCreator).values(
-            creators.map(creator => ({
-              assetUuid: assetUuid,
-              creatorUuid: creator.creator_uuid,
-              role: creator.role,
-            }))
-          );
-        }
+    // Handle creators
+    if (creators) {
+      await db.delete(assetCreator).where(eq(assetCreator.assetUuid, assetUuid));
+      if (creators.length > 0) {
+        await db.insert(assetCreator).values(
+          creators.map(creator => ({
+            assetUuid: assetUuid,
+            creatorUuid: creator.creator_uuid,
+            role: creator.role,
+          }))
+        );
       }
-    });
+    }
     return true;
   } catch (error) {
     console.error('Error updating asset:', error);
