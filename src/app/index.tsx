@@ -15,7 +15,7 @@ import { IndexPage } from './pages/index'
 import { PlayerPage } from './pages/player'
 import { GetFooterSettings, GetWorkByUUID, GetWorkListWithPagination, SearchWorks, GetWorksByTag, GetWorksByCategory, GetTagByUUID, GetCategoryByUUID, GetTotalWorkCount, GetWorkCountByTag, GetWorkCountByCategory, GetAvailableLanguages } from './database'
 
-const apiApp = new Hono<{ Bindings: Cloudflare }>()
+const apiApp = new Hono<{ Bindings: CloudflareBindings }>()
 
 apiApp.get('/', (c) => {
   return c.text('Hello Hono!')
@@ -72,7 +72,7 @@ apiApp.route('/search', searchInfo)
 // ---------- 列出信息 ----------
 apiApp.route('/list', listInfo)
 
-const app = new Hono<{ Bindings: Cloudflare }>()
+const app = new Hono<{ Bindings: CloudflareBindings }>()
 
 app.route('/api', apiApp)
 
@@ -96,7 +96,7 @@ app.get('/', async (c) => {
     const tagInfo = await GetTagByUUID(c.env.DB, tag)
     if (tagInfo) {
       filterInfo = {
-        type: 'tag',
+        type: 'tag' as const,
         name: tagInfo.name,
         uuid: tag
       }
@@ -107,7 +107,7 @@ app.get('/', async (c) => {
     const categoryInfo = await GetCategoryByUUID(c.env.DB, category)
     if (categoryInfo) {
       filterInfo = {
-        type: 'category', 
+        type: 'category' as const, 
         name: categoryInfo.name,
         uuid: category
       }

@@ -47,7 +47,7 @@ export const WorkHeader = (props: WorkHeaderProps) => {
                 <i class="fas fa-tags"></i>
                 <span class="meta-label">标签:</span>
                 <div class="tags-container">
-                    {visibleTags.map(tag => 
+                    {visibleTags.map((tag: { uuid: string; name: string }) => 
                         <span class="tag-chip clickable" data-tag={tag.uuid}>{tag.name}</span>
                     )}
                     {hiddenTags.length > 0 && (

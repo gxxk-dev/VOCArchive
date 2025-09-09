@@ -1241,7 +1241,9 @@ export async function SearchWorksByTitle(DB: D1Database, query: string): Promise
             titles,
             preview_asset: previewResult || undefined,
             non_preview_asset: nonPreviewResult || undefined,
-            creator: creatorMap.get(work_uuid) || []
+            creator: creatorMap.get(work_uuid) || [],
+            tags: [],
+            categories: []
         };
     });
 
@@ -1327,7 +1329,9 @@ export async function SearchWorksByCreator(DB: D1Database, query: string): Promi
             titles,
             preview_asset: previewResult || undefined,
             non_preview_asset: nonPreviewResult || undefined,
-            creator: creatorMap.get(work_uuid) || []
+            creator: creatorMap.get(work_uuid) || [],
+            tags: [],
+            categories: []
         };
     });
     return await Promise.all(workListPromises);
@@ -1471,7 +1475,9 @@ export async function GetWorksByTag(DB: D1Database, tagUUID: string, page: numbe
             titles,
             preview_asset: previewResult || undefined,
             non_preview_asset: nonPreviewResult || undefined,
-            creator: creatorMap.get(work_uuid) || []
+            creator: creatorMap.get(work_uuid) || [],
+            tags: [],
+            categories: []
         };
     });
     
@@ -1552,7 +1558,9 @@ export async function GetWorksByCategory(DB: D1Database, categoryUUID: string, p
             titles,
             preview_asset: previewResult || undefined,
             non_preview_asset: nonPreviewResult || undefined,
-            creator: creatorMap.get(work_uuid) || []
+            creator: creatorMap.get(work_uuid) || [],
+            tags: [],
+            categories: []
         };
     });
     

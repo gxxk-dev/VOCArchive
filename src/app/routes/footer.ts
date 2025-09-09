@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { GetFooterSettings, InsertFooterSetting, UpdateFooterSetting, DeleteFooterSetting, FooterSetting } from '../database'
 import { v4 as uuidv4 } from 'uuid';
 
-const app = new Hono<{ Bindings: Cloudflare }>()
+const app = new Hono<{ Bindings: CloudflareBindings }>()
 
 // Public endpoint to get footer settings
 app.get('/', async (c) => {
