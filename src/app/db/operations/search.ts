@@ -1,0 +1,328 @@
+import { eq, like, inArray, and } from 'drizzle-orm';
+import type { DrizzleDB } from '../client';
+import { 
+  work, 
+  workTitle, 
+  workCreator, 
+  creator, 
+  asset 
+} from '../schema';
+import { convertAssetData, convertCreatorData } from '../utils';
+
+// Types matching current interfaces
+export interface WorkTitle {
+  is_official: boolean;
+  language: string;
+  title: string;
+}
+
+export interface CreatorWithRole {
+  creator_uuid: string;
+  creator_name?: string;
+  creator_type: 'human' | 'virtual';
+  role: string;
+}
+
+export interface Asset {
+  uuid: string;
+  file_id: string;
+  work_uuid: string;
+  asset_type: 'lyrics' | 'picture';
+  file_name: string;
+  is_previewpic?: boolean;
+  language?: string;
+}
+
+export interface Tag {
+  uuid: string;
+  name: string;
+}
+
+export interface Category {
+  uuid: string;
+  name: string;
+  parent_uuid?: string;
+}
+
+export interface WorkListItem {
+  work_uuid: string;
+  titles: WorkTitle[];
+  preview_asset?: Asset;
+  non_preview_asset?: Asset;
+  creator: CreatorWithRole[];
+  tags: Tag[];
+  categories: Category[];
+}
+
+/**
+ * Get work titles for a specific work UUID
+ */
+async function getWorkTitles(db: DrizzleDB, workUUID: string): Promise<WorkTitle[]> {
+  const titles = await db
+    .select({
+      is_official: workTitle.isOfficial,
+      language: workTitle.language,
+      title: workTitle.title,
+    })
+    .from(workTitle)
+    .where(eq(workTitle.workUuid, workUUID));
+
+  return titles;
+}
+
+/**
+ * Search works by title
+ */
+export async function searchWorksByTitle(db: DrizzleDB, query: string): Promise<WorkListItem[]> {
+  // Get work UUIDs that match the title search
+  const workUuids = await db
+    .select({ work_uuid: workTitle.workUuid })
+    .from(workTitle)
+    .where(like(workTitle.title, `%${query}%`));
+
+  if (workUuids.length === 0) {
+    return [];
+  }
+
+  const workUuidList = workUuids.map(w => w.work_uuid);
+
+  // Get all creators for these works
+  const creators = await db
+    .select({
+      work_uuid: workCreator.workUuid,
+      creator_uuid: creator.uuid,
+      creator_name: creator.name,
+      creator_type: creator.type,
+      role: workCreator.role,
+    })
+    .from(workCreator)
+    .innerJoin(creator, eq(workCreator.creatorUuid, creator.uuid))
+    .where(inArray(workCreator.workUuid, workUuidList));
+
+  // Group creators by work UUID
+  const creatorMap = new Map<string, CreatorWithRole[]>();
+  creators.forEach(row => {
+    if (!creatorMap.has(row.work_uuid)) {
+      creatorMap.set(row.work_uuid, []);
+    }
+    creatorMap.get(row.work_uuid)!.push({
+      creator_uuid: row.creator_uuid,
+      creator_name: row.creator_name,
+      creator_type: row.creator_type,
+      role: row.role
+    });
+  });
+
+  // Get work details for each work
+  const workListPromises = workUuidList.map(async (work_uuid) => {
+    // Get titles
+    const titles = await getWorkTitles(db, work_uuid);
+
+    // Get assets
+    const previewAssets = await db
+      .select({
+        uuid: asset.uuid,
+        file_id: asset.fileId,
+        work_uuid: asset.workUuid,
+        asset_type: asset.assetType,
+        file_name: asset.fileName,
+        is_previewpic: asset.isPreviewpic,
+        language: asset.language,
+      })
+      .from(asset)
+      .where(
+        and(
+          eq(asset.workUuid, work_uuid),
+          eq(asset.assetType, 'picture'),
+          eq(asset.isPreviewpic, true)
+        )
+      )
+      .limit(1);
+
+    const nonPreviewAssets = await db
+      .select({
+        uuid: asset.uuid,
+        file_id: asset.fileId,
+        work_uuid: asset.workUuid,
+        asset_type: asset.assetType,
+        file_name: asset.fileName,
+        is_previewpic: asset.isPreviewpic,
+        language: asset.language,
+      })
+      .from(asset)
+      .where(
+        and(
+          eq(asset.workUuid, work_uuid),
+          eq(asset.assetType, 'picture')
+        )
+      )
+      .limit(1);
+
+    return {
+      work_uuid,
+      titles,
+      preview_asset: previewAssets[0] ? convertAssetData(previewAssets[0]) : undefined,
+      non_preview_asset: nonPreviewAssets[0] ? convertAssetData(nonPreviewAssets[0]) : undefined,
+      creator: creatorMap.get(work_uuid) || [],
+      tags: [], // We'll populate this if needed
+      categories: [], // We'll populate this if needed
+    };
+  });
+
+  return await Promise.all(workListPromises);
+}
+
+/**
+ * Search works by creator name
+ */
+export async function searchWorksByCreator(db: DrizzleDB, query: string): Promise<WorkListItem[]> {
+  // Get creator UUIDs that match the name search
+  const creatorUuids = await db
+    .select({ uuid: creator.uuid })
+    .from(creator)
+    .where(like(creator.name, `%${query}%`));
+
+  if (creatorUuids.length === 0) {
+    return [];
+  }
+
+  const creatorUuidList = creatorUuids.map(c => c.uuid);
+
+  // Get work UUIDs for these creators
+  const workUuids = await db
+    .select({ work_uuid: workCreator.workUuid })
+    .from(workCreator)
+    .where(inArray(workCreator.creatorUuid, creatorUuidList));
+
+  if (workUuids.length === 0) {
+    return [];
+  }
+
+  const workUuidList = Array.from(new Set(workUuids.map(w => w.work_uuid)));
+
+  // Get all creators for these works
+  const creators = await db
+    .select({
+      work_uuid: workCreator.workUuid,
+      creator_uuid: creator.uuid,
+      creator_name: creator.name,
+      creator_type: creator.type,
+      role: workCreator.role,
+    })
+    .from(workCreator)
+    .innerJoin(creator, eq(workCreator.creatorUuid, creator.uuid))
+    .where(inArray(workCreator.workUuid, workUuidList));
+
+  // Group creators by work UUID
+  const creatorMap = new Map<string, CreatorWithRole[]>();
+  creators.forEach(row => {
+    if (!creatorMap.has(row.work_uuid)) {
+      creatorMap.set(row.work_uuid, []);
+    }
+    creatorMap.get(row.work_uuid)!.push({
+      creator_uuid: row.creator_uuid,
+      creator_name: row.creator_name,
+      creator_type: row.creator_type,
+      role: row.role
+    });
+  });
+
+  // Get work details for each work
+  const workListPromises = workUuidList.map(async (work_uuid) => {
+    // Get titles
+    const titles = await getWorkTitles(db, work_uuid);
+
+    // Get assets
+    const previewAssets = await db
+      .select({
+        uuid: asset.uuid,
+        file_id: asset.fileId,
+        work_uuid: asset.workUuid,
+        asset_type: asset.assetType,
+        file_name: asset.fileName,
+        is_previewpic: asset.isPreviewpic,
+        language: asset.language,
+      })
+      .from(asset)
+      .where(
+        and(
+          eq(asset.workUuid, work_uuid),
+          eq(asset.assetType, 'picture'),
+          eq(asset.isPreviewpic, true)
+        )
+      )
+      .limit(1);
+
+    const nonPreviewAssets = await db
+      .select({
+        uuid: asset.uuid,
+        file_id: asset.fileId,
+        work_uuid: asset.workUuid,
+        asset_type: asset.assetType,
+        file_name: asset.fileName,
+        is_previewpic: asset.isPreviewpic,
+        language: asset.language,
+      })
+      .from(asset)
+      .where(
+        and(
+          eq(asset.workUuid, work_uuid),
+          eq(asset.assetType, 'picture')
+        )
+      )
+      .limit(1);
+
+    return {
+      work_uuid,
+      titles,
+      preview_asset: previewAssets[0] ? convertAssetData(previewAssets[0]) : undefined,
+      non_preview_asset: nonPreviewAssets[0] ? convertAssetData(nonPreviewAssets[0]) : undefined,
+      creator: creatorMap.get(work_uuid) || [],
+      tags: [], // We'll populate this if needed
+      categories: [], // We'll populate this if needed
+    };
+  });
+
+  return await Promise.all(workListPromises);
+}
+
+/**
+ * Search works (combines title and creator search)
+ */
+export async function searchWorks(
+  db: DrizzleDB, 
+  query: string, 
+  searchType: 'title' | 'creator' | 'all' = 'all'
+): Promise<WorkListItem[]> {
+  if (searchType === 'title') {
+    return await searchWorksByTitle(db, query);
+  } else if (searchType === 'creator') {
+    return await searchWorksByCreator(db, query);
+  } else {
+    // Search both title and creator, merge results and deduplicate
+    const [titleResults, creatorResults] = await Promise.all([
+      searchWorksByTitle(db, query),
+      searchWorksByCreator(db, query)
+    ]);
+
+    // Deduplicate by work_uuid
+    const resultMap = new Map<string, WorkListItem>();
+    titleResults.forEach(item => resultMap.set(item.work_uuid, item));
+    creatorResults.forEach(item => resultMap.set(item.work_uuid, item));
+
+    return Array.from(resultMap.values());
+  }
+}
+
+/**
+ * Get all available languages from work titles
+ */
+export async function getAvailableLanguages(db: DrizzleDB): Promise<string[]> {
+  const languages = await db
+    .select({ language: workTitle.language })
+    .from(workTitle)
+    .groupBy(workTitle.language)
+    .orderBy(workTitle.language);
+
+  return languages.map(row => row.language);
+}

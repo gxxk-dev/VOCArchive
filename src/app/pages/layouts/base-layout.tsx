@@ -1,6 +1,6 @@
 import { jsx } from 'hono/jsx'
 import { Footer } from '../footer'
-import { FooterSetting } from '../../database'
+import { FooterSetting } from '../../db/operations/admin'
 
 export interface BaseLayoutProps {
     title: string

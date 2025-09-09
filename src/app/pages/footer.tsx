@@ -1,5 +1,5 @@
 import { jsx } from 'hono/jsx'
-import { FooterSetting } from '../database'
+import { FooterSetting } from '../db/operations/admin'
 
 export const Footer = (props: { settings: FooterSetting[] }) => {
     const links = props.settings.filter(s => s.item_type === 'link');

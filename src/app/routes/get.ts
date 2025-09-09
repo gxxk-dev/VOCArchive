@@ -1,8 +1,14 @@
+import { Hono } from 'hono';
+import { createDrizzleClient } from '../db/client';
 import {
-    GetWorkByUUID, GetCreatorByUUID, GetMediaByUUID, GetAssetByUUID, GetRelationByUUID, GetFileURLByUUID,
-    GetTagByUUID, GetCategoryByUUID
-} from "../database"
-import { Hono } from 'hono'
+    getWorkByUUID, 
+    getCreatorByUUID, 
+    getMediaByUUID, 
+    getAssetByUUID,
+    getFileURLByUUID,
+    getTagByUUID, 
+    getCategoryByUUID
+} from "../db";
 
 export const getInfo = new Hono();
 
@@ -15,7 +21,8 @@ getInfo.get('/file/:uuid', async (c: any) => {
         return c.json({ error: 'Asset URL not configured' }, 500);
     }
     
-    const fileURL = await GetFileURLByUUID(c.env.DB, fileUUID, assetURL);
+    const db = createDrizzleClient(c.env.DB);
+    const fileURL = await getFileURLByUUID(db, fileUUID, assetURL);
     
     if (!fileURL) {
         return c.json({ error: 'File not found' }, 404);
@@ -26,42 +33,42 @@ getInfo.get('/file/:uuid', async (c: any) => {
 
 // 获取作品详情
 getInfo.get('/work/:uuid', async (c: any) => {
-    const result = await GetWorkByUUID(c.env.DB, c.req.param('uuid'));
+    const db = createDrizzleClient(c.env.DB);
+    const result = await getWorkByUUID(db, c.req.param('uuid'));
     return c.json(result);
 });
 
 // 获取创作者详情
 getInfo.get('/creator/:uuid', async (c: any) => {
-    const result = await GetCreatorByUUID(c.env.DB, c.req.param('uuid'));
+    const db = createDrizzleClient(c.env.DB);
+    const result = await getCreatorByUUID(db, c.req.param('uuid'));
     return c.json(result);
 });
 
 // 获取媒体详情
 getInfo.get('/media/:uuid', async (c: any) => {
-    const result = await GetMediaByUUID(c.env.DB, c.req.param('uuid'));
+    const db = createDrizzleClient(c.env.DB);
+    const result = await getMediaByUUID(db, c.req.param('uuid'));
     return c.json(result);
 });
 
 // 获取资产详情
 getInfo.get('/asset/:uuid', async (c: any) => {
-    const result = await GetAssetByUUID(c.env.DB, c.req.param('uuid'));
-    return c.json(result);
-});
-
-// 获取关系详情
-getInfo.get('/relation/:uuid', async (c: any) => {
-    const result = await GetRelationByUUID(c.env.DB, c.req.param('uuid'));
+    const db = createDrizzleClient(c.env.DB);
+    const result = await getAssetByUUID(db, c.req.param('uuid'));
     return c.json(result);
 });
 
 // 获取标签详情
 getInfo.get('/tag/:uuid', async (c: any) => {
-    const result = await GetTagByUUID(c.env.DB, c.req.param('uuid'));
+    const db = createDrizzleClient(c.env.DB);
+    const result = await getTagByUUID(db, c.req.param('uuid'));
     return c.json(result);
 });
 
 // 获取分类详情
 getInfo.get('/category/:uuid', async (c: any) => {
-    const result = await GetCategoryByUUID(c.env.DB, c.req.param('uuid'));
+    const db = createDrizzleClient(c.env.DB);
+    const result = await getCategoryByUUID(db, c.req.param('uuid'));
     return c.json(result);
 });

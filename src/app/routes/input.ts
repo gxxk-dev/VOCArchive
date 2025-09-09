@@ -1,9 +1,49 @@
-import { 
-    InputAsset, InputCreator, InputMedia, InputRelation, InputWork,
-    InputAssetRequestBody, InputCreatorRequestBody, InputMediaRequestBody, InputRelationRequestBody, InputWorkRequestBody,
-    InputTag, InputCategory, AddWorkTags, AddWorkCategories
-} from "../database";
+import { createDrizzleClient } from '../db/client';
+import { inputWork, inputAsset } from '../db/operations/work';
+import { inputCreator } from '../db/operations/creator';
+import { inputMedia } from '../db/operations/media';
+import { inputRelation } from '../db/operations/relation';
+import { inputTag, addWorkTags } from '../db/operations/tag';
+import { inputCategory, addWorkCategories } from '../db/operations/category';
+import { initializeDatabaseWithMigrations } from '../db/operations/admin';
+import type { Work, WorkTitle, CreatorWithRole, WikiRef, Asset, MediaSource, WorkRelation, Tag, Category } from '../db/operations/work';
 import { Hono } from "hono";
+
+// Request body interfaces
+interface InputWorkRequestBody {
+    work: Work;
+    titles: WorkTitle[];
+    license?: string;
+    creator?: CreatorWithRole[];
+    wikis?: WikiRef[];
+}
+
+interface InputCreatorRequestBody {
+    creator: { uuid: string; name: string; type: 'human' | 'virtual' };
+    wikis?: WikiRef[];
+}
+
+interface InputAssetRequestBody {
+    asset: Asset;
+    creator?: CreatorWithRole[];
+}
+
+interface InputMediaRequestBody {
+    uuid: string;
+    work_uuid: string;
+    is_music: boolean;
+    file_name: string;
+    url: string;
+    mime_type: string;
+    info: string;
+}
+
+interface InputRelationRequestBody {
+    uuid: string;
+    from_work_uuid: string;
+    to_work_uuid: string;
+    relation_type: 'original' | 'remix' | 'cover' | 'remake' | 'picture' | 'lyrics';
+}
 
 export const inputInfo = new Hono();
 
@@ -11,7 +51,8 @@ export const inputInfo = new Hono();
 inputInfo.post('/work', async (c: any) => {
     try {
         const body: InputWorkRequestBody = await c.req.json();
-        await InputWork(c.env.DB, body.work, body.titles || [], body.license || null, body.creator || [], body.wikis || []);
+        const db = createDrizzleClient(c.env.DB);
+        await inputWork(db, body.work, body.titles || [], body.license || null, body.creator || [], body.wikis || []);
         return c.json({ message: "Work added successfully." }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);
@@ -22,7 +63,8 @@ inputInfo.post('/work', async (c: any) => {
 inputInfo.post('/creator', async (c: any) => {
     try {
         const body: InputCreatorRequestBody = await c.req.json();
-        await InputCreator(c.env.DB, body.creator, body.wikis || []);
+        const db = createDrizzleClient(c.env.DB);
+        await inputCreator(db, body.creator, body.wikis || []);
         return c.json({ message: "Creator added successfully." }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);
@@ -33,7 +75,8 @@ inputInfo.post('/creator', async (c: any) => {
 inputInfo.post('/asset', async (c: any) => {
     try {
         const body: InputAssetRequestBody = await c.req.json();
-        await InputAsset(c.env.DB, body.asset, body.creator || []);
+        const db = createDrizzleClient(c.env.DB);
+        await inputAsset(db, body.asset, body.creator || []);
         return c.json({ message: "Asset added successfully." }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);
@@ -44,7 +87,8 @@ inputInfo.post('/asset', async (c: any) => {
 inputInfo.post('/relation', async (c: any) => {
     try {
         const body: InputRelationRequestBody = await c.req.json();
-        await InputRelation(c.env.DB, body);
+        const db = createDrizzleClient(c.env.DB);
+        await inputRelation(db, body);
         return c.json({ message: "Work relation added successfully." }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);
@@ -55,7 +99,8 @@ inputInfo.post('/relation', async (c: any) => {
 inputInfo.post('/media', async (c: any) => {
     try {
         const body: InputMediaRequestBody = await c.req.json();
-        await InputMedia(c.env.DB, body);
+        const db = createDrizzleClient(c.env.DB);
+        await inputMedia(db, body);
         return c.json({ message: "Media source added successfully." }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);
@@ -66,7 +111,8 @@ inputInfo.post('/media', async (c: any) => {
 inputInfo.post('/tag', async (c: any) => {
     try {
         const body: { uuid: string; name: string } = await c.req.json();
-        await InputTag(c.env.DB, body);
+        const db = createDrizzleClient(c.env.DB);
+        await inputTag(db, body);
         return c.json({ message: "Tag added successfully." }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);
@@ -77,7 +123,8 @@ inputInfo.post('/tag', async (c: any) => {
 inputInfo.post('/category', async (c: any) => {
     try {
         const body: { uuid: string; name: string; parent_uuid?: string } = await c.req.json();
-        await InputCategory(c.env.DB, body);
+        const db = createDrizzleClient(c.env.DB);
+        await inputCategory(db, body);
         return c.json({ message: "Category added successfully." }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);
@@ -93,7 +140,8 @@ inputInfo.post('/work-tags', async (c: any) => {
             return c.json({ error: 'Invalid request body' }, 400);
         }
         
-        const success = await AddWorkTags(c.env.DB, work_uuid, tag_uuids);
+        const db = createDrizzleClient(c.env.DB);
+        const success = await addWorkTags(db, work_uuid, tag_uuids);
         if (success) {
             return c.json({ message: 'Work tags added successfully.' });
         } else {
@@ -113,7 +161,8 @@ inputInfo.post('/work-categories', async (c: any) => {
             return c.json({ error: 'Invalid request body' }, 400);
         }
         
-        const success = await AddWorkCategories(c.env.DB, work_uuid, category_uuids);
+        const db = createDrizzleClient(c.env.DB);
+        const success = await addWorkCategories(db, work_uuid, category_uuids);
         if (success) {
             return c.json({ message: 'Work categories added successfully.' });
         } else {
@@ -121,5 +170,17 @@ inputInfo.post('/work-categories', async (c: any) => {
         }
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);
+    }
+});
+
+// 数据库初始化
+inputInfo.post('/dbinit', async (c: any) => {
+    try {
+        const db = createDrizzleClient(c.env.DB);
+        await initializeDatabaseWithMigrations(db);
+        return c.json({ message: 'Database initialized successfully with Drizzle migrations' });
+    } catch (error) {
+        console.error('Database initialization error:', error);
+        return c.json({ error: 'Failed to initialize database' }, 500);
     }
 });

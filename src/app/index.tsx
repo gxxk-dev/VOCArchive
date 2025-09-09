@@ -13,7 +13,12 @@ import { jwt } from 'hono/jwt'
 
 import { IndexPage } from './pages/index'
 import { PlayerPage } from './pages/player'
-import { GetFooterSettings, GetWorkByUUID, GetWorkListWithPagination, SearchWorks, GetWorksByTag, GetWorksByCategory, GetTagByUUID, GetCategoryByUUID, GetTotalWorkCount, GetWorkCountByTag, GetWorkCountByCategory, GetAvailableLanguages } from './database'
+import { createDrizzleClient } from './db/client'
+import { getFooterSettings, initializeDatabaseWithMigrations } from './db/operations/admin'
+import { getWorkByUUID, getWorkListWithPagination, getTotalWorkCount } from './db/operations/work'
+import { searchWorks, getAvailableLanguages } from './db/operations/search'
+import { getWorksByTag, getWorkCountByTag, getTagByUUID } from './db/operations/tag'
+import { getWorksByCategory, getWorkCountByCategory, getCategoryByUUID } from './db/operations/category'
 
 const apiApp = new Hono<{ Bindings: CloudflareBindings }>()
 
@@ -53,6 +58,18 @@ apiApp.get('/config', (c:any) => {
   })
 })
 
+// 数据库初始化 (GET方式)
+apiApp.get('/dbinit', async (c:any) => {
+    try {
+        const db = createDrizzleClient(c.env.DB);
+        await initializeDatabaseWithMigrations(db);
+        return c.json({ message: 'Database initialized successfully with Drizzle migrations' });
+    } catch (error) {
+        console.error('Database initialization error:', error);
+        return c.json({ error: 'Failed to initialize database' }, 500);
+    }
+})
+
 apiApp.get('/sw_config.js', (c:any) => {
     const assetUrl = c.env.ASSET_URL;
     const hostname = new URL(assetUrl).hostname;
@@ -80,6 +97,7 @@ app.get('/', async (c) => {
   const { search, page, type, tag, category, lang } = c.req.query()
   console.log(search, page, type, tag, category, lang)
   
+  const db = createDrizzleClient(c.env.DB);
   let works;
   let totalCount = 0;
   let filterInfo = null;
@@ -88,12 +106,12 @@ app.get('/', async (c) => {
   const preferredLanguage = lang || 'auto';
   
   if (search) {
-    works = await SearchWorks(c.env.DB, search, type as 'title' | 'creator' | 'all' || 'all')
+    works = await searchWorks(db, search, type as 'title' | 'creator' | 'all' || 'all')
     totalCount = works.length; // Search returns all results
   } else if (tag) {
-    works = await GetWorksByTag(c.env.DB, tag, currentPage, pageSize)
-    totalCount = await GetWorkCountByTag(c.env.DB, tag)
-    const tagInfo = await GetTagByUUID(c.env.DB, tag)
+    works = await getWorksByTag(db, tag, currentPage, pageSize)
+    totalCount = await getWorkCountByTag(db, tag)
+    const tagInfo = await getTagByUUID(db, tag)
     if (tagInfo) {
       filterInfo = {
         type: 'tag' as const,
@@ -102,9 +120,9 @@ app.get('/', async (c) => {
       }
     }
   } else if (category) {
-    works = await GetWorksByCategory(c.env.DB, category, currentPage, pageSize)
-    totalCount = await GetWorkCountByCategory(c.env.DB, category)
-    const categoryInfo = await GetCategoryByUUID(c.env.DB, category)
+    works = await getWorksByCategory(db, category, currentPage, pageSize)
+    totalCount = await getWorkCountByCategory(db, category)
+    const categoryInfo = await getCategoryByUUID(db, category)
     if (categoryInfo) {
       filterInfo = {
         type: 'category' as const, 
@@ -113,12 +131,12 @@ app.get('/', async (c) => {
       }
     }
   } else {
-    works = await GetWorkListWithPagination(c.env.DB, currentPage, pageSize)
-    totalCount = await GetTotalWorkCount(c.env.DB)
+    works = await getWorkListWithPagination(db, currentPage, pageSize)
+    totalCount = await getTotalWorkCount(db)
   }
   
-  const footerSettings = await GetFooterSettings(c.env.DB)
-  const availableLanguages = await GetAvailableLanguages(c.env.DB)
+  const footerSettings = await getFooterSettings(db)
+  const availableLanguages = await getAvailableLanguages(db)
   return c.html(<IndexPage 
     works={works} 
     footerSettings={footerSettings}
@@ -137,11 +155,12 @@ app.get('/player', async (c) => {
     if (!uuid) {
         return c.notFound()
     }
-    const workInfo = await GetWorkByUUID(c.env.DB, uuid)
+    const db = createDrizzleClient(c.env.DB);
+    const workInfo = await getWorkByUUID(db, uuid)
     if (!workInfo) {
         return c.notFound()
     }
-    const footerSettings = await GetFooterSettings(c.env.DB)
+    const footerSettings = await getFooterSettings(db)
     return c.html(<PlayerPage workInfo={workInfo} footerSettings={footerSettings} />)
 })
 

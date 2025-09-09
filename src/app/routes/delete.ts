@@ -1,9 +1,33 @@
-import {
-    DeleteCreator, DeleteWork, DeleteAsset, DeleteRelation, DeleteMedia, DeleteWorksByCreator, DropUserTables,
-    DeleteCreatorRequestBody, DeleteWorkRequestBody, DeleteAssetRequestBody, DeleteRelationRequestBody, DeleteMediaRequestBody,
-    DeleteTag, DeleteCategory, RemoveWorkTags, RemoveWorkCategories, RemoveAllWorkTags, RemoveAllWorkCategories
-} from "../database"
+import { createDrizzleClient } from '../db/client';
+import { deleteWork, deleteAsset } from '../db/operations/work';
+import { deleteCreator, deleteWorksByCreator } from '../db/operations/creator';
+import { deleteMedia } from '../db/operations/media';
+import { deleteRelation } from '../db/operations/relation';
+import { deleteTag, removeWorkTags, removeAllWorkTags } from '../db/operations/tag';
+import { deleteCategory, removeWorkCategories, removeAllWorkCategories } from '../db/operations/category';
+import { dropUserTables } from '../db/operations/admin';
 import { Hono } from "hono";
+
+// Request body interfaces
+interface DeleteCreatorRequestBody {
+    creator_uuid: string;
+}
+
+interface DeleteWorkRequestBody {
+    work_uuid: string;
+}
+
+interface DeleteAssetRequestBody {
+    asset_uuid: string;
+}
+
+interface DeleteRelationRequestBody {
+    relation_uuid: string;
+}
+
+interface DeleteMediaRequestBody {
+    media_uuid: string;
+}
 
 export const deleteInfo = new Hono();
 
@@ -11,7 +35,8 @@ export const deleteInfo = new Hono();
 deleteInfo.post('/creator', async (c: any) => {
     try {
         const body: DeleteCreatorRequestBody = await c.req.json();
-        const result = await DeleteCreator(c.env.DB, body.creator_uuid);
+        const db = createDrizzleClient(c.env.DB);
+        const result = await deleteCreator(db, body.creator_uuid);
         
         if (!result) {
             return c.json({ error: 'Creator not found or delete failed.' }, 404);
@@ -27,7 +52,8 @@ deleteInfo.post('/creator', async (c: any) => {
 deleteInfo.post('/work', async (c: any) => {
     try {
         const body: DeleteWorkRequestBody = await c.req.json();
-        const result = await DeleteWork(c.env.DB, body.work_uuid);
+        const db = createDrizzleClient(c.env.DB);
+        const result = await deleteWork(db, body.work_uuid);
         
         if (!result) {
             return c.json({ error: 'Work not found or delete failed.' }, 404);
@@ -43,7 +69,8 @@ deleteInfo.post('/work', async (c: any) => {
 deleteInfo.post('/asset', async (c: any) => {
     try {
         const body: DeleteAssetRequestBody = await c.req.json();
-        const result = await DeleteAsset(c.env.DB, body.asset_uuid);
+        const db = createDrizzleClient(c.env.DB);
+        const result = await deleteAsset(db, body.asset_uuid);
         
         if (!result) {
             return c.json({ error: 'Asset not found or delete failed.' }, 404);
@@ -59,7 +86,8 @@ deleteInfo.post('/asset', async (c: any) => {
 deleteInfo.post('/relation', async (c: any) => {
     try {
         const body: DeleteRelationRequestBody = await c.req.json();
-        const result = await DeleteRelation(c.env.DB, body.relation_uuid);
+        const db = createDrizzleClient(c.env.DB);
+        const result = await deleteRelation(db, body.relation_uuid);
         
         if (!result) {
             return c.json({ error: 'Relation not found or delete failed.' }, 404);
@@ -75,7 +103,8 @@ deleteInfo.post('/relation', async (c: any) => {
 deleteInfo.post('/media', async (c: any) => {
     try {
         const body: DeleteMediaRequestBody = await c.req.json();
-        const result = await DeleteMedia(c.env.DB, body.media_uuid);
+        const db = createDrizzleClient(c.env.DB);
+        const result = await deleteMedia(db, body.media_uuid);
         
         if (!result) {
             return c.json({ error: 'Media not found or delete failed.' }, 404);
@@ -91,7 +120,8 @@ deleteInfo.post('/media', async (c: any) => {
 deleteInfo.post('/tag', async (c: any) => {
     try {
         const body: { tag_uuid: string } = await c.req.json();
-        const result = await DeleteTag(c.env.DB, body.tag_uuid);
+        const db = createDrizzleClient(c.env.DB);
+        const result = await deleteTag(db, body.tag_uuid);
         
         if (!result) {
             return c.json({ error: 'Tag not found or delete failed.' }, 404);
@@ -107,7 +137,8 @@ deleteInfo.post('/tag', async (c: any) => {
 deleteInfo.post('/category', async (c: any) => {
     try {
         const body: { category_uuid: string } = await c.req.json();
-        const result = await DeleteCategory(c.env.DB, body.category_uuid);
+        const db = createDrizzleClient(c.env.DB);
+        const result = await deleteCategory(db, body.category_uuid);
         
         if (!result) {
             return c.json({ error: 'Category not found or delete failed.' }, 404);
@@ -123,7 +154,8 @@ deleteInfo.post('/category', async (c: any) => {
 deleteInfo.post('/worksbycreator', async (c: any) => {
     try {
         const body: DeleteCreatorRequestBody = await c.req.json();
-        const deletedCount = await DeleteWorksByCreator(c.env.DB, body.creator_uuid);
+        const db = createDrizzleClient(c.env.DB);
+        const deletedCount = await deleteWorksByCreator(db, body.creator_uuid);
         
         return c.json({ message: `Successfully deleted ${deletedCount} work.` }, 200);
     } catch (error) {
@@ -134,7 +166,8 @@ deleteInfo.post('/worksbycreator', async (c: any) => {
 // 清空数据库
 deleteInfo.post('/dbclear', async (c: any) => {
     try {
-        await DropUserTables(c.env.DB);
+        const db = createDrizzleClient(c.env.DB);
+        await dropUserTables(db);
         return c.json({ message: "OK." }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);
@@ -150,7 +183,8 @@ deleteInfo.post('/work-tags', async (c: any) => {
             return c.json({ error: 'Invalid request body' }, 400);
         }
         
-        const success = await RemoveWorkTags(c.env.DB, work_uuid, tag_uuids);
+        const db = createDrizzleClient(c.env.DB);
+        const success = await removeWorkTags(db, work_uuid, tag_uuids);
         if (success) {
             return c.json({ message: 'Work tags removed successfully.' });
         } else {
@@ -170,7 +204,8 @@ deleteInfo.post('/work-categories', async (c: any) => {
             return c.json({ error: 'Invalid request body' }, 400);
         }
         
-        const success = await RemoveWorkCategories(c.env.DB, work_uuid, category_uuids);
+        const db = createDrizzleClient(c.env.DB);
+        const success = await removeWorkCategories(db, work_uuid, category_uuids);
         if (success) {
             return c.json({ message: 'Work categories removed successfully.' });
         } else {
@@ -190,7 +225,8 @@ deleteInfo.post('/work-tags-all', async (c: any) => {
             return c.json({ error: 'Invalid request body: work_uuid required' }, 400);
         }
         
-        const success = await RemoveAllWorkTags(c.env.DB, work_uuid);
+        const db = createDrizzleClient(c.env.DB);
+        const success = await removeAllWorkTags(db, work_uuid);
         if (success) {
             return c.json({ message: 'All work tags removed successfully.' });
         } else {
@@ -210,7 +246,8 @@ deleteInfo.post('/work-categories-all', async (c: any) => {
             return c.json({ error: 'Invalid request body: work_uuid required' }, 400);
         }
         
-        const success = await RemoveAllWorkCategories(c.env.DB, work_uuid);
+        const db = createDrizzleClient(c.env.DB);
+        const success = await removeAllWorkCategories(db, work_uuid);
         if (success) {
             return c.json({ message: 'All work categories removed successfully.' });
         } else {

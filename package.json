@@ -11,12 +11,12 @@
 		"@cloudflare/workers-types": "^4.20250812.0",
 		"@types/node": "^24.2.0",
 		"@types/uuid": "^10.0.0",
+		"drizzle-kit": "^0.31.4",
 		"typescript": "^5.5.2",
 		"wrangler": "^4.25.1"
 	},
 	"dependencies": {
 		"@libsql/client": "^0.15.15",
-		"drizzle-kit": "^0.18.1",
 		"drizzle-orm": "^0.44.5",
 		"hono": "^4.9.0",
 		"otplib": "^12.0.1",
