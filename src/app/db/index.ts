@@ -16,86 +16,86 @@ export * as AdminOperations from './operations/admin';
 
 // Convenience re-exports of common functions
 export {
-  // Work operations
-  getWorkListWithPagination,
-  getWorkByUUID,
-  getTotalWorkCount,
-  inputWork,
-  updateWork,
-  deleteWork
+    // Work operations
+    getWorkListWithPagination,
+    getWorkByUUID,
+    getTotalWorkCount,
+    inputWork,
+    updateWork,
+    deleteWork
 } from './operations/work';
 
 export {
-  // Creator operations
-  getCreatorByUUID,
-  listCreators,
-  inputCreator,
-  updateCreator,
-  deleteCreator
+    // Creator operations
+    getCreatorByUUID,
+    listCreators,
+    inputCreator,
+    updateCreator,
+    deleteCreator
 } from './operations/creator';
 
 export {
-  // Media operations
-  getMediaByUUID,
-  listMedia,
-  inputMedia,
-  updateMedia,
-  deleteMedia,
-  getFileURLByUUID
+    // Media operations
+    getMediaByUUID,
+    listMedia,
+    inputMedia,
+    updateMedia,
+    deleteMedia,
+    getFileURLByUUID
 } from './operations/media';
 
 export {
-  // Asset operations
-  getAssetByUUID,
-  listAssets,
-  inputAsset,
-  updateAsset,
-  deleteAsset
+    // Asset operations
+    getAssetByUUID,
+    listAssets,
+    inputAsset,
+    updateAsset,
+    deleteAsset
 } from './operations/asset';
 
 export {
-  // Tag operations
-  listTags,
-  getTagByUUID,
-  getWorksByTag,
-  getWorkCountByTag,
-  inputTag,
-  updateTag,
-  deleteTag,
-  addWorkTags,
-  removeWorkTags,
-  removeAllWorkTags
+    // Tag operations
+    listTags,
+    getTagByUUID,
+    getWorksByTag,
+    getWorkCountByTag,
+    inputTag,
+    updateTag,
+    deleteTag,
+    addWorkTags,
+    removeWorkTags,
+    removeAllWorkTags
 } from './operations/tag';
 
 export {
-  // Category operations
-  listCategories,
-  getCategoryByUUID,
-  getWorksByCategory,
-  getWorkCountByCategory,
-  inputCategory,
-  updateCategory,
-  deleteCategory,
-  addWorkCategories,
-  removeWorkCategories,
-  removeAllWorkCategories
+    // Category operations
+    listCategories,
+    getCategoryByUUID,
+    getWorksByCategory,
+    getWorkCountByCategory,
+    inputCategory,
+    updateCategory,
+    deleteCategory,
+    addWorkCategories,
+    removeWorkCategories,
+    removeAllWorkCategories
 } from './operations/category';
 
 export {
-  // Search operations
-  searchWorks,
-  searchWorksByTitle,
-  searchWorksByCreator,
-  getAvailableLanguages
+    // Search operations
+    searchWorks,
+    searchWorksByTitle,
+    searchWorksByCreator,
+    getAvailableLanguages
 } from './operations/search';
 
 export {
-  // Admin operations
-  getFooterSettings,
-  insertFooterSetting,
-  updateFooterSetting,
-  deleteFooterSetting,
-  dropUserTables,
-  exportAllTables,
-  initializeDatabaseWithMigrations
+    // Admin operations
+    getFooterSettings,
+    insertFooterSetting,
+    updateFooterSetting,
+    deleteFooterSetting,
+    dropUserTables,
+    exportAllTables,
+    initializeDatabaseWithMigrations
 } from './operations/admin';

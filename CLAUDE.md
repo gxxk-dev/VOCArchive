@@ -64,38 +64,38 @@ The application uses a comprehensive relational schema:
 
 #### Core Data Interface
 - **Authentication**:
-  - `POST /api/auth/login`: User login
-  - `POST /api/auth/reset-secrets`: Reset authentication secrets
+    - `POST /api/auth/login`: User login
+    - `POST /api/auth/reset-secrets`: Reset authentication secrets
 
 - **Data Query (Read)**:
-  - `GET /api/list/{type}`: Get paginated list of specified type (e.g. `/api/list/works`)
-  - `GET /api/get/{type}/{uuid}`: Get single item details by UUID (e.g. `/api/get/work/{uuid}`)
-  - `GET /api/get/file/{uuid}`: Get file redirect to download URL for media_source/asset UUID (returns 302 redirect)
-  - `GET /api/search/{query}`: Search songs by keyword (matches title field with multi-language support)
-  - `GET /api/list/tags`: Get all tags
-  - `GET /api/list/categories`: Get category tree structure
-  - `GET /api/list/works-by-tag/{tag_uuid}/{page}/{size?}`: Get works by tag with pagination
-  - `GET /api/list/works-by-category/{category_uuid}/{page}/{size?}`: Get works by category with pagination
+    - `GET /api/list/{type}`: Get paginated list of specified type (e.g. `/api/list/works`)
+    - `GET /api/get/{type}/{uuid}`: Get single item details by UUID (e.g. `/api/get/work/{uuid}`)
+    - `GET /api/get/file/{uuid}`: Get file redirect to download URL for media_source/asset UUID (returns 302 redirect)
+    - `GET /api/search/{query}`: Search songs by keyword (matches title field with multi-language support)
+    - `GET /api/list/tags`: Get all tags
+    - `GET /api/list/categories`: Get category tree structure
+    - `GET /api/list/works-by-tag/{tag_uuid}/{page}/{size?}`: Get works by tag with pagination
+    - `GET /api/list/works-by-category/{category_uuid}/{page}/{size?}`: Get works by category with pagination
 
 - **Data Modification (Write)** - *Requires Authentication*:
-  - `POST /api/input/{type}`: Create new item (e.g. `/api/input/work`, `/api/input/tag`, `/api/input/category`)
-  - `POST /api/update/{type}`: Update existing item (e.g. `/api/update/work`, `/api/update/tag`, `/api/update/category`)
-  - `POST /api/delete/{type}`: Delete item (e.g. `/api/delete/work`, `/api/delete/tag`, `/api/delete/category`)
-  - `POST /api/input/work-tags`: Batch add tags to work
-  - `POST /api/input/work-categories`: Batch add categories to work
-  - `POST /api/delete/work-tags`: Batch remove tags from work  
-  - `POST /api/delete/work-categories`: Batch remove categories from work
+    - `POST /api/input/{type}`: Create new item (e.g. `/api/input/work`, `/api/input/tag`, `/api/input/category`)
+    - `POST /api/update/{type}`: Update existing item (e.g. `/api/update/work`, `/api/update/tag`, `/api/update/category`)
+    - `POST /api/delete/{type}`: Delete item (e.g. `/api/delete/work`, `/api/delete/tag`, `/api/delete/category`)
+    - `POST /api/input/work-tags`: Batch add tags to work
+    - `POST /api/input/work-categories`: Batch add categories to work
+    - `POST /api/delete/work-tags`: Batch remove tags from work  
+    - `POST /api/delete/work-categories`: Batch remove categories from work
 
 #### Management and Testing Interface
 - **Database Management** - *Requires Authentication*:
-  - `POST /api/input/dbinit` or `GET /api/dbinit`: Initialize database tables
-  - `POST /api/delete/dbclear` or `GET /api/dbclear`: Clear user data tables
+    - `POST /api/input/dbinit` or `GET /api/dbinit`: Initialize database tables
+    - `POST /api/delete/dbclear` or `GET /api/dbclear`: Clear user data tables
 
 #### File Access
 - `GET /api/get/file/{uuid}`: Redirect to download URL for media_source or asset UUID
-  - Returns 302 redirect to actual file download URL
-  - Works with both media_source UUIDs (direct URL) and asset UUIDs (constructed from ASSET_URL + file_id)
-  - Returns 404 if UUID not found, 500 if ASSET_URL not configured
+    - Returns 302 redirect to actual file download URL
+    - Works with both media_source UUIDs (direct URL) and asset UUIDs (constructed from ASSET_URL + file_id)
+    - Returns 404 if UUID not found, 500 if ASSET_URL not configured
 
 #### External Assets (Legacy)
 - `GET https://assets.vocarchive.com/{file_id}`: Download files from object storage (Demo only)
@@ -172,11 +172,11 @@ Required environment variables:
 ### Naming Standards
 - **Database/Routes**: snake_case
 - **Classes/Objects**: 
-  - Callable objects: PascalCase
-  - Data/route objects: camelCase
+    - Callable objects: PascalCase
+    - Data/route objects: camelCase
 - **Files**: 
-  - Route-related: kebab-case (based on route paths)
-  - Others: snake_case
+    - Route-related: kebab-case (based on route paths)
+    - Others: snake_case
 - **System concepts**: lowercase singular words
 
 ### TypeScript Integration

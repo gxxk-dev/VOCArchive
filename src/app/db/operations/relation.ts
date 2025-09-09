@@ -4,125 +4,125 @@ import { workRelation } from '../schema';
 
 // Types
 export interface WorkRelation {
-  uuid: string;
-  from_work_uuid: string;
-  to_work_uuid: string;
-  relation_type: 'original' | 'remix' | 'cover' | 'remake' | 'picture' | 'lyrics';
+    uuid: string;
+    from_work_uuid: string;
+    to_work_uuid: string;
+    relation_type: 'original' | 'remix' | 'cover' | 'remake' | 'picture' | 'lyrics';
 }
 
 // UUID validation
 const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function validateUUID(uuid: string): boolean {
-  return UUID_PATTERNS.test(uuid);
+    return UUID_PATTERNS.test(uuid);
 }
 
 /**
  * Get relation by UUID
  */
 export async function getRelationByUUID(db: DrizzleDB, relationUuid: string): Promise<WorkRelation | null> {
-  if (!validateUUID(relationUuid)) return null;
+    if (!validateUUID(relationUuid)) return null;
 
-  const result = await db
-    .select({
-      uuid: workRelation.uuid,
-      from_work_uuid: workRelation.fromWorkUuid,
-      to_work_uuid: workRelation.toWorkUuid,
-      relation_type: workRelation.relationType,
-    })
-    .from(workRelation)
-    .where(eq(workRelation.uuid, relationUuid))
-    .limit(1);
+    const result = await db
+        .select({
+            uuid: workRelation.uuid,
+            from_work_uuid: workRelation.fromWorkUuid,
+            to_work_uuid: workRelation.toWorkUuid,
+            relation_type: workRelation.relationType,
+        })
+        .from(workRelation)
+        .where(eq(workRelation.uuid, relationUuid))
+        .limit(1);
 
-  return result[0] || null;
+    return result[0] || null;
 }
 
 /**
  * List all relations with pagination
  */
 export async function listRelations(db: DrizzleDB, page: number, pageSize: number): Promise<WorkRelation[]> {
-  if (page < 1 || pageSize < 1) return [];
+    if (page < 1 || pageSize < 1) return [];
 
-  const offset = (page - 1) * pageSize;
+    const offset = (page - 1) * pageSize;
 
-  const relations = await db
-    .select({
-      uuid: workRelation.uuid,
-      from_work_uuid: workRelation.fromWorkUuid,
-      to_work_uuid: workRelation.toWorkUuid,
-      relation_type: workRelation.relationType,
-    })
-    .from(workRelation)
-    .limit(pageSize)
-    .offset(offset);
+    const relations = await db
+        .select({
+            uuid: workRelation.uuid,
+            from_work_uuid: workRelation.fromWorkUuid,
+            to_work_uuid: workRelation.toWorkUuid,
+            relation_type: workRelation.relationType,
+        })
+        .from(workRelation)
+        .limit(pageSize)
+        .offset(offset);
 
-  return relations;
+    return relations;
 }
 
 /**
  * Create a new work relation
  */
 export async function inputRelation(db: DrizzleDB, relationData: WorkRelation): Promise<boolean> {
-  if (!validateUUID(relationData.uuid) || 
-      !validateUUID(relationData.from_work_uuid) || 
-      !validateUUID(relationData.to_work_uuid)) {
-    return false;
-  }
+    if (!validateUUID(relationData.uuid) || 
+            !validateUUID(relationData.from_work_uuid) || 
+            !validateUUID(relationData.to_work_uuid)) {
+        return false;
+    }
 
-  try {
-    await db.insert(workRelation).values({
-      uuid: relationData.uuid,
-      fromWorkUuid: relationData.from_work_uuid,
-      toWorkUuid: relationData.to_work_uuid,
-      relationType: relationData.relation_type,
-    });
-    return true;
-  } catch (error) {
-    console.error('Error creating relation:', error);
-    return false;
-  }
+    try {
+        await db.insert(workRelation).values({
+            uuid: relationData.uuid,
+            fromWorkUuid: relationData.from_work_uuid,
+            toWorkUuid: relationData.to_work_uuid,
+            relationType: relationData.relation_type,
+        });
+        return true;
+    } catch (error) {
+        console.error('Error creating relation:', error);
+        return false;
+    }
 }
 
 /**
  * Update a work relation
  */
 export async function updateRelation(
-  db: DrizzleDB, 
-  relationUuid: string, 
-  relationData: Omit<WorkRelation, 'uuid'>
+    db: DrizzleDB, 
+    relationUuid: string, 
+    relationData: Omit<WorkRelation, 'uuid'>
 ): Promise<boolean> {
-  if (!validateUUID(relationUuid) || 
-      !validateUUID(relationData.from_work_uuid) || 
-      !validateUUID(relationData.to_work_uuid)) {
-    return false;
-  }
+    if (!validateUUID(relationUuid) || 
+            !validateUUID(relationData.from_work_uuid) || 
+            !validateUUID(relationData.to_work_uuid)) {
+        return false;
+    }
 
-  try {
-    await db
-      .update(workRelation)
-      .set({
-        fromWorkUuid: relationData.from_work_uuid,
-        toWorkUuid: relationData.to_work_uuid,
-        relationType: relationData.relation_type,
-      })
-      .where(eq(workRelation.uuid, relationUuid));
-    return true;
-  } catch (error) {
-    console.error('Error updating relation:', error);
-    return false;
-  }
+    try {
+        await db
+            .update(workRelation)
+            .set({
+                fromWorkUuid: relationData.from_work_uuid,
+                toWorkUuid: relationData.to_work_uuid,
+                relationType: relationData.relation_type,
+            })
+            .where(eq(workRelation.uuid, relationUuid));
+        return true;
+    } catch (error) {
+        console.error('Error updating relation:', error);
+        return false;
+    }
 }
 
 /**
  * Delete a work relation
  */
 export async function deleteRelation(db: DrizzleDB, relationUuid: string): Promise<boolean> {
-  if (!validateUUID(relationUuid)) return false;
+    if (!validateUUID(relationUuid)) return false;
 
-  try {
-    await db.delete(workRelation).where(eq(workRelation.uuid, relationUuid));
-    return true;
-  } catch (error) {
-    console.error('Error deleting relation:', error);
-    return false;
-  }
+    try {
+        await db.delete(workRelation).where(eq(workRelation.uuid, relationUuid));
+        return true;
+    } catch (error) {
+        console.error('Error deleting relation:', error);
+        return false;
+    }
 }

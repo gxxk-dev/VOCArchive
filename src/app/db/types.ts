@@ -1,21 +1,21 @@
 import type { InferSelectModel, InferInsertModel } from 'drizzle-orm';
 import {
-  creator,
-  creatorWiki,
-  work,
-  workTitle,
-  workLicense,
-  mediaSource,
-  asset,
-  workCreator,
-  assetCreator,
-  workRelation,
-  workWiki,
-  tag,
-  category,
-  workTag,
-  workCategory,
-  footerSettings,
+    creator,
+    creatorWiki,
+    work,
+    workTitle,
+    workLicense,
+    mediaSource,
+    asset,
+    workCreator,
+    assetCreator,
+    workRelation,
+    workWiki,
+    tag,
+    category,
+    workTag,
+    workCategory,
+    footerSettings,
 } from './schema';
 
 // Basic table types
@@ -70,60 +70,60 @@ export type NewFooterSettings = InferInsertModel<typeof footerSettings>;
 // Composite types for complex queries (matching existing interfaces)
 
 export interface WikiRef {
-  platform: string;
-  identifier: string;
+    platform: string;
+    identifier: string;
 }
 
 export interface CreatorWithRole {
-  creator_uuid: string;
-  creator_name?: string;
-  creator_type: 'human' | 'virtual';
-  role: string;
-  wikis?: WikiRef[];
+    creator_uuid: string;
+    creator_name?: string;
+    creator_type: 'human' | 'virtual';
+    role: string;
+    wikis?: WikiRef[];
 }
 
 export interface AssetWithCreators extends Asset {
-  creator: CreatorWithRole[];
+    creator: CreatorWithRole[];
 }
 
 export interface CategoryWithChildren extends Category {
-  children?: CategoryWithChildren[];
+    children?: CategoryWithChildren[];
 }
 
 export interface WorkRelationWithTitles extends WorkRelation {
-  related_work_titles?: {
-    from_work_titles: Array<{ 
-      language: string;
-      title: string;
-    }>;
-    to_work_titles: Array<{ 
-      language: string;
-      title: string;
-    }>;
-  };
+    related_work_titles?: {
+        from_work_titles: Array<{ 
+            language: string;
+            title: string;
+        }>;
+        to_work_titles: Array<{ 
+            language: string;
+            title: string;
+        }>;
+    };
 }
 
 export interface WorkInfo {
-  work: Work;
-  titles: WorkTitle[];
-  license?: string;
-  media_sources: MediaSource[];
-  asset: AssetWithCreators[];
-  creator: CreatorWithRole[];
-  relation: WorkRelationWithTitles[];
-  wikis: WikiRef[];
-  tags?: Tag[];
-  categories?: Category[];
+    work: Work;
+    titles: WorkTitle[];
+    license?: string;
+    media_sources: MediaSource[];
+    asset: AssetWithCreators[];
+    creator: CreatorWithRole[];
+    relation: WorkRelationWithTitles[];
+    wikis: WikiRef[];
+    tags?: Tag[];
+    categories?: Category[];
 }
 
 export interface WorkListItem {
-  work_uuid: string;
-  titles: WorkTitle[];
-  preview_asset?: Asset;
-  non_preview_asset?: Asset;
-  creator: CreatorWithRole[];
-  tags: Tag[];
-  categories: Category[];
+    work_uuid: string;
+    titles: WorkTitle[];
+    preview_asset?: Asset;
+    non_preview_asset?: Asset;
+    creator: CreatorWithRole[];
+    tags: Tag[];
+    categories: Category[];
 }
 
 // Enum types for better type safety
@@ -135,18 +135,18 @@ export type FooterItemType = 'link' | 'social' | 'copyright';
 
 // Utility types for API responses
 export interface PaginationParams {
-  page: number;
-  pageSize: number;
+    page: number;
+    pageSize: number;
 }
 
 export interface SearchParams {
-  query?: string;
-  type?: 'title' | 'creator' | 'all';
-  language?: string;
+    query?: string;
+    type?: 'title' | 'creator' | 'all';
+    language?: string;
 }
 
 export interface FilterParams {
-  tag?: string;
-  category?: string;
-  language?: string;
+    tag?: string;
+    category?: string;
+    language?: string;
 }
