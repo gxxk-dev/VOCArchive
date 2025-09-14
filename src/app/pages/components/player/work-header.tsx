@@ -20,6 +20,7 @@ export const WorkHeader = (props: WorkHeaderProps) => {
             const officialTitle = workInfo.titles.find((t: any) => t.is_official === 1);
             if (officialTitle) {
                 displayTitle = officialTitle.title;
+                isOfficialTitle = true;
             } else {
                 displayTitle = workInfo.titles[0].title;
                 isOfficialTitle = false;

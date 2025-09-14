@@ -8,6 +8,13 @@
       "when": 1757436310358,
       "tag": "0000_broad_shooting_star",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1757861907093,
+      "tag": "0001_steady_nightmare",
+      "breakpoints": true
     }
   ]
 }
