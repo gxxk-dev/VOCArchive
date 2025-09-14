@@ -1,9 +1,58 @@
 import { jsx } from 'hono/jsx'
 
+export interface WorkTitle {
+    work_uuid: string
+    is_official: boolean
+    language: string
+    title: string
+}
+
+export interface WorkCreator {
+    uuid: string
+    creator_name: string
+    role: string
+}
+
+export interface WorkTag {
+    uuid: string
+    name: string
+}
+
+export interface WorkCategory {
+    uuid: string
+    name: string
+    parent_uuid?: string
+}
+
+export interface WorkInfo {
+    work: {
+        uuid: string
+        copyright_basis: string
+    }
+    titles: WorkTitle[]
+    creator: WorkCreator[]
+    tags?: WorkTag[]
+    categories?: WorkCategory[]
+}
+
 export interface WorkHeaderProps {
-    workInfo: any
+    workInfo: WorkInfo
     userLang: string
 }
+
+const languageNames: Record<string, string> = {
+    'zh-cn': '中文 (简体)',
+    'zh-tw': '中文 (繁體)', 
+    'ja': '日本語',
+    'en': 'English',
+    'ko': '한국어',
+    'es': 'Español',
+    'fr': 'Français',
+    'de': 'Deutsch',
+    'it': 'Italiano',
+    'pt': 'Português',
+    'ru': 'Русский'
+};
 
 export const WorkHeader = (props: WorkHeaderProps) => {
     const { workInfo, userLang } = props;
@@ -12,12 +61,12 @@ export const WorkHeader = (props: WorkHeaderProps) => {
     let isOfficialTitle = true;
 
     if (workInfo.titles && workInfo.titles.length > 0) {
-        const userLangTitle = workInfo.titles.find((t: any) => t.language === userLang);
+        const userLangTitle = workInfo.titles.find((t: WorkTitle) => t.language === userLang);
         if (userLangTitle) {
             displayTitle = userLangTitle.title;
-            isOfficialTitle = userLangTitle.is_official === 1;
+            isOfficialTitle = userLangTitle.is_official;
         } else {
-            const officialTitle = workInfo.titles.find((t: any) => t.is_official === 1);
+            const officialTitle = workInfo.titles.find((t: WorkTitle) => t.is_official);
             if (officialTitle) {
                 displayTitle = officialTitle.title;
                 isOfficialTitle = true;
@@ -29,11 +78,11 @@ export const WorkHeader = (props: WorkHeaderProps) => {
     }
 
     const officialTitles = workInfo.titles
-        .filter((t: any) => t.is_official === 1)
-        .map((t: any) => `${t.language} - ${t.title}`)
+        .filter((t: WorkTitle) => t.is_official)
+        .map((t: WorkTitle) => `${languageNames[t.language]} - ${t.title}`)
         .join('<br>');
 
-    const creatorNames = workInfo.creator ? workInfo.creator.map((c: any) => c.creator_name).join(', ') : '';
+    const creatorNames = workInfo.creator ? workInfo.creator.map((c: WorkCreator) => c.creator_name).join(', ') : '';
 
     // 处理标签显示
     const renderTags = () => {
@@ -48,7 +97,7 @@ export const WorkHeader = (props: WorkHeaderProps) => {
                 <i class="fas fa-tags"></i>
                 <span class="meta-label">标签:</span>
                 <div class="tags-container">
-                    {visibleTags.map((tag: { uuid: string; name: string }) => 
+                    {visibleTags.map((tag: WorkTag) => 
                         <span class="tag-chip clickable" data-tag={tag.uuid}>{tag.name}</span>
                     )}
                     {hiddenTags.length > 0 && (
@@ -70,7 +119,7 @@ export const WorkHeader = (props: WorkHeaderProps) => {
                 <i class="fas fa-folder"></i>
                 <span class="meta-label">分类:</span>
                 <div class="categories-container">
-                    {workInfo.categories.map((category: any, index: number) => (
+                    {workInfo.categories.map((category: WorkCategory, index: number) => (
                         <>
                             {index > 0 && <span class="category-separator"> &gt; </span>}
                             <span class="category-chip clickable" data-category={category.uuid}>{category.name}</span>
