@@ -3,6 +3,7 @@ import { jsx } from 'hono/jsx'
 export interface WorkTitle {
     work_uuid: string
     is_official: boolean
+    is_for_search?: boolean
     language: string
     title: string
 }
@@ -61,24 +62,29 @@ export const WorkHeader = (props: WorkHeaderProps) => {
     let isOfficialTitle = true;
 
     if (workInfo.titles && workInfo.titles.length > 0) {
-        const userLangTitle = workInfo.titles.find((t: WorkTitle) => t.language === userLang);
-        if (userLangTitle) {
-            displayTitle = userLangTitle.title;
-            isOfficialTitle = userLangTitle.is_official;
-        } else {
-            const officialTitle = workInfo.titles.find((t: WorkTitle) => t.is_official);
-            if (officialTitle) {
-                displayTitle = officialTitle.title;
-                isOfficialTitle = true;
+        // Filter out ForSearch titles for display
+        const displayTitles = workInfo.titles.filter((t: WorkTitle) => !t.is_for_search);
+        
+        if (displayTitles.length > 0) {
+            const userLangTitle = displayTitles.find((t: WorkTitle) => t.language === userLang);
+            if (userLangTitle) {
+                displayTitle = userLangTitle.title;
+                isOfficialTitle = userLangTitle.is_official;
             } else {
-                displayTitle = workInfo.titles[0].title;
-                isOfficialTitle = false;
+                const officialTitle = displayTitles.find((t: WorkTitle) => t.is_official);
+                if (officialTitle) {
+                    displayTitle = officialTitle.title;
+                    isOfficialTitle = true;
+                } else {
+                    displayTitle = displayTitles[0].title;
+                    isOfficialTitle = false;
+                }
             }
         }
     }
 
     const officialTitles = workInfo.titles
-        .filter((t: WorkTitle) => t.is_official)
+        .filter((t: WorkTitle) => t.is_official && !t.is_for_search)
         .map((t: WorkTitle) => `${languageNames[t.language]} - ${t.title}`)
         .join('<br>');
 

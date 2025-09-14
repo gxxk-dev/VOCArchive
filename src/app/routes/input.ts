@@ -5,8 +5,10 @@ import { inputMedia } from '../db/operations/media';
 import { inputRelation } from '../db/operations/relation';
 import { inputTag, addWorkTags } from '../db/operations/tag';
 import { inputCategory, addWorkCategories } from '../db/operations/category';
+import { inputWorkTitle } from '../db/operations/work-title';
 import { initializeDatabaseWithMigrations } from '../db/operations/admin';
 import type { Work, WorkTitle, CreatorWithRole, WikiRef, Asset, MediaSource, WorkRelation, Tag, Category } from '../db/operations/work';
+import type { WorkTitleInput } from '../db/operations/work-title';
 import { Hono } from "hono";
 
 // Request body interfaces
@@ -102,6 +104,23 @@ inputInfo.post('/media', async (c: any) => {
         const db = createDrizzleClient(c.env.DB);
         await inputMedia(db, body);
         return c.json({ message: "Media source added successfully." }, 200);
+    } catch (error) {
+        return c.json({ error: 'Internal server error' }, 500);
+    }
+});
+
+// 添加作品标题
+inputInfo.post('/work-title', async (c: any) => {
+    try {
+        const body: WorkTitleInput = await c.req.json();
+        const db = createDrizzleClient(c.env.DB);
+        const titleUuid = await inputWorkTitle(db, body);
+        
+        if (!titleUuid) {
+            return c.json({ error: 'Failed to create work title. Check if work exists.' }, 400);
+        }
+        
+        return c.json({ message: "Work title added successfully.", uuid: titleUuid }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);
     }

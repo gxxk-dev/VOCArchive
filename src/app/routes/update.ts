@@ -5,7 +5,9 @@ import { updateMedia } from '../db/operations/media';
 import { updateRelation } from '../db/operations/relation';
 import { updateTag } from '../db/operations/tag';
 import { updateCategory } from '../db/operations/category';
+import { updateWorkTitle } from '../db/operations/work-title';
 import type { Work, WorkTitle, CreatorWithRole, WikiRef, Asset, MediaSource, WorkRelation } from '../db/operations/work';
+import type { WorkTitleUpdate } from '../db/operations/work-title';
 import { Hono } from 'hono'
 
 // Request body interfaces
@@ -45,6 +47,11 @@ interface UpdateRelationRequestBody {
     from_work_uuid: string;
     to_work_uuid: string;
     relation_type: 'original' | 'remix' | 'cover' | 'remake' | 'picture' | 'lyrics';
+}
+
+interface UpdateWorkTitleRequestBody {
+    title_uuid: string;
+    updates: WorkTitleUpdate;
 }
 
 const updateHandlers = {
@@ -89,6 +96,10 @@ const updateHandlers = {
     category: async (DB: any, body: { category_uuid: string; name: string; parent_uuid?: string }) => {
         const db = createDrizzleClient(DB);
         return await updateCategory(db, body.category_uuid, body.name, body.parent_uuid);
+    },
+    'work-title': async (DB: any, body: UpdateWorkTitleRequestBody) => {
+        const db = createDrizzleClient(DB);
+        return await updateWorkTitle(db, body.title_uuid, body.updates);
     }
 };
 

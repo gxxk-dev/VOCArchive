@@ -58,29 +58,6 @@ apiApp.get('/config', (c:any) => {
   })
 })
 
-// 数据库初始化 (GET方式)
-apiApp.get('/dbinit', async (c:any) => {
-    try {
-        const db = createDrizzleClient(c.env.DB);
-        await initializeDatabaseWithMigrations(db);
-        return c.json({ message: 'Database initialized successfully with Drizzle migrations' });
-    } catch (error) {
-        console.error('Database initialization error:', error);
-        return c.json({ error: 'Failed to initialize database' }, 500);
-    }
-})
-
-apiApp.get('/sw_config.js', (c:any) => {
-    const assetUrl = c.env.ASSET_URL;
-    const hostname = new URL(assetUrl).hostname;
-    const content = `const ASSET_HOST = '${hostname}';`;
-    return new Response(content, {
-        headers: {
-            'Content-Type': 'application/javascript',
-        },
-      });
-});
-
 // ========== 信息读取(仅GET方法) ==========
 // ---------- 获取信息 ----------
 apiApp.route('/get', getInfo)

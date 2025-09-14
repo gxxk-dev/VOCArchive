@@ -11,6 +11,7 @@ export * as MediaOperations from './operations/media';
 export * as AssetOperations from './operations/asset';
 export * as TagOperations from './operations/tag';
 export * as CategoryOperations from './operations/category';
+export * as WorkTitleOperations from './operations/work-title';
 export * as SearchOperations from './operations/search';
 export * as AdminOperations from './operations/admin';
 
@@ -80,6 +81,16 @@ export {
     removeWorkCategories,
     removeAllWorkCategories
 } from './operations/category';
+
+export {
+    // Work title operations
+    getWorkTitleByUUID,
+    listWorkTitles,
+    inputWorkTitle,
+    updateWorkTitle,
+    deleteWorkTitle,
+    getWorkTitleCount
+} from './operations/work-title';
 
 export {
     // Search operations

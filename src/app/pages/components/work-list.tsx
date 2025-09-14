@@ -10,31 +10,35 @@ export const WorkList = (props: WorkListProps) => {
         let mainTitle = '[Untitled]';
         if (!item.titles || item.titles.length === 0) return mainTitle;
 
+        // Filter out ForSearch titles for display
+        const displayTitles = item.titles.filter((t: any) => !t.is_for_search);
+        if (displayTitles.length === 0) return mainTitle;
+
         // 如果是自动选择，使用原有逻辑
         if (userLang === 'auto') {
-            const userLangTitle = item.titles.find((t: any) => t.language === 'zh-cn');
+            const userLangTitle = displayTitles.find((t: any) => t.language === 'zh-cn');
             if (userLangTitle) {
                 mainTitle = userLangTitle.title;
             } else {
-                const officialTitle = item.titles.find((t: any) => t.is_official);
+                const officialTitle = displayTitles.find((t: any) => t.is_official);
                 if (officialTitle) {
                     mainTitle = officialTitle.title;
                 } else {
-                    mainTitle = item.titles[0].title;
+                    mainTitle = displayTitles[0].title;
                 }
             }
         } else {
             // 优先查找指定语言的标题
-            const specificLangTitle = item.titles.find((t: any) => t.language === userLang);
+            const specificLangTitle = displayTitles.find((t: any) => t.language === userLang);
             if (specificLangTitle) {
                 mainTitle = specificLangTitle.title;
             } else {
                 // 找不到指定语言，按优先级fallback
-                const officialTitle = item.titles.find((t: any) => t.is_official);
+                const officialTitle = displayTitles.find((t: any) => t.is_official);
                 if (officialTitle) {
                     mainTitle = officialTitle.title;
                 } else {
-                    mainTitle = item.titles[0].title;
+                    mainTitle = displayTitles[0].title;
                 }
             }
         }

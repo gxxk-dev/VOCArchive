@@ -785,13 +785,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         `;
     }
 
-    function createTitleRow(title = { title: '', language: 'ja', is_official: false }) {
+    function createTitleRow(title = { title: '', language: 'ja', is_official: false, is_for_search: false }) {
         console.log("[Edit UI] Show title:", title)
         return `
             <div class="dynamic-list-item">
                 <input type="text" name="title_text" placeholder="Title" required value="${title.title || ''}">
                 <input type="text" name="title_lang" placeholder="Lang" required value="${title.language || 'ja'}">
                 <label><input type="checkbox" name="title_is_official" ${title.is_official ? 'checked' : ''}> 官方标题</label>
+                <label><input type="checkbox" name="title_is_for_search" ${title.is_for_search ? 'checked' : ''}> 仅用于搜索</label>
                 <button type="button" class="remove-row-button">Remove</button>
             </div>
         `;
@@ -932,6 +933,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             title: item.querySelector('input[name="title_text"]').value,
                             language: item.querySelector('input[name="title_lang"]').value,
                             is_official: item.querySelector('input[name="title_is_official"]').checked,
+                            is_for_search: item.querySelector('input[name="title_is_for_search"]').checked,
                         });
                     });
 

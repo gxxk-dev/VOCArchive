@@ -1,0 +1,74 @@
+{
+  "id": "4b7c1b8f-9d3a-4a5e-b2c6-8f7e9d3a4b5c",
+  "prevId": "3a6b5c9e-8e2d-4f4a-a1c5-7f6e8d2a3b4c",
+  "version": "6",
+  "dialect": "sqlite",
+  "tables": {
+    "work_title": {
+      "name": "work_title",
+      "columns": {
+        "uuid": {
+          "name": "uuid",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "work_uuid": {
+          "name": "work_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_official": {
+          "name": "is_official",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_for_search": {
+          "name": "is_for_search",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "language": {
+          "name": "language",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "work_title_work_uuid_work_uuid_fk": {
+          "name": "work_title_work_uuid_work_uuid_fk",
+          "tableFrom": "work_title",
+          "tableTo": "work",
+          "columnsFrom": [
+            "work_uuid"
+          ],
+          "columnsTo": [
+            "uuid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    }
+  },
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  }
+}

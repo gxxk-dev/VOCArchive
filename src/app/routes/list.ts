@@ -6,6 +6,7 @@ import { listCreators } from '../db/operations/creator';
 import { listMedia } from '../db/operations/media';
 import { listTags, getWorksByTag, getWorkCountByTag } from '../db/operations/tag';
 import { listCategories, getWorksByCategory, getWorkCountByCategory } from '../db/operations/category';
+import { listWorkTitles } from '../db/operations/work-title';
 import { Hono } from 'hono'
 
 export const listInfo = new Hono();
@@ -91,5 +92,15 @@ listInfo.get('/works-by-category/:category_uuid/:page/:size?', async (c: any) =>
     
     const db = createDrizzleClient(c.env.DB);
     const results = await getWorksByCategory(db, categoryUUID, page, size);
+    return c.json(results);
+});
+
+// 获取作品标题列表
+listInfo.get('/work-titles/:work_uuid', async (c: any) => {
+    const workUuid = c.req.param('work_uuid');
+    const includeForSearch = c.req.query('include_for_search') === 'true';
+    
+    const db = createDrizzleClient(c.env.DB);
+    const results = await listWorkTitles(db, workUuid, includeForSearch);
     return c.json(results);
 });

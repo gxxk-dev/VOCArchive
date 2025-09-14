@@ -22,6 +22,7 @@ import { convertCategoryData } from '../utils';
 // Types that match the current database.ts interfaces
 export interface WorkTitle {
     is_official: boolean;
+    is_for_search?: boolean;
     language: string;
     title: string;
 }
@@ -129,17 +130,25 @@ export function validateUUID(uuid: string): boolean {
 /**
  * Get work titles for a specific work UUID
  */
-async function getWorkTitles(db: DrizzleDB, workUUID: string): Promise<WorkTitle[]> {
-    const titles = await db
+async function getWorkTitles(db: DrizzleDB, workUUID: string, includeForSearch: boolean = false): Promise<WorkTitle[]> {
+    const query = db
         .select({
             is_official: workTitle.isOfficial,
+            is_for_search: workTitle.isForSearch,
             language: workTitle.language,
             title: workTitle.title,
         })
         .from(workTitle)
         .where(eq(workTitle.workUuid, workUUID));
-
-    return titles;
+    
+    const allTitles = await query;
+    
+    // Filter out ForSearch titles if not explicitly requested
+    if (!includeForSearch) {
+        return allTitles.filter(title => !title.is_for_search);
+    }
+    
+    return allTitles;
 }
 
 /**
@@ -576,6 +585,7 @@ export async function inputWork(
                 uuid: crypto.randomUUID(),
                 workUuid: workData.uuid,
                 isOfficial: title.is_official,
+                isForSearch: title.is_for_search || false,
                 language: title.language,
                 title: title.title,
             }))
@@ -643,6 +653,7 @@ export async function updateWork(
                     uuid: crypto.randomUUID(),
                     workUuid: workUuid,
                     isOfficial: title.is_official,
+                    isForSearch: title.is_for_search || false,
                     language: title.language,
                     title: title.title,
                 }))

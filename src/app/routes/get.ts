@@ -9,6 +9,7 @@ import {
     getTagByUUID, 
     getCategoryByUUID
 } from "../db";
+import { getWorkTitleByUUID } from '../db/operations/work-title';
 
 export const getInfo = new Hono();
 
@@ -70,5 +71,12 @@ getInfo.get('/tag/:uuid', async (c: any) => {
 getInfo.get('/category/:uuid', async (c: any) => {
     const db = createDrizzleClient(c.env.DB);
     const result = await getCategoryByUUID(db, c.req.param('uuid'));
+    return c.json(result);
+});
+
+// 获取作品标题详情
+getInfo.get('/work-title/:uuid', async (c: any) => {
+    const db = createDrizzleClient(c.env.DB);
+    const result = await getWorkTitleByUUID(db, c.req.param('uuid'));
     return c.json(result);
 });

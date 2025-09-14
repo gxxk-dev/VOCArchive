@@ -55,6 +55,7 @@ export const workTitle = sqliteTable('work_title', {
         onDelete: 'cascade' 
     }),
     isOfficial: integer('is_official', { mode: 'boolean' }).notNull(),
+    isForSearch: integer('is_for_search', { mode: 'boolean' }).notNull().default(false),
     language: text('language').notNull(),
     title: text('title').notNull(),
 });

@@ -5,6 +5,7 @@ import { deleteMedia } from '../db/operations/media';
 import { deleteRelation } from '../db/operations/relation';
 import { deleteTag, removeWorkTags, removeAllWorkTags } from '../db/operations/tag';
 import { deleteCategory, removeWorkCategories, removeAllWorkCategories } from '../db/operations/category';
+import { deleteWorkTitle } from '../db/operations/work-title';
 import { dropUserTables } from '../db/operations/admin';
 import { Hono } from "hono";
 
@@ -27,6 +28,10 @@ interface DeleteRelationRequestBody {
 
 interface DeleteMediaRequestBody {
     media_uuid: string;
+}
+
+interface DeleteWorkTitleRequestBody {
+    title_uuid: string;
 }
 
 export const deleteInfo = new Hono();
@@ -111,6 +116,23 @@ deleteInfo.post('/media', async (c: any) => {
         }
         
         return c.json({ message: 'Media deleted successfully.' }, 200);
+    } catch (error) {
+        return c.json({ error: 'Internal server error' }, 500);
+    }
+});
+
+// 删除作品标题
+deleteInfo.post('/work-title', async (c: any) => {
+    try {
+        const body: DeleteWorkTitleRequestBody = await c.req.json();
+        const db = createDrizzleClient(c.env.DB);
+        const result = await deleteWorkTitle(db, body.title_uuid);
+        
+        if (!result) {
+            return c.json({ error: 'Work title not found or delete failed.' }, 404);
+        }
+        
+        return c.json({ message: 'Work title deleted successfully.' }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);
     }

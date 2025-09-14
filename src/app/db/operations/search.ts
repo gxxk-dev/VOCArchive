@@ -12,6 +12,7 @@ import { convertAssetData, convertCreatorData } from '../utils';
 // Types matching current interfaces
 export interface WorkTitle {
     is_official: boolean;
+    is_for_search?: boolean;
     language: string;
     title: string;
 }
@@ -57,24 +58,32 @@ export interface WorkListItem {
 /**
  * Get work titles for a specific work UUID
  */
-async function getWorkTitles(db: DrizzleDB, workUUID: string): Promise<WorkTitle[]> {
-    const titles = await db
+async function getWorkTitles(db: DrizzleDB, workUUID: string, includeForSearch: boolean = false): Promise<WorkTitle[]> {
+    const query = db
         .select({
             is_official: workTitle.isOfficial,
+            is_for_search: workTitle.isForSearch,
             language: workTitle.language,
             title: workTitle.title,
         })
         .from(workTitle)
         .where(eq(workTitle.workUuid, workUUID));
-
-    return titles;
+    
+    const allTitles = await query;
+    
+    // Filter out ForSearch titles if not explicitly requested
+    if (!includeForSearch) {
+        return allTitles.filter(title => !title.is_for_search);
+    }
+    
+    return allTitles;
 }
 
 /**
  * Search works by title
  */
 export async function searchWorksByTitle(db: DrizzleDB, query: string): Promise<WorkListItem[]> {
-    // Get work UUIDs that match the title search
+    // Get work UUIDs that match the title search (including ForSearch titles for search)
     const workUuids = await db
         .select({ work_uuid: workTitle.workUuid })
         .from(workTitle)
@@ -115,8 +124,8 @@ export async function searchWorksByTitle(db: DrizzleDB, query: string): Promise<
 
     // Get work details for each work
     const workListPromises = workUuidList.map(async (work_uuid) => {
-        // Get titles
-        const titles = await getWorkTitles(db, work_uuid);
+        // Get titles (excluding ForSearch titles for display)
+        const titles = await getWorkTitles(db, work_uuid, false);
 
         // Get assets
         const previewAssets = await db
@@ -229,8 +238,8 @@ export async function searchWorksByCreator(db: DrizzleDB, query: string): Promis
 
     // Get work details for each work
     const workListPromises = workUuidList.map(async (work_uuid) => {
-        // Get titles
-        const titles = await getWorkTitles(db, work_uuid);
+        // Get titles (excluding ForSearch titles for display)
+        const titles = await getWorkTitles(db, work_uuid, false);
 
         // Get assets
         const previewAssets = await db
@@ -315,12 +324,13 @@ export async function searchWorks(
 }
 
 /**
- * Get all available languages from work titles
+ * Get all available languages from work titles (excluding ForSearch titles)
  */
 export async function getAvailableLanguages(db: DrizzleDB): Promise<string[]> {
     const languages = await db
         .select({ language: workTitle.language })
         .from(workTitle)
+        .where(eq(workTitle.isForSearch, false))
         .groupBy(workTitle.language)
         .orderBy(workTitle.language);
 
