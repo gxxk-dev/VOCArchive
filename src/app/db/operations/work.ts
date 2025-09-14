@@ -130,7 +130,7 @@ export function validateUUID(uuid: string): boolean {
 /**
  * Get work titles for a specific work UUID
  */
-async function getWorkTitles(db: DrizzleDB, workUUID: string, includeForSearch: boolean = false): Promise<WorkTitle[]> {
+async function getWorkTitles(db: DrizzleDB, workUUID: string, includeForSearch: boolean = true): Promise<WorkTitle[]> {
     const query = db
         .select({
             is_official: workTitle.isOfficial,
@@ -143,11 +143,7 @@ async function getWorkTitles(db: DrizzleDB, workUUID: string, includeForSearch: 
     
     const allTitles = await query;
     
-    // Filter out ForSearch titles if not explicitly requested
-    if (!includeForSearch) {
-        return allTitles.filter(title => !title.is_for_search);
-    }
-    
+    // Always return all titles, let frontend handle filtering
     return allTitles;
 }
 
@@ -332,8 +328,8 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
     const workData = works[0];
 
     // 2. Get work titles
-    const titles = await getWorkTitles(db, workUUID);
-
+    const titles = await getWorkTitles(db, workUUID, true);
+    console.log(titles)
     // 3. Get license information if needed
     let license: string | undefined;
     if (workData.copyright_basis === 'license') {

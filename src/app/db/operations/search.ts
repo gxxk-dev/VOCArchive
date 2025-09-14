@@ -58,7 +58,7 @@ export interface WorkListItem {
 /**
  * Get work titles for a specific work UUID
  */
-async function getWorkTitles(db: DrizzleDB, workUUID: string, includeForSearch: boolean = false): Promise<WorkTitle[]> {
+async function getWorkTitles(db: DrizzleDB, workUUID: string, includeForSearch: boolean = true): Promise<WorkTitle[]> {
     const query = db
         .select({
             is_official: workTitle.isOfficial,
@@ -71,11 +71,7 @@ async function getWorkTitles(db: DrizzleDB, workUUID: string, includeForSearch: 
     
     const allTitles = await query;
     
-    // Filter out ForSearch titles if not explicitly requested
-    if (!includeForSearch) {
-        return allTitles.filter(title => !title.is_for_search);
-    }
-    
+    // Always return all titles, let frontend handle filtering
     return allTitles;
 }
 
@@ -124,8 +120,8 @@ export async function searchWorksByTitle(db: DrizzleDB, query: string): Promise<
 
     // Get work details for each work
     const workListPromises = workUuidList.map(async (work_uuid) => {
-        // Get titles (excluding ForSearch titles for display)
-        const titles = await getWorkTitles(db, work_uuid, false);
+        // Get titles (return all titles, frontend will filter for display)
+        const titles = await getWorkTitles(db, work_uuid, true);
 
         // Get assets
         const previewAssets = await db
@@ -238,8 +234,8 @@ export async function searchWorksByCreator(db: DrizzleDB, query: string): Promis
 
     // Get work details for each work
     const workListPromises = workUuidList.map(async (work_uuid) => {
-        // Get titles (excluding ForSearch titles for display)
-        const titles = await getWorkTitles(db, work_uuid, false);
+        // Get titles (return all titles, frontend will filter for display)
+        const titles = await getWorkTitles(db, work_uuid, true);
 
         // Get assets
         const previewAssets = await db
