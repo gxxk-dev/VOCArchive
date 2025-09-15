@@ -12,43 +12,43 @@ import { Hono } from 'hono'
 export const listInfo = new Hono();
 
 // 获取创作者列表
-listInfo.get('/creator/:pageNum/:pageSize?', async (c: any) => {
-    const pageNum = Number(c.req.param("pageNum")) || 1;
-    const pageSize = Number(c.req.param("pageSize")) || 10;
+listInfo.get('/creator/:page_num/:page_size?', async (c: any) => {
+    const page_num = Number(c.req.param("page_num")) || 1;
+    const page_size = Number(c.req.param("page_size")) || 10;
     const db = createDrizzleClient(c.env.DB);
-    return c.json(await listCreators(db, pageNum, pageSize));
+    return c.json(await listCreators(db, page_num, page_size));
 });
 
 // 获取媒体列表
-listInfo.get('/media/:pageNum/:pageSize?', async (c: any) => {
-    const pageNum = Number(c.req.param("pageNum")) || 1;
-    const pageSize = Number(c.req.param("pageSize")) || 10;
+listInfo.get('/media/:page_num/:page_size?', async (c: any) => {
+    const page_num = Number(c.req.param("page_num")) || 1;
+    const page_size = Number(c.req.param("page_size")) || 10;
     const db = createDrizzleClient(c.env.DB);
-    return c.json(await listMedia(db, pageNum, pageSize));
+    return c.json(await listMedia(db, page_num, page_size));
 });
 
 // 获取资产列表
-listInfo.get('/asset/:pageNum/:pageSize?', async (c: any) => {
-    const pageNum = Number(c.req.param("pageNum")) || 1;
-    const pageSize = Number(c.req.param("pageSize")) || 10;
+listInfo.get('/asset/:page_num/:page_size?', async (c: any) => {
+    const page_num = Number(c.req.param("page_num")) || 1;
+    const page_size = Number(c.req.param("page_size")) || 10;
     const db = createDrizzleClient(c.env.DB);
-    return c.json(await listAssets(db, pageNum, pageSize));
+    return c.json(await listAssets(db, page_num, page_size));
 });
 
 // 获取关系列表
-listInfo.get('/relation/:pageNum/:pageSize?', async (c: any) => {
-    const pageNum = Number(c.req.param("pageNum")) || 1;
-    const pageSize = Number(c.req.param("pageSize")) || 10;
+listInfo.get('/relation/:page_num/:page_size?', async (c: any) => {
+    const page_num = Number(c.req.param("page_num")) || 1;
+    const page_size = Number(c.req.param("page_size")) || 10;
     const db = createDrizzleClient(c.env.DB);
-    return c.json(await listRelations(db, pageNum, pageSize));
+    return c.json(await listRelations(db, page_num, page_size));
 });
 
 // 获取作品列表
-listInfo.get('/work/:pageNum/:pageSize?', async (c: any) => {
-    const pageNum = Number(c.req.param("pageNum")) || 1;
-    const pageSize = Number(c.req.param("pageSize")) || 10;
+listInfo.get('/work/:page_num/:page_size?', async (c: any) => {
+    const page_num = Number(c.req.param("page_num")) || 1;
+    const page_size = Number(c.req.param("page_size")) || 10;
     const db = createDrizzleClient(c.env.DB);
-    return c.json(await getWorkListWithPagination(db, pageNum, pageSize));
+    return c.json(await getWorkListWithPagination(db, page_num, page_size));
 });
 
 // 获取所有标签列表
@@ -67,7 +67,7 @@ listInfo.get('/categories', async (c: any) => {
 
 // 获取标签下的作品列表（带分页）
 listInfo.get('/works-by-tag/:tag_uuid/:page/:size?', async (c: any) => {
-    const tagUUID = c.req.param('tag_uuid');
+    const tag_uuid = c.req.param('tag_uuid');
     const page = parseInt(c.req.param('page'));
     const size = c.req.param('size') ? parseInt(c.req.param('size')) : 20;
     
@@ -76,13 +76,13 @@ listInfo.get('/works-by-tag/:tag_uuid/:page/:size?', async (c: any) => {
     }
     
     const db = createDrizzleClient(c.env.DB);
-    const results = await getWorksByTag(db, tagUUID, page, size);
+    const results = await getWorksByTag(db, tag_uuid, page, size);
     return c.json(results);
 });
 
 // 获取分类下的作品列表（带分页）
 listInfo.get('/works-by-category/:category_uuid/:page/:size?', async (c: any) => {
-    const categoryUUID = c.req.param('category_uuid');
+    const category_uuid = c.req.param('category_uuid');
     const page = parseInt(c.req.param('page'));
     const size = c.req.param('size') ? parseInt(c.req.param('size')) : 20;
     
@@ -91,16 +91,16 @@ listInfo.get('/works-by-category/:category_uuid/:page/:size?', async (c: any) =>
     }
     
     const db = createDrizzleClient(c.env.DB);
-    const results = await getWorksByCategory(db, categoryUUID, page, size);
+    const results = await getWorksByCategory(db, category_uuid, page, size);
     return c.json(results);
 });
 
 // 获取作品标题列表
 listInfo.get('/work-titles/:work_uuid', async (c: any) => {
-    const workUuid = c.req.param('work_uuid');
-    const includeForSearch = c.req.query('include_for_search') === 'true';
+    const work_uuid = c.req.param('work_uuid');
+    const include_for_search = c.req.query('include_for_search') === 'true';
     
     const db = createDrizzleClient(c.env.DB);
-    const results = await listWorkTitles(db, workUuid, includeForSearch);
+    const results = await listWorkTitles(db, work_uuid, include_for_search);
     return c.json(results);
 });

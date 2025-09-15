@@ -114,13 +114,13 @@ inputInfo.post('/work-title', async (c: any) => {
     try {
         const body: WorkTitleInput = await c.req.json();
         const db = createDrizzleClient(c.env.DB);
-        const titleUuid = await inputWorkTitle(db, body);
+        const title_uuid = await inputWorkTitle(db, body);
         
-        if (!titleUuid) {
+        if (!title_uuid) {
             return c.json({ error: 'Failed to create work title. Check if work exists.' }, 400);
         }
         
-        return c.json({ message: "Work title added successfully.", uuid: titleUuid }, 200);
+        return c.json({ message: "Work title added successfully.", uuid: title_uuid }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);
     }

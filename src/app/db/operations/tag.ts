@@ -68,12 +68,12 @@ export function validateUUID(uuid: string): boolean {
 async function getWorkTitles(db: DrizzleDB, workUUID: string): Promise<WorkTitle[]> {
     const titles = await db
         .select({
-            is_official: workTitle.isOfficial,
+            is_official: workTitle.is_official,
             language: workTitle.language,
             title: workTitle.title,
         })
         .from(workTitle)
-        .where(eq(workTitle.workUuid, workUUID));
+        .where(eq(workTitle.work_uuid, workUUID));
 
     return titles;
 }
@@ -127,9 +127,9 @@ export async function getWorksByTag(
 
     // Get work UUIDs for this tag
     const workUuids = await db
-        .select({ work_uuid: workTag.workUuid })
+        .select({ work_uuid: workTag.work_uuid })
         .from(workTag)
-        .where(eq(workTag.tagUuid, tagUuid))
+        .where(eq(workTag.tag_uuid, tagUuid))
         .limit(pageSize)
         .offset(offset);
 
@@ -140,15 +140,15 @@ export async function getWorksByTag(
     // Get creators for these works
     const creators = await db
         .select({
-            work_uuid: workCreator.workUuid,
+            work_uuid: workCreator.work_uuid,
             creator_uuid: creator.uuid,
             creator_name: creator.name,
             creator_type: creator.type,
             role: workCreator.role,
         })
         .from(workCreator)
-        .innerJoin(creator, eq(workCreator.creatorUuid, creator.uuid))
-        .where(inArray(workCreator.workUuid, workUuidList));
+        .innerJoin(creator, eq(workCreator.creator_uuid, creator.uuid))
+        .where(inArray(workCreator.work_uuid, workUuidList));
 
     // Group creators by work UUID
     const creatorMap = new Map<string, CreatorWithRole[]>();
@@ -173,19 +173,19 @@ export async function getWorksByTag(
         const previewAssets = await db
             .select({
                 uuid: asset.uuid,
-                file_id: asset.fileId,
-                work_uuid: asset.workUuid,
-                asset_type: asset.assetType,
-                file_name: asset.fileName,
-                is_previewpic: asset.isPreviewpic,
+                file_id: asset.file_id,
+                work_uuid: asset.work_uuid,
+                asset_type: asset.asset_type,
+                file_name: asset.file_name,
+                is_previewpic: asset.is_previewpic,
                 language: asset.language,
             })
             .from(asset)
             .where(
                 and(
-                    eq(asset.workUuid, work_uuid),
-                    eq(asset.assetType, 'picture'),
-                    eq(asset.isPreviewpic, true)
+                    eq(asset.work_uuid, work_uuid),
+                    eq(asset.asset_type, 'picture'),
+                    eq(asset.is_previewpic, true)
                 )
             )
             .limit(1);
@@ -193,18 +193,18 @@ export async function getWorksByTag(
         const nonPreviewAssets = await db
             .select({
                 uuid: asset.uuid,
-                file_id: asset.fileId,
-                work_uuid: asset.workUuid,
-                asset_type: asset.assetType,
-                file_name: asset.fileName,
-                is_previewpic: asset.isPreviewpic,
+                file_id: asset.file_id,
+                work_uuid: asset.work_uuid,
+                asset_type: asset.asset_type,
+                file_name: asset.file_name,
+                is_previewpic: asset.is_previewpic,
                 language: asset.language,
             })
             .from(asset)
             .where(
                 and(
-                    eq(asset.workUuid, work_uuid),
-                    eq(asset.assetType, 'picture')
+                    eq(asset.work_uuid, work_uuid),
+                    eq(asset.asset_type, 'picture')
                 )
             )
             .limit(1);
@@ -232,7 +232,7 @@ export async function getWorkCountByTag(db: DrizzleDB, tagUuid: string): Promise
     const result = await db
         .select({ count: count() })
         .from(workTag)
-        .where(eq(workTag.tagUuid, tagUuid));
+        .where(eq(workTag.tag_uuid, tagUuid));
 
     return result[0]?.count || 0;
 }
@@ -303,8 +303,8 @@ export async function addWorkTags(
     try {
         await db.insert(workTag).values(
             tagUuids.map(tagUuid => ({
-                workUuid,
-                tagUuid,
+                work_uuid: workUuid,
+                tag_uuid: tagUuid,
             }))
         ).onConflictDoNothing();
         return true;
@@ -329,8 +329,8 @@ export async function removeWorkTags(
             .delete(workTag)
             .where(
                 and(
-                    eq(workTag.workUuid, workUuid),
-                    inArray(workTag.tagUuid, tagUuids)
+                    eq(workTag.work_uuid, workUuid),
+                    inArray(workTag.tag_uuid, tagUuids)
                 )
             );
         return true;
@@ -347,7 +347,7 @@ export async function removeAllWorkTags(db: DrizzleDB, workUuid: string): Promis
     if (!validateUUID(workUuid)) return false;
 
     try {
-        await db.delete(workTag).where(eq(workTag.workUuid, workUuid));
+        await db.delete(workTag).where(eq(workTag.work_uuid, workUuid));
         return true;
     } catch (error) {
         console.error('Error removing all work tags:', error);

@@ -53,7 +53,7 @@ export async function getCreatorByUUID(
             identifier: creatorWiki.identifier,
         })
         .from(creatorWiki)
-        .where(eq(creatorWiki.creatorUuid, creatorUuid));
+        .where(eq(creatorWiki.creator_uuid, creatorUuid));
 
     return {
         creator: creatorResult[0],
@@ -108,7 +108,7 @@ export async function inputCreator(
     if (wikis && wikis.length > 0) {
         await db.insert(creatorWiki).values(
             wikis.map(wiki => ({
-                creatorUuid: creatorData.uuid,
+                creator_uuid: creatorData.uuid,
                 platform: wiki.platform,
                 identifier: wiki.identifier,
             }))
@@ -141,13 +141,13 @@ export async function updateCreator(
         // Delete old wiki entries
         await db
             .delete(creatorWiki)
-            .where(eq(creatorWiki.creatorUuid, creatorUuid));
+            .where(eq(creatorWiki.creator_uuid, creatorUuid));
 
         // Insert new wiki entries
         if (wikis && wikis.length > 0) {
             await db.insert(creatorWiki).values(
                 wikis.map(wiki => ({
-                    creatorUuid: creatorUuid,
+                    creator_uuid: creatorUuid,
                     platform: wiki.platform,
                     identifier: wiki.identifier,
                 }))
@@ -196,13 +196,13 @@ export async function deleteWorksByCreator(db: DrizzleDB, creatorUuid: string): 
     try {
         // Get all work UUIDs for this creator
         const creatorWorks = await db
-            .select({ workUuid: workCreator.workUuid })
+            .select({ work_uuid: workCreator.work_uuid })
             .from(workCreator)
-            .where(eq(workCreator.creatorUuid, creatorUuid));
+            .where(eq(workCreator.creator_uuid, creatorUuid));
 
         if (creatorWorks.length === 0) return 0;
 
-        const workUuids = creatorWorks.map(w => w.workUuid);
+        const workUuids = creatorWorks.map(w => w.work_uuid);
 
         // Delete all works (cascade will handle related data)
         await db.delete(work).where(inArray(work.uuid, workUuids));

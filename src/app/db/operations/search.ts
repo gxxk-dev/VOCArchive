@@ -61,13 +61,13 @@ export interface WorkListItem {
 async function getWorkTitles(db: DrizzleDB, workUUID: string, includeForSearch: boolean = true): Promise<WorkTitle[]> {
     const query = db
         .select({
-            is_official: workTitle.isOfficial,
-            is_for_search: workTitle.isForSearch,
+            is_official: workTitle.is_official,
+            is_for_search: workTitle.is_for_search,
             language: workTitle.language,
             title: workTitle.title,
         })
         .from(workTitle)
-        .where(eq(workTitle.workUuid, workUUID));
+        .where(eq(workTitle.work_uuid, workUUID));
     
     const allTitles = await query;
     
@@ -81,7 +81,7 @@ async function getWorkTitles(db: DrizzleDB, workUUID: string, includeForSearch: 
 export async function searchWorksByTitle(db: DrizzleDB, query: string): Promise<WorkListItem[]> {
     // Get work UUIDs that match the title search (including ForSearch titles for search)
     const workUuids = await db
-        .select({ work_uuid: workTitle.workUuid })
+        .select({ work_uuid: workTitle.work_uuid })
         .from(workTitle)
         .where(like(workTitle.title, `%${query}%`));
 
@@ -94,15 +94,15 @@ export async function searchWorksByTitle(db: DrizzleDB, query: string): Promise<
     // Get all creators for these works
     const creators = await db
         .select({
-            work_uuid: workCreator.workUuid,
+            work_uuid: workCreator.work_uuid,
             creator_uuid: creator.uuid,
             creator_name: creator.name,
             creator_type: creator.type,
             role: workCreator.role,
         })
         .from(workCreator)
-        .innerJoin(creator, eq(workCreator.creatorUuid, creator.uuid))
-        .where(inArray(workCreator.workUuid, workUuidList));
+        .innerJoin(creator, eq(workCreator.creator_uuid, creator.uuid))
+        .where(inArray(workCreator.work_uuid, workUuidList));
 
     // Group creators by work UUID
     const creatorMap = new Map<string, CreatorWithRole[]>();
@@ -127,19 +127,19 @@ export async function searchWorksByTitle(db: DrizzleDB, query: string): Promise<
         const previewAssets = await db
             .select({
                 uuid: asset.uuid,
-                file_id: asset.fileId,
-                work_uuid: asset.workUuid,
-                asset_type: asset.assetType,
-                file_name: asset.fileName,
-                is_previewpic: asset.isPreviewpic,
+                file_id: asset.file_id,
+                work_uuid: asset.work_uuid,
+                asset_type: asset.asset_type,
+                file_name: asset.file_name,
+                is_previewpic: asset.is_previewpic,
                 language: asset.language,
             })
             .from(asset)
             .where(
                 and(
-                    eq(asset.workUuid, work_uuid),
-                    eq(asset.assetType, 'picture'),
-                    eq(asset.isPreviewpic, true)
+                    eq(asset.work_uuid, work_uuid),
+                    eq(asset.asset_type, 'picture'),
+                    eq(asset.is_previewpic, true)
                 )
             )
             .limit(1);
@@ -147,18 +147,18 @@ export async function searchWorksByTitle(db: DrizzleDB, query: string): Promise<
         const nonPreviewAssets = await db
             .select({
                 uuid: asset.uuid,
-                file_id: asset.fileId,
-                work_uuid: asset.workUuid,
-                asset_type: asset.assetType,
-                file_name: asset.fileName,
-                is_previewpic: asset.isPreviewpic,
+                file_id: asset.file_id,
+                work_uuid: asset.work_uuid,
+                asset_type: asset.asset_type,
+                file_name: asset.file_name,
+                is_previewpic: asset.is_previewpic,
                 language: asset.language,
             })
             .from(asset)
             .where(
                 and(
-                    eq(asset.workUuid, work_uuid),
-                    eq(asset.assetType, 'picture')
+                    eq(asset.work_uuid, work_uuid),
+                    eq(asset.asset_type, 'picture')
                 )
             )
             .limit(1);
@@ -195,9 +195,9 @@ export async function searchWorksByCreator(db: DrizzleDB, query: string): Promis
 
     // Get work UUIDs for these creators
     const workUuids = await db
-        .select({ work_uuid: workCreator.workUuid })
+        .select({ work_uuid: workCreator.work_uuid })
         .from(workCreator)
-        .where(inArray(workCreator.creatorUuid, creatorUuidList));
+        .where(inArray(workCreator.creator_uuid, creatorUuidList));
 
     if (workUuids.length === 0) {
         return [];
@@ -208,15 +208,15 @@ export async function searchWorksByCreator(db: DrizzleDB, query: string): Promis
     // Get all creators for these works
     const creators = await db
         .select({
-            work_uuid: workCreator.workUuid,
+            work_uuid: workCreator.work_uuid,
             creator_uuid: creator.uuid,
             creator_name: creator.name,
             creator_type: creator.type,
             role: workCreator.role,
         })
         .from(workCreator)
-        .innerJoin(creator, eq(workCreator.creatorUuid, creator.uuid))
-        .where(inArray(workCreator.workUuid, workUuidList));
+        .innerJoin(creator, eq(workCreator.creator_uuid, creator.uuid))
+        .where(inArray(workCreator.work_uuid, workUuidList));
 
     // Group creators by work UUID
     const creatorMap = new Map<string, CreatorWithRole[]>();
@@ -241,19 +241,19 @@ export async function searchWorksByCreator(db: DrizzleDB, query: string): Promis
         const previewAssets = await db
             .select({
                 uuid: asset.uuid,
-                file_id: asset.fileId,
-                work_uuid: asset.workUuid,
-                asset_type: asset.assetType,
-                file_name: asset.fileName,
-                is_previewpic: asset.isPreviewpic,
+                file_id: asset.file_id,
+                work_uuid: asset.work_uuid,
+                asset_type: asset.asset_type,
+                file_name: asset.file_name,
+                is_previewpic: asset.is_previewpic,
                 language: asset.language,
             })
             .from(asset)
             .where(
                 and(
-                    eq(asset.workUuid, work_uuid),
-                    eq(asset.assetType, 'picture'),
-                    eq(asset.isPreviewpic, true)
+                    eq(asset.work_uuid, work_uuid),
+                    eq(asset.asset_type, 'picture'),
+                    eq(asset.is_previewpic, true)
                 )
             )
             .limit(1);
@@ -261,18 +261,18 @@ export async function searchWorksByCreator(db: DrizzleDB, query: string): Promis
         const nonPreviewAssets = await db
             .select({
                 uuid: asset.uuid,
-                file_id: asset.fileId,
-                work_uuid: asset.workUuid,
-                asset_type: asset.assetType,
-                file_name: asset.fileName,
-                is_previewpic: asset.isPreviewpic,
+                file_id: asset.file_id,
+                work_uuid: asset.work_uuid,
+                asset_type: asset.asset_type,
+                file_name: asset.file_name,
+                is_previewpic: asset.is_previewpic,
                 language: asset.language,
             })
             .from(asset)
             .where(
                 and(
-                    eq(asset.workUuid, work_uuid),
-                    eq(asset.assetType, 'picture')
+                    eq(asset.work_uuid, work_uuid),
+                    eq(asset.asset_type, 'picture')
                 )
             )
             .limit(1);
@@ -326,7 +326,7 @@ export async function getAvailableLanguages(db: DrizzleDB): Promise<string[]> {
     const languages = await db
         .select({ language: workTitle.language })
         .from(workTitle)
-        .where(eq(workTitle.isForSearch, false))
+        .where(eq(workTitle.is_for_search, false))
         .groupBy(workTitle.language)
         .orderBy(workTitle.language);
 

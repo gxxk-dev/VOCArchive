@@ -69,12 +69,12 @@ export function validateUUID(uuid: string): boolean {
 async function getWorkTitles(db: DrizzleDB, workUUID: string): Promise<WorkTitle[]> {
     const titles = await db
         .select({
-            is_official: workTitle.isOfficial,
+            is_official: workTitle.is_official,
             language: workTitle.language,
             title: workTitle.title,
         })
         .from(workTitle)
-        .where(eq(workTitle.workUuid, workUUID));
+        .where(eq(workTitle.work_uuid, workUUID));
 
     return titles;
 }
@@ -114,7 +114,7 @@ export async function listCategories(db: DrizzleDB): Promise<Category[]> {
         .select({
             uuid: category.uuid,
             name: category.name,
-            parent_uuid: category.parentUuid,
+            parent_uuid: category.parent_uuid,
         })
         .from(category)
         .orderBy(category.name);
@@ -132,7 +132,7 @@ export async function getCategoryByUUID(db: DrizzleDB, categoryUuid: string): Pr
         .select({
             uuid: category.uuid,
             name: category.name,
-            parent_uuid: category.parentUuid,
+            parent_uuid: category.parent_uuid,
         })
         .from(category)
         .where(eq(category.uuid, categoryUuid))
@@ -157,9 +157,9 @@ export async function getWorksByCategory(
 
     // Get work UUIDs for this category
     const workUuids = await db
-        .select({ work_uuid: workCategory.workUuid })
+        .select({ work_uuid: workCategory.work_uuid })
         .from(workCategory)
-        .where(eq(workCategory.categoryUuid, categoryUuid))
+        .where(eq(workCategory.category_uuid, categoryUuid))
         .limit(pageSize)
         .offset(offset);
 
@@ -170,15 +170,15 @@ export async function getWorksByCategory(
     // Get creators for these works
     const creators = await db
         .select({
-            work_uuid: workCreator.workUuid,
+            work_uuid: workCreator.work_uuid,
             creator_uuid: creator.uuid,
             creator_name: creator.name,
             creator_type: creator.type,
             role: workCreator.role,
         })
         .from(workCreator)
-        .innerJoin(creator, eq(workCreator.creatorUuid, creator.uuid))
-        .where(inArray(workCreator.workUuid, workUuidList));
+        .innerJoin(creator, eq(workCreator.creator_uuid, creator.uuid))
+        .where(inArray(workCreator.work_uuid, workUuidList));
 
     // Group creators by work UUID
     const creatorMap = new Map<string, CreatorWithRole[]>();
@@ -203,19 +203,19 @@ export async function getWorksByCategory(
         const previewAssets = await db
             .select({
                 uuid: asset.uuid,
-                file_id: asset.fileId,
-                work_uuid: asset.workUuid,
-                asset_type: asset.assetType,
-                file_name: asset.fileName,
-                is_previewpic: asset.isPreviewpic,
+                file_id: asset.file_id,
+                work_uuid: asset.work_uuid,
+                asset_type: asset.asset_type,
+                file_name: asset.file_name,
+                is_previewpic: asset.is_previewpic,
                 language: asset.language,
             })
             .from(asset)
             .where(
                 and(
-                    eq(asset.workUuid, work_uuid),
-                    eq(asset.assetType, 'picture'),
-                    eq(asset.isPreviewpic, true)
+                    eq(asset.work_uuid, work_uuid),
+                    eq(asset.asset_type, 'picture'),
+                    eq(asset.is_previewpic, true)
                 )
             )
             .limit(1);
@@ -223,18 +223,18 @@ export async function getWorksByCategory(
         const nonPreviewAssets = await db
             .select({
                 uuid: asset.uuid,
-                file_id: asset.fileId,
-                work_uuid: asset.workUuid,
-                asset_type: asset.assetType,
-                file_name: asset.fileName,
-                is_previewpic: asset.isPreviewpic,
+                file_id: asset.file_id,
+                work_uuid: asset.work_uuid,
+                asset_type: asset.asset_type,
+                file_name: asset.file_name,
+                is_previewpic: asset.is_previewpic,
                 language: asset.language,
             })
             .from(asset)
             .where(
                 and(
-                    eq(asset.workUuid, work_uuid),
-                    eq(asset.assetType, 'picture')
+                    eq(asset.work_uuid, work_uuid),
+                    eq(asset.asset_type, 'picture')
                 )
             )
             .limit(1);
@@ -262,7 +262,7 @@ export async function getWorkCountByCategory(db: DrizzleDB, categoryUuid: string
     const result = await db
         .select({ count: count() })
         .from(workCategory)
-        .where(eq(workCategory.categoryUuid, categoryUuid));
+        .where(eq(workCategory.category_uuid, categoryUuid));
 
     return result[0]?.count || 0;
 }
@@ -275,7 +275,7 @@ export async function inputCategory(db: DrizzleDB, categoryData: Category): Prom
         await db.insert(category).values({
             uuid: categoryData.uuid,
             name: categoryData.name,
-            parentUuid: categoryData.parent_uuid || null,
+            parent_uuid: categoryData.parent_uuid || null,
         });
         return true;
     } catch (error) {
@@ -300,7 +300,7 @@ export async function updateCategory(
             .update(category)
             .set({ 
                 name,
-                parentUuid: parentUuid || null
+                parent_uuid: parentUuid || null
             })
             .where(eq(category.uuid, categoryUuid));
         return true;
@@ -338,8 +338,8 @@ export async function addWorkCategories(
     try {
         await db.insert(workCategory).values(
             categoryUuids.map(categoryUuid => ({
-                workUuid,
-                categoryUuid,
+                work_uuid: workUuid,
+                category_uuid: categoryUuid,
             }))
         ).onConflictDoNothing();
         return true;
@@ -364,8 +364,8 @@ export async function removeWorkCategories(
             .delete(workCategory)
             .where(
                 and(
-                    eq(workCategory.workUuid, workUuid),
-                    inArray(workCategory.categoryUuid, categoryUuids)
+                    eq(workCategory.work_uuid, workUuid),
+                    inArray(workCategory.category_uuid, categoryUuids)
                 )
             );
         return true;
@@ -382,7 +382,7 @@ export async function removeAllWorkCategories(db: DrizzleDB, workUuid: string): 
     if (!validateUUID(workUuid)) return false;
 
     try {
-        await db.delete(workCategory).where(eq(workCategory.workUuid, workUuid));
+        await db.delete(workCategory).where(eq(workCategory.work_uuid, workUuid));
         return true;
     } catch (error) {
         console.error('Error removing all work categories:', error);

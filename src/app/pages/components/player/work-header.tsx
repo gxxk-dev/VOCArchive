@@ -1,40 +1,5 @@
 import { jsx } from 'hono/jsx'
-
-export interface WorkTitle {
-    work_uuid: string
-    is_official: boolean
-    is_for_search?: boolean
-    language: string
-    title: string
-}
-
-export interface WorkCreator {
-    uuid: string
-    creator_name: string
-    role: string
-}
-
-export interface WorkTag {
-    uuid: string
-    name: string
-}
-
-export interface WorkCategory {
-    uuid: string
-    name: string
-    parent_uuid?: string
-}
-
-export interface WorkInfo {
-    work: {
-        uuid: string
-        copyright_basis: string
-    }
-    titles: WorkTitle[]
-    creator: WorkCreator[]
-    tags?: WorkTag[]
-    categories?: WorkCategory[]
-}
+import type { WorkTitle, Tag, Category, WorkInfo, CreatorWithRole } from '../../../db/types'
 
 export interface WorkHeaderProps {
     workInfo: WorkInfo
@@ -59,7 +24,7 @@ export const WorkHeader = (props: WorkHeaderProps) => {
     const { workInfo, userLang } = props;
 
     let displayTitle = "";
-    let isOfficialTitle = true;
+    let is_officialTitle = true;
 
     if (workInfo.titles && workInfo.titles.length > 0) {
         // Filter out ForSearch titles for display
@@ -69,15 +34,15 @@ export const WorkHeader = (props: WorkHeaderProps) => {
             const userLangTitle = displayTitles.find((t: WorkTitle) => t.language === userLang);
             if (userLangTitle) {
                 displayTitle = userLangTitle.title;
-                isOfficialTitle = userLangTitle.is_official;
+                is_officialTitle = userLangTitle.is_official;
             } else {
                 const officialTitle = displayTitles.find((t: WorkTitle) => t.is_official);
                 if (officialTitle) {
                     displayTitle = officialTitle.title;
-                    isOfficialTitle = true;
+                    is_officialTitle = true;
                 } else {
                     displayTitle = displayTitles[0].title;
-                    isOfficialTitle = false;
+                    is_officialTitle = false;
                 }
             }
         }
@@ -88,7 +53,7 @@ export const WorkHeader = (props: WorkHeaderProps) => {
         .map((t: WorkTitle) => `${languageNames[t.language]} - ${t.title}`)
         .join('<br>');
 
-    const creatorNames = workInfo.creator ? workInfo.creator.map((c: WorkCreator) => c.creator_name).join(', ') : '';
+    const creatorNames = workInfo.creator ? workInfo.creator.map((c: CreatorWithRole) => c.creator_name || 'Unknown').join(', ') : '';
 
     // 处理标签显示
     const renderTags = () => {
@@ -103,7 +68,7 @@ export const WorkHeader = (props: WorkHeaderProps) => {
                 <i class="fas fa-tags"></i>
                 <span class="meta-label">标签:</span>
                 <div class="tags-container">
-                    {visibleTags.map((tag: WorkTag) => 
+                    {visibleTags.map((tag: Tag) => 
                         <span class="tag-chip clickable" data-tag={tag.uuid}>{tag.name}</span>
                     )}
                     {hiddenTags.length > 0 && (
@@ -125,7 +90,7 @@ export const WorkHeader = (props: WorkHeaderProps) => {
                 <i class="fas fa-folder"></i>
                 <span class="meta-label">分类:</span>
                 <div class="categories-container">
-                    {workInfo.categories.map((category: WorkCategory, index: number) => (
+                    {workInfo.categories.map((category: Category, index: number) => (
                         <>
                             {index > 0 && <span class="category-separator"> &gt; </span>}
                             <span class="category-chip clickable" data-category={category.uuid}>{category.name}</span>
@@ -140,7 +105,7 @@ export const WorkHeader = (props: WorkHeaderProps) => {
         <div class="work-header">
             <div class="work-title">
                 {displayTitle}
-                {!isOfficialTitle && (
+                {!is_officialTitle && (
                     <div class="info-icon">
                         <span class="material-symbols-outlined">info</span>
                         <div class="tooltip" dangerouslySetInnerHTML={{ __html: `<strong>非官方标题</strong><br>这是一个非官方标题译名，其官方名称为：<br>${officialTitles}` }}>

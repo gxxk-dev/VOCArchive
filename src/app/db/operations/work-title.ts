@@ -21,7 +21,7 @@ export interface WorkTitleInput {
 }
 
 export interface WorkTitleUpdate {
-    is_official?: boolean;
+    isOfficial?: boolean;
     is_for_search?: boolean;
     language?: string;
     title?: string;
@@ -45,9 +45,9 @@ export async function getWorkTitleByUUID(db: DrizzleDB, titleUuid: string): Prom
         const result = await db
             .select({
                 uuid: workTitle.uuid,
-                work_uuid: workTitle.workUuid,
-                is_official: workTitle.isOfficial,
-                is_for_search: workTitle.isForSearch,
+                work_uuid: workTitle.work_uuid,
+                is_official: workTitle.is_official,
+                is_for_search: workTitle.is_for_search,
                 language: workTitle.language,
                 title: workTitle.title,
             })
@@ -74,14 +74,14 @@ export async function listWorkTitles(db: DrizzleDB, workUuid: string, includeFor
         const query = db
             .select({
                 uuid: workTitle.uuid,
-                work_uuid: workTitle.workUuid,
-                is_official: workTitle.isOfficial,
-                is_for_search: workTitle.isForSearch,
+                work_uuid: workTitle.work_uuid,
+                is_official: workTitle.is_official,
+                is_for_search: workTitle.is_for_search,
                 language: workTitle.language,
                 title: workTitle.title,
             })
             .from(workTitle)
-            .where(eq(workTitle.workUuid, workUuid));
+            .where(eq(workTitle.work_uuid, workUuid));
 
         const allTitles = await query;
         
@@ -121,9 +121,9 @@ export async function inputWorkTitle(db: DrizzleDB, titleData: WorkTitleInput): 
         
         await db.insert(workTitle).values({
             uuid: titleUuid,
-            workUuid: titleData.work_uuid,
-            isOfficial: titleData.is_official,
-            isForSearch: titleData.is_for_search || false,
+            work_uuid: titleData.work_uuid,
+            is_official: titleData.is_official,
+            is_for_search: titleData.is_for_search || false,
             language: titleData.language,
             title: titleData.title,
         });
@@ -162,11 +162,11 @@ export async function updateWorkTitle(
         // Build update object with only provided fields
         const updateData: any = {};
         
-        if (updates.is_official !== undefined) {
-            updateData.isOfficial = updates.is_official;
+        if (updates.isOfficial !== undefined) {
+            updateData.is_official = updates.isOfficial;
         }
         if (updates.is_for_search !== undefined) {
-            updateData.isForSearch = updates.is_for_search;
+            updateData.is_for_search = updates.is_for_search;
         }
         if (updates.language !== undefined) {
             updateData.language = updates.language;
@@ -232,7 +232,7 @@ export async function getWorkTitleCount(db: DrizzleDB, workUuid: string): Promis
         const result = await db
             .select({ uuid: workTitle.uuid })
             .from(workTitle)
-            .where(eq(workTitle.workUuid, workUuid));
+            .where(eq(workTitle.work_uuid, workUuid));
 
         return result.length;
     } catch (error) {

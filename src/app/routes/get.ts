@@ -15,21 +15,21 @@ export const getInfo = new Hono();
 
 // 获取文件重定向
 getInfo.get('/file/:uuid', async (c: any) => {
-    const fileUUID = c.req.param('uuid');
-    const assetURL = c.env.ASSET_URL as string;
+    const file_uuid = c.req.param('uuid');
+    const asset_url = c.env.ASSET_URL as string;
     
-    if (!assetURL) {
+    if (!asset_url) {
         return c.json({ error: 'Asset URL not configured' }, 500);
     }
     
     const db = createDrizzleClient(c.env.DB);
-    const fileURL = await getFileURLByUUID(db, fileUUID, assetURL);
+    const file_url = await getFileURLByUUID(db, file_uuid, asset_url);
     
-    if (!fileURL) {
+    if (!file_url) {
         return c.json({ error: 'File not found' }, 404);
     }
     
-    return c.redirect(fileURL, 302);
+    return c.redirect(file_url, 302);
 });
 
 // 获取作品详情

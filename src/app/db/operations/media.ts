@@ -33,11 +33,11 @@ export async function getMediaByUUID(
     const mediaResult = await db
         .select({
             uuid: mediaSource.uuid,
-            work_uuid: mediaSource.workUuid,
-            is_music: mediaSource.isMusic,
-            file_name: mediaSource.fileName,
+            work_uuid: mediaSource.work_uuid,
+            is_music: mediaSource.is_music,
+            file_name: mediaSource.file_name,
             url: mediaSource.url,
-            mime_type: mediaSource.mimeType,
+            mime_type: mediaSource.mime_type,
             info: mediaSource.info,
         })
         .from(mediaSource)
@@ -64,11 +64,11 @@ export async function listMedia(
     const mediaList = await db
         .select({
             uuid: mediaSource.uuid,
-            work_uuid: mediaSource.workUuid,
-            is_music: mediaSource.isMusic,
-            file_name: mediaSource.fileName,
+            work_uuid: mediaSource.work_uuid,
+            is_music: mediaSource.is_music,
+            file_name: mediaSource.file_name,
             url: mediaSource.url,
-            mime_type: mediaSource.mimeType,
+            mime_type: mediaSource.mime_type,
             info: mediaSource.info,
         })
         .from(mediaSource)
@@ -87,11 +87,11 @@ export async function inputMedia(
 ): Promise<void> {
     await db.insert(mediaSource).values({
         uuid: mediaData.uuid,
-        workUuid: mediaData.work_uuid,
-        isMusic: mediaData.is_music,
-        fileName: mediaData.file_name,
+        work_uuid: mediaData.work_uuid,
+        is_music: mediaData.is_music,
+        file_name: mediaData.file_name,
         url: mediaData.url,
-        mimeType: mediaData.mime_type,
+        mime_type: mediaData.mime_type,
         info: mediaData.info,
     });
 }
@@ -110,11 +110,11 @@ export async function updateMedia(
         await db
             .update(mediaSource)
             .set({
-                workUuid: mediaData.work_uuid,
-                isMusic: mediaData.is_music,
-                fileName: mediaData.file_name,
+                work_uuid: mediaData.work_uuid,
+                is_music: mediaData.is_music,
+                file_name: mediaData.file_name,
                 url: mediaData.url,
-                mimeType: mediaData.mime_type,
+                mime_type: mediaData.mime_type,
                 info: mediaData.info,
             })
             .where(eq(mediaSource.uuid, mediaUuid));
@@ -169,7 +169,7 @@ export async function getFileURLByUUID(
 
     // Then check asset table
     const assetResult = await db
-        .select({ file_id: asset.fileId })
+        .select({ file_id: asset.file_id })
         .from(asset)
         .where(eq(asset.uuid, fileUuid))
         .limit(1);

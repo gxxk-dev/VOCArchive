@@ -11,7 +11,7 @@ export const creator = sqliteTable('creator', {
 
 export const work = sqliteTable('work', {
     uuid: text('uuid').primaryKey(),
-    copyrightBasis: text('copyright_basis', { 
+    copyright_basis: text('copyright_basis', { 
         enum: ['none', 'accept', 'license'] 
     }).notNull(),
 });
@@ -24,140 +24,140 @@ export const tag = sqliteTable('tag', {
 export const category = sqliteTable('category', {
     uuid: text('uuid').primaryKey(),
     name: text('name').notNull().unique(),
-    parentUuid: text('parent_uuid'),
+    parent_uuid: text('parent_uuid'),
 });
 
 export const footerSettings = sqliteTable('footer_settings', {
     uuid: text('uuid').primaryKey(),
-    itemType: text('item_type', { 
+    item_type: text('item_type', { 
         enum: ['link', 'social', 'copyright'] 
     }).notNull(),
     text: text('text').notNull(),
     url: text('url'),
-    iconClass: text('icon_class'),
+    icon_class: text('icon_class'),
 });
 
 // Dependent tables (with foreign key relationships)
 
 export const creatorWiki = sqliteTable('creator_wiki', {
-    creatorUuid: text('creator_uuid').notNull().references(() => creator.uuid, { 
+    creator_uuid: text('creator_uuid').notNull().references(() => creator.uuid, { 
         onDelete: 'cascade' 
     }),
     platform: text('platform').notNull(),
     identifier: text('identifier').notNull(),
 }, (table) => ({
-    pk: primaryKey({ columns: [table.creatorUuid, table.platform] }),
+    pk: primaryKey({ columns: [table.creator_uuid, table.platform] }),
 }));
 
 export const workTitle = sqliteTable('work_title', {
     uuid: text('uuid').primaryKey(),
-    workUuid: text('work_uuid').notNull().references(() => work.uuid, { 
+    work_uuid: text('work_uuid').notNull().references(() => work.uuid, { 
         onDelete: 'cascade' 
     }),
-    isOfficial: integer('is_official', { mode: 'boolean' }).notNull(),
-    isForSearch: integer('is_for_search', { mode: 'boolean' }).notNull().default(false),
+    is_official: integer('is_official', { mode: 'boolean' }).notNull(),
+    is_for_search: integer('is_for_search', { mode: 'boolean' }).notNull().default(false),
     language: text('language').notNull(),
     title: text('title').notNull(),
 });
 
 export const workLicense = sqliteTable('work_license', {
-    workUuid: text('work_uuid').primaryKey().references(() => work.uuid, { 
+    work_uuid: text('work_uuid').primaryKey().references(() => work.uuid, { 
         onDelete: 'cascade' 
     }),
-    licenseType: text('license_type').notNull(),
+    license_type: text('license_type').notNull(),
 });
 
 export const mediaSource = sqliteTable('media_source', {
     uuid: text('uuid').primaryKey(),
-    workUuid: text('work_uuid').notNull().references(() => work.uuid, { 
+    work_uuid: text('work_uuid').notNull().references(() => work.uuid, { 
         onDelete: 'cascade' 
     }),
-    isMusic: integer('is_music', { mode: 'boolean' }).notNull(),
-    fileName: text('file_name').notNull(),
+    is_music: integer('is_music', { mode: 'boolean' }).notNull(),
+    file_name: text('file_name').notNull(),
     url: text('url').notNull(),
-    mimeType: text('mime_type').notNull(),
+    mime_type: text('mime_type').notNull(),
     info: text('info').notNull(),
 });
 
 export const asset = sqliteTable('asset', {
     uuid: text('uuid').primaryKey(),
-    fileId: text('file_id').notNull(),
-    workUuid: text('work_uuid').notNull().references(() => work.uuid, { 
+    file_id: text('file_id').notNull(),
+    work_uuid: text('work_uuid').notNull().references(() => work.uuid, { 
         onDelete: 'cascade' 
     }),
-    assetType: text('asset_type', { 
+    asset_type: text('asset_type', { 
         enum: ['lyrics', 'picture'] 
     }).notNull(),
-    fileName: text('file_name').notNull(),
-    isPreviewpic: integer('is_previewpic', { mode: 'boolean' }),
+    file_name: text('file_name').notNull(),
+    is_previewpic: integer('is_previewpic', { mode: 'boolean' }),
     language: text('language'),
 });
 
 export const workCreator = sqliteTable('work_creator', {
-    workUuid: text('work_uuid').notNull().references(() => work.uuid, { 
+    work_uuid: text('work_uuid').notNull().references(() => work.uuid, { 
         onDelete: 'cascade' 
     }),
-    creatorUuid: text('creator_uuid').notNull().references(() => creator.uuid, { 
+    creator_uuid: text('creator_uuid').notNull().references(() => creator.uuid, { 
         onDelete: 'cascade' 
     }),
     role: text('role').notNull(),
 }, (table) => ({
-    pk: primaryKey({ columns: [table.workUuid, table.creatorUuid, table.role] }),
+    pk: primaryKey({ columns: [table.work_uuid, table.creator_uuid, table.role] }),
 }));
 
 export const assetCreator = sqliteTable('asset_creator', {
-    assetUuid: text('asset_uuid').notNull().references(() => asset.uuid, { 
+    asset_uuid: text('asset_uuid').notNull().references(() => asset.uuid, { 
         onDelete: 'cascade' 
     }),
-    creatorUuid: text('creator_uuid').notNull().references(() => creator.uuid),
+    creator_uuid: text('creator_uuid').notNull().references(() => creator.uuid),
     role: text('role').notNull(),
 }, (table) => ({
-    pk: primaryKey({ columns: [table.assetUuid, table.creatorUuid] }),
+    pk: primaryKey({ columns: [table.asset_uuid, table.creator_uuid] }),
 }));
 
 export const workRelation = sqliteTable('work_relation', {
     uuid: text('uuid').primaryKey(),
-    fromWorkUuid: text('from_work_uuid').notNull().references(() => work.uuid, { 
+    from_work_uuid: text('from_work_uuid').notNull().references(() => work.uuid, { 
         onDelete: 'cascade' 
     }),
-    toWorkUuid: text('to_work_uuid').notNull().references(() => work.uuid, { 
+    to_work_uuid: text('to_work_uuid').notNull().references(() => work.uuid, { 
         onDelete: 'cascade' 
     }),
-    relationType: text('relation_type', { 
+    relation_type: text('relation_type', { 
         enum: ['original', 'remix', 'cover', 'remake', 'picture', 'lyrics'] 
     }).notNull(),
 });
 
 export const workWiki = sqliteTable('work_wiki', {
-    workUuid: text('work_uuid').notNull().references(() => work.uuid, { 
+    work_uuid: text('work_uuid').notNull().references(() => work.uuid, { 
         onDelete: 'cascade' 
     }),
     platform: text('platform').notNull(),
     identifier: text('identifier').notNull(),
 }, (table) => ({
-    pk: primaryKey({ columns: [table.workUuid, table.platform] }),
+    pk: primaryKey({ columns: [table.work_uuid, table.platform] }),
 }));
 
 export const workTag = sqliteTable('work_tag', {
-    workUuid: text('work_uuid').notNull().references(() => work.uuid, { 
+    work_uuid: text('work_uuid').notNull().references(() => work.uuid, { 
         onDelete: 'cascade' 
     }),
-    tagUuid: text('tag_uuid').notNull().references(() => tag.uuid, { 
+    tag_uuid: text('tag_uuid').notNull().references(() => tag.uuid, { 
         onDelete: 'cascade' 
     }),
 }, (table) => ({
-    pk: primaryKey({ columns: [table.workUuid, table.tagUuid] }),
+    pk: primaryKey({ columns: [table.work_uuid, table.tag_uuid] }),
 }));
 
 export const workCategory = sqliteTable('work_category', {
-    workUuid: text('work_uuid').notNull().references(() => work.uuid, { 
+    work_uuid: text('work_uuid').notNull().references(() => work.uuid, { 
         onDelete: 'cascade' 
     }),
-    categoryUuid: text('category_uuid').notNull().references(() => category.uuid, { 
+    category_uuid: text('category_uuid').notNull().references(() => category.uuid, { 
         onDelete: 'cascade' 
     }),
 }, (table) => ({
-    pk: primaryKey({ columns: [table.workUuid, table.categoryUuid] }),
+    pk: primaryKey({ columns: [table.work_uuid, table.category_uuid] }),
 }));
 
 // Relations
@@ -170,7 +170,7 @@ export const creatorRelations = relations(creator, ({ many }) => ({
 
 export const creatorWikiRelations = relations(creatorWiki, ({ one }) => ({
     creator: one(creator, {
-        fields: [creatorWiki.creatorUuid],
+        fields: [creatorWiki.creator_uuid],
         references: [creator.uuid],
     }),
 }));
@@ -190,28 +190,28 @@ export const workRelations = relations(work, ({ many }) => ({
 
 export const workTitleRelations = relations(workTitle, ({ one }) => ({
     work: one(work, {
-        fields: [workTitle.workUuid],
+        fields: [workTitle.work_uuid],
         references: [work.uuid],
     }),
 }));
 
 export const workLicenseRelations = relations(workLicense, ({ one }) => ({
     work: one(work, {
-        fields: [workLicense.workUuid],
+        fields: [workLicense.work_uuid],
         references: [work.uuid],
     }),
 }));
 
 export const mediaSourceRelations = relations(mediaSource, ({ one }) => ({
     work: one(work, {
-        fields: [mediaSource.workUuid],
+        fields: [mediaSource.work_uuid],
         references: [work.uuid],
     }),
 }));
 
 export const assetRelations = relations(asset, ({ one, many }) => ({
     work: one(work, {
-        fields: [asset.workUuid],
+        fields: [asset.work_uuid],
         references: [work.uuid],
     }),
     assetCreators: many(assetCreator),
@@ -219,34 +219,34 @@ export const assetRelations = relations(asset, ({ one, many }) => ({
 
 export const workCreatorRelations = relations(workCreator, ({ one }) => ({
     work: one(work, {
-        fields: [workCreator.workUuid],
+        fields: [workCreator.work_uuid],
         references: [work.uuid],
     }),
     creator: one(creator, {
-        fields: [workCreator.creatorUuid],
+        fields: [workCreator.creator_uuid],
         references: [creator.uuid],
     }),
 }));
 
 export const assetCreatorRelations = relations(assetCreator, ({ one }) => ({
     asset: one(asset, {
-        fields: [assetCreator.assetUuid],
+        fields: [assetCreator.asset_uuid],
         references: [asset.uuid],
     }),
     creator: one(creator, {
-        fields: [assetCreator.creatorUuid],
+        fields: [assetCreator.creator_uuid],
         references: [creator.uuid],
     }),
 }));
 
 export const workRelationRelations = relations(workRelation, ({ one }) => ({
     fromWork: one(work, {
-        fields: [workRelation.fromWorkUuid],
+        fields: [workRelation.from_work_uuid],
         references: [work.uuid],
         relationName: 'fromWork',
     }),
     toWork: one(work, {
-        fields: [workRelation.toWorkUuid],
+        fields: [workRelation.to_work_uuid],
         references: [work.uuid],
         relationName: 'toWork',
     }),
@@ -254,7 +254,7 @@ export const workRelationRelations = relations(workRelation, ({ one }) => ({
 
 export const workWikiRelations = relations(workWiki, ({ one }) => ({
     work: one(work, {
-        fields: [workWiki.workUuid],
+        fields: [workWiki.work_uuid],
         references: [work.uuid],
     }),
 }));
@@ -265,18 +265,18 @@ export const tagRelations = relations(tag, ({ many }) => ({
 
 export const workTagRelations = relations(workTag, ({ one }) => ({
     work: one(work, {
-        fields: [workTag.workUuid],
+        fields: [workTag.work_uuid],
         references: [work.uuid],
     }),
     tag: one(tag, {
-        fields: [workTag.tagUuid],
+        fields: [workTag.tag_uuid],
         references: [tag.uuid],
     }),
 }));
 
 export const categoryRelations = relations(category, ({ one, many }) => ({
     parent: one(category, {
-        fields: [category.parentUuid],
+        fields: [category.parent_uuid],
         references: [category.uuid],
         relationName: 'parentCategory',
     }),
@@ -286,11 +286,11 @@ export const categoryRelations = relations(category, ({ one, many }) => ({
 
 export const workCategoryRelations = relations(workCategory, ({ one }) => ({
     work: one(work, {
-        fields: [workCategory.workUuid],
+        fields: [workCategory.work_uuid],
         references: [work.uuid],
     }),
     category: one(category, {
-        fields: [workCategory.categoryUuid],
+        fields: [workCategory.category_uuid],
         references: [category.uuid],
     }),
 }));

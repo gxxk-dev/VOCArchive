@@ -46,11 +46,11 @@ export async function getAssetByUUID(
     const assetResult = await db
         .select({
             uuid: asset.uuid,
-            file_id: asset.fileId,
-            work_uuid: asset.workUuid,
-            asset_type: asset.assetType,
-            file_name: asset.fileName,
-            is_previewpic: asset.isPreviewpic,
+            file_id: asset.file_id,
+            work_uuid: asset.work_uuid,
+            asset_type: asset.asset_type,
+            file_name: asset.file_name,
+            is_previewpic: asset.is_previewpic,
             language: asset.language,
         })
         .from(asset)
@@ -70,8 +70,8 @@ export async function getAssetByUUID(
             role: assetCreator.role,
         })
         .from(assetCreator)
-        .innerJoin(creator, eq(assetCreator.creatorUuid, creator.uuid))
-        .where(eq(assetCreator.assetUuid, assetUuid));
+        .innerJoin(creator, eq(assetCreator.creator_uuid, creator.uuid))
+        .where(eq(assetCreator.asset_uuid, assetUuid));
 
     return {
         asset: convertAssetData(assetResult[0]),
@@ -96,11 +96,11 @@ export async function listAssets(
     const assets = await db
         .select({
             uuid: asset.uuid,
-            file_id: asset.fileId,
-            work_uuid: asset.workUuid,
-            asset_type: asset.assetType,
-            file_name: asset.fileName,
-            is_previewpic: asset.isPreviewpic,
+            file_id: asset.file_id,
+            work_uuid: asset.work_uuid,
+            asset_type: asset.asset_type,
+            file_name: asset.file_name,
+            is_previewpic: asset.is_previewpic,
             language: asset.language,
         })
         .from(asset)
@@ -122,11 +122,11 @@ export async function inputAsset(
     // Insert asset
     await db.insert(asset).values({
         uuid: assetData.uuid,
-        fileId: assetData.file_id,
-        workUuid: assetData.work_uuid,
-        assetType: assetData.asset_type,
-        fileName: assetData.file_name,
-        isPreviewpic: assetData.is_previewpic || null,
+        file_id: assetData.file_id,
+        work_uuid: assetData.work_uuid,
+        asset_type: assetData.asset_type,
+        file_name: assetData.file_name,
+        is_previewpic: assetData.is_previewpic || null,
         language: assetData.language || null,
     });
 
@@ -134,8 +134,8 @@ export async function inputAsset(
     if (creators && creators.length > 0) {
         await db.insert(assetCreator).values(
             creators.map(creator => ({
-                assetUuid: assetData.uuid,
-                creatorUuid: creator.creator_uuid,
+                asset_uuid: assetData.uuid,
+                creator_uuid: creator.creator_uuid,
                 role: creator.role,
             }))
         );
@@ -159,11 +159,11 @@ export async function updateAsset(
         await db
             .update(asset)
             .set({
-                fileId: assetData.file_id,
-                workUuid: assetData.work_uuid,
-                assetType: assetData.asset_type,
-                fileName: assetData.file_name,
-                isPreviewpic: assetData.is_previewpic || null,
+                file_id: assetData.file_id,
+                work_uuid: assetData.work_uuid,
+                asset_type: assetData.asset_type,
+                file_name: assetData.file_name,
+                is_previewpic: assetData.is_previewpic || null,
                 language: assetData.language || null,
             })
             .where(eq(asset.uuid, assetUuid));
@@ -171,14 +171,14 @@ export async function updateAsset(
         // Delete old asset creators
         await db
             .delete(assetCreator)
-            .where(eq(assetCreator.assetUuid, assetUuid));
+            .where(eq(assetCreator.asset_uuid, assetUuid));
 
         // Insert new asset creators
         if (creators && creators.length > 0) {
             await db.insert(assetCreator).values(
                 creators.map(creator => ({
-                    assetUuid: assetUuid,
-                    creatorUuid: creator.creator_uuid,
+                    asset_uuid: assetUuid,
+                    creator_uuid: creator.creator_uuid,
                     role: creator.role,
                 }))
             );

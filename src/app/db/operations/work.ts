@@ -133,13 +133,13 @@ export function validateUUID(uuid: string): boolean {
 async function getWorkTitles(db: DrizzleDB, workUUID: string, includeForSearch: boolean = true): Promise<WorkTitle[]> {
     const query = db
         .select({
-            is_official: workTitle.isOfficial,
-            is_for_search: workTitle.isForSearch,
+            is_official: workTitle.is_official,
+            is_for_search: workTitle.is_for_search,
             language: workTitle.language,
             title: workTitle.title,
         })
         .from(workTitle)
-        .where(eq(workTitle.workUuid, workUUID));
+        .where(eq(workTitle.work_uuid, workUUID));
     
     const allTitles = await query;
     
@@ -177,15 +177,15 @@ export async function getWorkListWithPagination(
     // Get all creators for these works in a single query
     const creators = await db
         .select({
-            work_uuid: workCreator.workUuid,
+            work_uuid: workCreator.work_uuid,
             creator_uuid: creator.uuid,
             creator_name: creator.name,
             creator_type: creator.type,
             role: workCreator.role,
         })
         .from(workCreator)
-        .innerJoin(creator, eq(workCreator.creatorUuid, creator.uuid))
-        .where(inArray(workCreator.workUuid, workUUIDs));
+        .innerJoin(creator, eq(workCreator.creator_uuid, creator.uuid))
+        .where(inArray(workCreator.work_uuid, workUUIDs));
     
     // Group creators by work UUID
     const creatorMap = new Map<string, CreatorWithRole[]>();
@@ -212,19 +212,19 @@ export async function getWorkListWithPagination(
         const previewAssets = await db
             .select({
                 uuid: asset.uuid,
-                file_id: asset.fileId,
-                work_uuid: asset.workUuid,
-                asset_type: asset.assetType,
-                file_name: asset.fileName,
-                is_previewpic: asset.isPreviewpic,
+                file_id: asset.file_id,
+                work_uuid: asset.work_uuid,
+                asset_type: asset.asset_type,
+                file_name: asset.file_name,
+                is_previewpic: asset.is_previewpic,
                 language: asset.language,
             })
             .from(asset)
             .where(
                 and(
-                    eq(asset.workUuid, work_uuid),
-                    eq(asset.assetType, 'picture'),
-                    eq(asset.isPreviewpic, true)
+                    eq(asset.work_uuid, work_uuid),
+                    eq(asset.asset_type, 'picture'),
+                    eq(asset.is_previewpic, true)
                 )
             )
             .limit(1);
@@ -232,18 +232,18 @@ export async function getWorkListWithPagination(
         const nonPreviewAssets = await db
             .select({
                 uuid: asset.uuid,
-                file_id: asset.fileId,
-                work_uuid: asset.workUuid,
-                asset_type: asset.assetType,
-                file_name: asset.fileName,
-                is_previewpic: asset.isPreviewpic,
+                file_id: asset.file_id,
+                work_uuid: asset.work_uuid,
+                asset_type: asset.asset_type,
+                file_name: asset.file_name,
+                is_previewpic: asset.is_previewpic,
                 language: asset.language,
             })
             .from(asset)
             .where(
                 and(
-                    eq(asset.workUuid, work_uuid),
-                    eq(asset.assetType, 'picture')
+                    eq(asset.work_uuid, work_uuid),
+                    eq(asset.asset_type, 'picture')
                     // For non-preview, we'll need to handle null/false separately
                 )
             )
@@ -256,19 +256,19 @@ export async function getWorkListWithPagination(
                 name: tag.name,
             })
             .from(tag)
-            .innerJoin(workTag, eq(tag.uuid, workTag.tagUuid))
-            .where(eq(workTag.workUuid, work_uuid));
+            .innerJoin(workTag, eq(tag.uuid, workTag.tag_uuid))
+            .where(eq(workTag.work_uuid, work_uuid));
         
         // Get categories
         const workCategories = await db
             .select({
                 uuid: category.uuid,
                 name: category.name,
-                parent_uuid: category.parentUuid,
+                parent_uuid: category.parent_uuid,
             })
             .from(category)
-            .innerJoin(workCategory, eq(category.uuid, workCategory.categoryUuid))
-            .where(eq(workCategory.workUuid, work_uuid));
+            .innerJoin(workCategory, eq(category.uuid, workCategory.category_uuid))
+            .where(eq(workCategory.work_uuid, work_uuid));
         
         return {
             work_uuid,
@@ -315,7 +315,7 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
     const works = await db
         .select({
             uuid: work.uuid,
-            copyright_basis: work.copyrightBasis,
+            copyright_basis: work.copyright_basis,
         })
         .from(work)
         .where(eq(work.uuid, workUUID))
@@ -329,14 +329,13 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
 
     // 2. Get work titles
     const titles = await getWorkTitles(db, workUUID, true);
-    console.log(titles)
     // 3. Get license information if needed
     let license: string | undefined;
     if (workData.copyright_basis === 'license') {
         const licenseData = await db
-            .select({ license_type: workLicense.licenseType })
+            .select({ license_type: workLicense.license_type })
             .from(workLicense)
-            .where(eq(workLicense.workUuid, workUUID))
+            .where(eq(workLicense.work_uuid, workUUID))
             .limit(1);
         
         license = licenseData[0]?.license_type;
@@ -346,25 +345,25 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
     const mediaSources = await db
         .select({
             uuid: mediaSource.uuid,
-            work_uuid: mediaSource.workUuid,
-            is_music: mediaSource.isMusic,
-            file_name: mediaSource.fileName,
+            work_uuid: mediaSource.work_uuid,
+            is_music: mediaSource.is_music,
+            file_name: mediaSource.file_name,
             url: mediaSource.url,
-            mime_type: mediaSource.mimeType,
+            mime_type: mediaSource.mime_type,
             info: mediaSource.info,
         })
         .from(mediaSource)
-        .where(eq(mediaSource.workUuid, workUUID));
+        .where(eq(mediaSource.work_uuid, workUUID));
 
     // 5. Get assets with their creators
     const assets = await db
         .select({
             uuid: asset.uuid,
-            file_id: asset.fileId,
-            work_uuid: asset.workUuid,
-            asset_type: asset.assetType,
-            file_name: asset.fileName,
-            is_previewpic: asset.isPreviewpic,
+            file_id: asset.file_id,
+            work_uuid: asset.work_uuid,
+            asset_type: asset.asset_type,
+            file_name: asset.file_name,
+            is_previewpic: asset.is_previewpic,
             language: asset.language,
             creator_uuid: creator.uuid,
             creator_name: creator.name,
@@ -372,9 +371,9 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
             creator_role: assetCreator.role,
         })
         .from(asset)
-        .leftJoin(assetCreator, eq(asset.uuid, assetCreator.assetUuid))
-        .leftJoin(creator, eq(assetCreator.creatorUuid, creator.uuid))
-        .where(eq(asset.workUuid, workUUID));
+        .leftJoin(assetCreator, eq(asset.uuid, assetCreator.asset_uuid))
+        .leftJoin(creator, eq(assetCreator.creator_uuid, creator.uuid))
+        .where(eq(asset.work_uuid, workUUID));
 
     // Group assets with their creators
     const assetMap = new Map<string, AssetWithCreators>();
@@ -415,9 +414,9 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
             wiki_identifier: creatorWiki.identifier,
         })
         .from(workCreator)
-        .innerJoin(creator, eq(workCreator.creatorUuid, creator.uuid))
-        .leftJoin(creatorWiki, eq(creator.uuid, creatorWiki.creatorUuid))
-        .where(eq(workCreator.workUuid, workUUID));
+        .innerJoin(creator, eq(workCreator.creator_uuid, creator.uuid))
+        .leftJoin(creatorWiki, eq(creator.uuid, creatorWiki.creator_uuid))
+        .where(eq(workCreator.work_uuid, workUUID));
 
     // Group creators with their wikis
     const creatorMap = new Map<string, CreatorWithRole>();
@@ -447,14 +446,14 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
     const relations = await db
         .select({
             uuid: workRelation.uuid,
-            from_work_uuid: workRelation.fromWorkUuid,
-            to_work_uuid: workRelation.toWorkUuid,
-            relation_type: workRelation.relationType,
+            from_work_uuid: workRelation.from_work_uuid,
+            to_work_uuid: workRelation.to_work_uuid,
+            relation_type: workRelation.relation_type,
         })
         .from(workRelation)
         .where(or(
-            eq(workRelation.fromWorkUuid, workUUID),
-            eq(workRelation.toWorkUuid, workUUID)
+            eq(workRelation.from_work_uuid, workUUID),
+            eq(workRelation.to_work_uuid, workUUID)
         ));
 
     // Get titles for related works
@@ -479,14 +478,14 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
     const originalRelations = await db
         .select({
             uuid: workRelation.uuid,
-            from_work_uuid: workRelation.fromWorkUuid,
-            to_work_uuid: workRelation.toWorkUuid,
-            relation_type: workRelation.relationType,
+            from_work_uuid: workRelation.from_work_uuid,
+            to_work_uuid: workRelation.to_work_uuid,
+            relation_type: workRelation.relation_type,
         })
         .from(workRelation)
         .where(and(
-            eq(workRelation.toWorkUuid, workUUID),
-            eq(workRelation.relationType, 'original')
+            eq(workRelation.to_work_uuid, workUUID),
+            eq(workRelation.relation_type, 'original')
         ));
 
     for (const relation of originalRelations) {
@@ -515,7 +514,7 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
             identifier: workWiki.identifier,
         })
         .from(workWiki)
-        .where(eq(workWiki.workUuid, workUUID));
+        .where(eq(workWiki.work_uuid, workUUID));
 
     // 9. Get work tags
     const workTags = await db
@@ -524,19 +523,19 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
             name: tag.name,
         })
         .from(tag)
-        .innerJoin(workTag, eq(tag.uuid, workTag.tagUuid))
-        .where(eq(workTag.workUuid, workUUID));
+        .innerJoin(workTag, eq(tag.uuid, workTag.tag_uuid))
+        .where(eq(workTag.work_uuid, workUUID));
 
     // 10. Get work categories
     const workCategories = await db
         .select({
             uuid: category.uuid,
             name: category.name,
-            parent_uuid: category.parentUuid,
+            parent_uuid: category.parent_uuid,
         })
         .from(category)
-        .innerJoin(workCategory, eq(category.uuid, workCategory.categoryUuid))
-        .where(eq(workCategory.workUuid, workUUID));
+        .innerJoin(workCategory, eq(category.uuid, workCategory.category_uuid))
+        .where(eq(workCategory.work_uuid, workUUID));
 
     // 11. Assemble complete information
     return {
@@ -571,7 +570,7 @@ export async function inputWork(
     // Insert work
     await db.insert(work).values({
         uuid: workData.uuid,
-        copyrightBasis: workData.copyright_basis,
+        copyright_basis: workData.copyright_basis,
     });
     
     // Insert titles
@@ -579,9 +578,9 @@ export async function inputWork(
         await db.insert(workTitle).values(
             titles.map(title => ({
                 uuid: crypto.randomUUID(),
-                workUuid: workData.uuid,
-                isOfficial: title.is_official,
-                isForSearch: title.is_for_search || false,
+                work_uuid: workData.uuid,
+                is_official: title.is_official,
+                is_for_search: title.is_for_search || false,
                 language: title.language,
                 title: title.title,
             }))
@@ -591,8 +590,8 @@ export async function inputWork(
     // Insert license if needed
     if (license && workData.copyright_basis === 'license') {
         await db.insert(workLicense).values({
-            workUuid: workData.uuid,
-            licenseType: license,
+            work_uuid: workData.uuid,
+            license_type: license,
         });
     }
     
@@ -600,8 +599,8 @@ export async function inputWork(
     if (creators.length > 0) {
         await db.insert(workCreator).values(
             creators.map(creator => ({
-                workUuid: workData.uuid,
-                creatorUuid: creator.creator_uuid,
+                work_uuid: workData.uuid,
+                creator_uuid: creator.creator_uuid,
                 role: creator.role,
             }))
         );
@@ -611,7 +610,7 @@ export async function inputWork(
     if (wikis && wikis.length > 0) {
         await db.insert(workWiki).values(
             wikis.map(wiki => ({
-                workUuid: workData.uuid,
+                work_uuid: workData.uuid,
                 platform: wiki.platform,
                 identifier: wiki.identifier,
             }))
@@ -638,18 +637,18 @@ export async function updateWork(
         // Update work
         await db
             .update(work)
-            .set({ copyrightBasis: workData.copyright_basis })
+            .set({ copyright_basis: workData.copyright_basis })
             .where(eq(work.uuid, workUuid));
         
         // Delete and re-insert titles
-        await db.delete(workTitle).where(eq(workTitle.workUuid, workUuid));
+        await db.delete(workTitle).where(eq(workTitle.work_uuid, workUuid));
         if (titles.length > 0) {
             await db.insert(workTitle).values(
                 titles.map(title => ({
                     uuid: crypto.randomUUID(),
-                    workUuid: workUuid,
-                    isOfficial: title.is_official,
-                    isForSearch: title.is_for_search || false,
+                    work_uuid: workUuid,
+                    is_official: title.is_official,
+                    is_for_search: title.is_for_search || false,
                     language: title.language,
                     title: title.title,
                 }))
@@ -657,22 +656,22 @@ export async function updateWork(
         }
         
         // Handle license
-        await db.delete(workLicense).where(eq(workLicense.workUuid, workUuid));
+        await db.delete(workLicense).where(eq(workLicense.work_uuid, workUuid));
         if (license && workData.copyright_basis === 'license') {
             await db.insert(workLicense).values({
-                workUuid: workUuid,
-                licenseType: license,
+                work_uuid: workUuid,
+                license_type: license,
             });
         }
         
         // Handle creators
         if (creators) {
-            await db.delete(workCreator).where(eq(workCreator.workUuid, workUuid));
+            await db.delete(workCreator).where(eq(workCreator.work_uuid, workUuid));
             if (creators.length > 0) {
                 await db.insert(workCreator).values(
                     creators.map(creator => ({
-                        workUuid: workUuid,
-                        creatorUuid: creator.creator_uuid,
+                        work_uuid: workUuid,
+                        creator_uuid: creator.creator_uuid,
                         role: creator.role,
                     }))
                 );
@@ -680,11 +679,11 @@ export async function updateWork(
         }
         
         // Handle wikis
-        await db.delete(workWiki).where(eq(workWiki.workUuid, workUuid));
+        await db.delete(workWiki).where(eq(workWiki.work_uuid, workUuid));
         if (wikis && wikis.length > 0) {
             await db.insert(workWiki).values(
                 wikis.map(wiki => ({
-                    workUuid: workUuid,
+                    work_uuid: workUuid,
                     platform: wiki.platform,
                     identifier: wiki.identifier,
                 }))
@@ -734,11 +733,11 @@ export async function listAssets(db: DrizzleDB, page: number, pageSize: number):
     const assets = await db
         .select({
             uuid: asset.uuid,
-            file_id: asset.fileId,
-            work_uuid: asset.workUuid,
-            asset_type: asset.assetType,
-            file_name: asset.fileName,
-            is_previewpic: asset.isPreviewpic,
+            file_id: asset.file_id,
+            work_uuid: asset.work_uuid,
+            asset_type: asset.asset_type,
+            file_name: asset.file_name,
+            is_previewpic: asset.is_previewpic,
             language: asset.language,
         })
         .from(asset)
@@ -769,11 +768,11 @@ export async function inputAsset(
         // Insert asset
         await db.insert(asset).values({
             uuid: assetData.uuid,
-            fileId: assetData.file_id,
-            workUuid: assetData.work_uuid,
-            assetType: assetData.asset_type,
-            fileName: assetData.file_name,
-            isPreviewpic: assetData.is_previewpic || null,
+            file_id: assetData.file_id,
+            work_uuid: assetData.work_uuid,
+            asset_type: assetData.asset_type,
+            file_name: assetData.file_name,
+            is_previewpic: assetData.is_previewpic || null,
             language: assetData.language || null,
         });
 
@@ -781,8 +780,8 @@ export async function inputAsset(
         if (creators.length > 0) {
             await db.insert(assetCreator).values(
                 creators.map(creator => ({
-                    assetUuid: assetData.uuid,
-                    creatorUuid: creator.creator_uuid,
+                    asset_uuid: assetData.uuid,
+                    creator_uuid: creator.creator_uuid,
                     role: creator.role,
                 }))
             );
@@ -811,23 +810,23 @@ export async function updateAsset(
         await db
             .update(asset)
             .set({
-                fileId: assetData.file_id,
-                workUuid: assetData.work_uuid,
-                assetType: assetData.asset_type,
-                fileName: assetData.file_name,
-                isPreviewpic: assetData.is_previewpic || null,
+                file_id: assetData.file_id,
+                work_uuid: assetData.work_uuid,
+                asset_type: assetData.asset_type,
+                file_name: assetData.file_name,
+                is_previewpic: assetData.is_previewpic || null,
                 language: assetData.language || null,
             })
             .where(eq(asset.uuid, assetUuid));
 
         // Handle creators
         if (creators) {
-            await db.delete(assetCreator).where(eq(assetCreator.assetUuid, assetUuid));
+            await db.delete(assetCreator).where(eq(assetCreator.asset_uuid, assetUuid));
             if (creators.length > 0) {
                 await db.insert(assetCreator).values(
                     creators.map(creator => ({
-                        assetUuid: assetUuid,
-                        creatorUuid: creator.creator_uuid,
+                        asset_uuid: assetUuid,
+                        creator_uuid: creator.creator_uuid,
                         role: creator.role,
                     }))
                 );
@@ -866,9 +865,9 @@ export async function listRelations(db: DrizzleDB, page: number, pageSize: numbe
     const relations = await db
         .select({
             uuid: workRelation.uuid,
-            from_work_uuid: workRelation.fromWorkUuid,
-            to_work_uuid: workRelation.toWorkUuid,
-            relation_type: workRelation.relationType,
+            from_work_uuid: workRelation.from_work_uuid,
+            to_work_uuid: workRelation.to_work_uuid,
+            relation_type: workRelation.relation_type,
         })
         .from(workRelation)
         .limit(pageSize)

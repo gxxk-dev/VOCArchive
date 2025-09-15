@@ -57,12 +57,12 @@ interface UpdateWorkTitleRequestBody {
 const updateHandlers = {
     creator: async (DB: any, body: UpdateCreatorRequestBody) => {
         const db = createDrizzleClient(DB);
-        const fullCreator = {
+        const full_creator = {
             uuid: body.creator_uuid,
             name: body.creator.name,
             type: body.creator.type
         };
-        return await updateCreator(db, body.creator_uuid, fullCreator, body.wikis);
+        return await updateCreator(db, body.creator_uuid, full_creator, body.wikis);
     },
     work: async (DB: any, body: UpdateWorkRequestBody) => {
         const db = createDrizzleClient(DB);
@@ -78,7 +78,7 @@ const updateHandlers = {
     },
     media: async (DB: any, body: UpdateMediaRequestBody) => {
         const db = createDrizzleClient(DB);
-        const fullMediaSource = {
+        const full_media_source = {
             uuid: body.media_uuid,
             work_uuid: body.work_uuid,
             is_music: body.is_music,
@@ -87,7 +87,7 @@ const updateHandlers = {
             mime_type: body.mime_type,
             info: body.info
         };
-        return await updateMedia(db, body.media_uuid, fullMediaSource);
+        return await updateMedia(db, body.media_uuid, full_media_source);
     },
     tag: async (DB: any, body: { tag_uuid: string; name: string }) => {
         const db = createDrizzleClient(DB);

@@ -24,10 +24,10 @@ export async function getFooterSettings(db: DrizzleDB): Promise<FooterSetting[]>
     const settings = await db
         .select({
             uuid: footerSettings.uuid,
-            item_type: footerSettings.itemType,
+            item_type: footerSettings.item_type,
             text: footerSettings.text,
             url: footerSettings.url,
-            icon_class: footerSettings.iconClass,
+            icon_class: footerSettings.icon_class,
         })
         .from(footerSettings);
 
@@ -47,10 +47,10 @@ export async function insertFooterSetting(db: DrizzleDB, setting: FooterSetting)
     try {
         await db.insert(footerSettings).values({
             uuid: setting.uuid,
-            itemType: setting.item_type,
+            item_type: setting.item_type,
             text: setting.text,
             url: setting.url || null,
-            iconClass: setting.icon_class || null,
+            icon_class: setting.icon_class || null,
         });
         return true;
     } catch (error) {
@@ -69,10 +69,10 @@ export async function updateFooterSetting(db: DrizzleDB, setting: FooterSetting)
         await db
             .update(footerSettings)
             .set({
-                itemType: setting.item_type,
+                item_type: setting.item_type,
                 text: setting.text,
                 url: setting.url || null,
-                iconClass: setting.icon_class || null,
+                icon_class: setting.icon_class || null,
             })
             .where(eq(footerSettings.uuid, setting.uuid));
         return true;

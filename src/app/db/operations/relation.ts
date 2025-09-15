@@ -25,9 +25,9 @@ export async function getRelationByUUID(db: DrizzleDB, relationUuid: string): Pr
     const result = await db
         .select({
             uuid: workRelation.uuid,
-            from_work_uuid: workRelation.fromWorkUuid,
-            to_work_uuid: workRelation.toWorkUuid,
-            relation_type: workRelation.relationType,
+            from_work_uuid: workRelation.from_work_uuid,
+            to_work_uuid: workRelation.to_work_uuid,
+            relation_type: workRelation.relation_type,
         })
         .from(workRelation)
         .where(eq(workRelation.uuid, relationUuid))
@@ -47,9 +47,9 @@ export async function listRelations(db: DrizzleDB, page: number, pageSize: numbe
     const relations = await db
         .select({
             uuid: workRelation.uuid,
-            from_work_uuid: workRelation.fromWorkUuid,
-            to_work_uuid: workRelation.toWorkUuid,
-            relation_type: workRelation.relationType,
+            from_work_uuid: workRelation.from_work_uuid,
+            to_work_uuid: workRelation.to_work_uuid,
+            relation_type: workRelation.relation_type,
         })
         .from(workRelation)
         .limit(pageSize)
@@ -71,9 +71,9 @@ export async function inputRelation(db: DrizzleDB, relationData: WorkRelation): 
     try {
         await db.insert(workRelation).values({
             uuid: relationData.uuid,
-            fromWorkUuid: relationData.from_work_uuid,
-            toWorkUuid: relationData.to_work_uuid,
-            relationType: relationData.relation_type,
+            from_work_uuid: relationData.from_work_uuid,
+            to_work_uuid: relationData.to_work_uuid,
+            relation_type: relationData.relation_type,
         });
         return true;
     } catch (error) {
@@ -100,9 +100,9 @@ export async function updateRelation(
         await db
             .update(workRelation)
             .set({
-                fromWorkUuid: relationData.from_work_uuid,
-                toWorkUuid: relationData.to_work_uuid,
-                relationType: relationData.relation_type,
+                from_work_uuid: relationData.from_work_uuid,
+                to_work_uuid: relationData.to_work_uuid,
+                relation_type: relationData.relation_type,
             })
             .where(eq(workRelation.uuid, relationUuid));
         return true;
