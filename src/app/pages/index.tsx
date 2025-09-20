@@ -8,6 +8,7 @@ import { FooterSetting } from '../db/operations/admin'
 import { CommonStyles } from './styles/common-styles'
 import { IndexStyles } from './styles/index-styles'
 import { IndexScripts } from './scripts/index-scripts'
+import { replacePlaceholders, PlaceholderContext } from '../utils/placeholder'
 
 export const IndexPage = (props: { 
     works: any[], 
@@ -25,6 +26,21 @@ export const IndexPage = (props: {
     preferredLanguage?: string,
     availableLanguages: string[]
 }) => {
+    // 构建占位符上下文
+    const placeholderContext: PlaceholderContext = {
+        tagName: props.filterInfo?.type === 'tag' ? props.filterInfo.name : undefined,
+        categoryName: props.filterInfo?.type === 'category' ? props.filterInfo.name : undefined,
+        searchQuery: props.searchQuery || undefined,
+        pageNumber: props.currentPage,
+        totalCount: props.totalCount
+    };
+
+    // 使用占位符替换功能处理标题
+    const pageTitle = replacePlaceholders(
+        props.siteConfig?.home_title || "VOCArchive - 作品选择",
+        placeholderContext
+    );
+
     const additionalStyles = `${CommonStyles}${IndexStyles}`;
     
     const additionalScripts = IndexScripts(props);
@@ -95,12 +111,6 @@ export const IndexPage = (props: {
             </div>
         </>
     );
-    
-    const pageTitle = props.filterInfo 
-        ? `${props.siteConfig?.site_title || 'VOCArchive'} - ${props.filterInfo.name} (${props.filterInfo.type === 'tag' ? '标签' : '分类'})`
-        : props.searchQuery 
-        ? `${props.siteConfig?.site_title || 'VOCArchive'} - 搜索: ${props.searchQuery}`
-        : props.siteConfig?.site_title || "VOCArchive";
     
     return BaseLayout({
         title: pageTitle,

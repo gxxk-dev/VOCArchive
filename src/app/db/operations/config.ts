@@ -98,18 +98,18 @@ export async function initializeDefaultConfig(db: DrizzleDB): Promise<void> {
         },
         {
             key: 'home_title',
-            value: 'VOCArchive - 作品选择',
-            description: '主页标题'
+            value: 'VOCArchive - 作品选择{TAG_NAME? - 标签: {TAG_NAME}}{CATEGORY_NAME? - 分类: {CATEGORY_NAME}}{SEARCH_QUERY? - 搜索: {SEARCH_QUERY}}',
+            description: '主页标题，支持占位符：{TAG_NAME}, {CATEGORY_NAME}, {SEARCH_QUERY}, {PAGE_NUMBER}, {TOTAL_COUNT}'
         },
         {
             key: 'player_title',
-            value: 'VOCArchive - 作品页面',
-            description: '播放器页标题'
+            value: 'VOCArchive - {WORK_TITLE}',
+            description: '播放器页标题，支持占位符：{WORK_TITLE}'
         },
         {
             key: 'admin_title',
-            value: 'VOCArchive - 管理后台',
-            description: '管理后台标题'
+            value: 'VOCArchive 管理后台 - {TAB_NAME}',
+            description: '管理后台标题，支持占位符：{TAB_NAME}, {TAB_ID}'
         }
     ];
 

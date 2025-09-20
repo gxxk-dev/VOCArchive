@@ -10,10 +10,20 @@ import { FooterSetting } from '../db/operations/admin'
 import { PlayerStyles } from './styles/player-styles'
 import { CommonStyles } from './styles/common-styles'
 import { PlayerScripts } from './scripts/player-scripts'
+import { replacePlaceholders, getWorkDisplayTitle } from '../utils/placeholder'
 
 export const PlayerPage = (props: { workInfo: any, footerSettings: FooterSetting[], siteConfig: Record<string, string> }) => {
     const { workInfo, footerSettings, siteConfig } = props;
     const userLang = "zh-cn";
+
+    // 获取作品显示标题
+    const workDisplayTitle = getWorkDisplayTitle(workInfo, userLang);
+
+    // 使用占位符替换功能处理标题
+    const pageTitle = replacePlaceholders(
+        siteConfig?.player_title || "VOCArchive - {WORK_TITLE}",
+        { workTitle: workDisplayTitle }
+    );
 
     const additionalStyles = `${CommonStyles}${PlayerStyles}`;
     const additionalScripts = PlayerScripts(props);
@@ -30,7 +40,7 @@ export const PlayerPage = (props: { workInfo: any, footerSettings: FooterSetting
     );
 
     return BaseLayout({
-        title: siteConfig?.player_title || "VOCArchive - 作品页面",
+        title: pageTitle,
         footerSettings: footerSettings,
         additionalStyles: additionalStyles,
         additionalScripts: additionalScripts,

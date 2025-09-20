@@ -23,6 +23,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     let allWorks = [];
     let allExternalSources = [];
     let allExternalObjects = [];
+    
+    // Admin title configuration
+    let adminTitleTemplate = 'VOCArchive - 管理后台';
+    const tabNames = {
+        'work': '作品',
+        'creator': '作者',
+        'media': '媒体',
+        'asset': '资产',
+        'relation': '关系',
+        'tag': '标签',
+        'category': '分类',
+        'external_source': '存储源',
+        'external_object': '外部对象',
+        'footer': '页脚',
+        'site_config': '系统配置'
+    };
 
     // --- API & Helper Functions ---
     function showLogin() {
@@ -42,6 +58,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         await loadExternalSources();
         await loadExternalObjects();
         
+        // 获取配置的标题模板
+        try {
+            const config = await apiFetch('/config/public');
+            if (config.admin_title) {
+                adminTitleTemplate = config.admin_title;
+            }
+        } catch (e) {
+            console.warn('Failed to load title config:', e);
+        }
+        
         loadContent(currentTab);
     }
 
@@ -60,6 +86,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (error) {
             console.error('Failed to load external objects:', error);
             allExternalObjects = [];
+        }
+    }
+
+    // 更新页面标题函数
+    function updatePageTitle(tabId) {
+        let title = adminTitleTemplate;
+        const tabName = tabNames[tabId] || tabId;
+        
+        title = title.replace(/{TAB_NAME}/g, tabName);
+        title = title.replace(/{TAB_ID}/g, tabId);
+        
+        document.title = title;
+        
+        // 同时更新页面内的 h1 标题（可选）
+        const headerTitle = document.querySelector('#admin-panel h1');
+        if (headerTitle) {
+            headerTitle.textContent = title.replace(/^VOCArchive\s*[-\s]*/, '');
         }
     }
 
@@ -166,6 +209,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- Content & Table Rendering ---
     async function loadContent(target) {
+        // 更新页面标题
+        updatePageTitle(target);
+        
         content.innerHTML = '<h2>Loading...</h2>';
         try {
             let endpoint, data;
@@ -994,6 +1040,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <option value="totp_secret" ${data?.key === 'totp_secret' ? 'selected' : ''}>TOTP 密钥 (totp_secret)</option>
                     <option value="jwt_secret" ${data?.key === 'jwt_secret' ? 'selected' : ''}>JWT 密钥 (jwt_secret)</option>
                 </select>
+                ${data?.key?.includes('title') ? `
+                    <div class="placeholder-help" style="margin: 10px 0; padding: 10px; background-color: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 4px; font-size: 0.9em;">
+                        <strong>💡 可用占位符：</strong><br>
+                        ${data.key === 'home_title' ? 
+                            '• {TAG_NAME} - 当前标签名称<br>• {CATEGORY_NAME} - 当前分类名称<br>• {SEARCH_QUERY} - 搜索关键词<br>• {PAGE_NUMBER} - 当前页码<br>• {TOTAL_COUNT} - 总数量<br><strong>条件占位符:</strong> {TAG_NAME? - 标签: {TAG_NAME}} (仅在有值时显示)' : 
+                            data.key === 'player_title' ? 
+                                '• {WORK_TITLE} - 当前作品标题' : 
+                                data.key === 'admin_title' ? 
+                                    '• {TAB_NAME} - 当前标签页名称(中文)<br>• {TAB_ID} - 当前标签页ID(英文)' : ''
+                        }
+                    </div>
+                ` : ''}
                 <label for="value">配置值:</label>
                 <input type="text" id="value" name="value" required value="${data?.value || ''}" placeholder="请输入配置值">
                 <label for="description">描述 (可选):</label>
