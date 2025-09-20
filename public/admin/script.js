@@ -184,6 +184,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else if (target === 'external_object') {
                 endpoint = '/list/external_objects/1/999';
                 data = await apiFetch(endpoint);
+            } else if (target === 'site_config') {
+                endpoint = '/config';
+                data = await apiFetch(endpoint);
+                console.log("Get Config:",data)
             } else {
                 endpoint = `/list/${target}/1?pageSize=999`;
                 data = await apiFetch(endpoint);
@@ -280,7 +284,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </thead>
                     <tbody>
                         ${data.map(row => {
-                            const uuid = row.uuid || row.work_uuid || row.creator_uuid || row.media_uuid || row.asset_uuid || row.relation_uuid;
+                            const uuid = row.uuid || row.work_uuid || row.creator_uuid || row.media_uuid || row.asset_uuid || row.relation_uuid || row.key;
                             return `<tr data-uuid="${uuid}">
                                 ${headers.map(h => `<td>${renderCellContent(row[h])}</td>`).join('')}
                                 <td class="actions">
@@ -605,6 +609,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        if (target === 'site_config') {
+            try {
+                const data = await apiFetch(`/config/${uuid}`);
+                console.log(data)
+                showFormModal(target, data);
+            } catch (error) {
+                alert(`Failed to fetch item details: ${error.message}`);
+            }
+            return;
+        }
+
         const endpointMap = { 
             creator: 'creator', 
             work: 'work',
@@ -667,7 +682,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- Form & Create/Update Logic ---
     async function showFormModal(target, data = null) {
-        currentEditUUID = data ? (data.uuid || data.work?.uuid || data.creator?.uuid || data.asset?.uuid) : null;
+        // Set currentEditUUID based on target type and data structure
+        if (data) {
+            switch (target) {
+                case 'work':
+                    currentEditUUID = data.work?.uuid;
+                    break;
+                case 'creator':
+                case 'asset':
+                case 'media':
+                case 'relation':
+                case 'tag':
+                case 'category':
+                case 'external_source':
+                case 'external_object':
+                case 'footer':
+                case 'site_config':
+                    currentEditUUID = data.key;
+                    break;
+                default:
+                    currentEditUUID = data.uuid;
+                    break;
+            }
+        } else {
+            currentEditUUID = null;
+        }
+        
         const mode = data ? 'Edit' : 'Create New';
         formTitle.textContent = `${mode} ${target.charAt(0).toUpperCase() + target.slice(1)}`;
         formError.textContent = '';
@@ -734,21 +774,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const data_wikis = (data?.wikis || []).map(createWikiRow).join('');
         console.log(data)
-        const data_creators = (data?.creator instanceof Array)
-                        // 兼容创作者修改
-                        ? (data?.creator || []).map(creator => createCreatorRow(creator, options.creators)).join('')
+        const data_creators = (data?.creator && Array.isArray(data.creator))
+                        ? data.creator.map(creator => createCreatorRow(creator, options.creators)).join('')
                         : (data?.creator ? createCreatorRow(data.creator, options.creators) : '');
         const data_relations = ['original', 'remix', 'cover', 'remake', 'picture', 'lyrics'].map(type => `<option value="${type}" ${data?.relation_type === type ? 'selected' : ''}>${type}</option>`).join('');
         const data_titles = (data?.titles || []).map(createTitleRow).join('')
         
         const fields = {
             creator: `
-                <input type="hidden" name="creator_uuid" value="${data?.creator?.uuid || data?.uuid || ''}">
-                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.creator?.uuid || data?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
-                <label for="name">Name:</label><input type="text" id="name" name="name" required value="${data?.creator?.name || data?.name || ''}">
+                <input type="hidden" name="creator_uuid" value="${data?.uuid || ''}">
+                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
+                <label for="name">Name:</label><input type="text" id="name" name="name" required value="${data?.name || ''}">
                 <label for="type">Type:</label><select id="type" name="type">
-                    <option value="human" ${(data?.creator?.type || data?.type) === 'human' ? 'selected' : ''}>Human</option>
-                    <option value="virtual" ${(data?.creator?.type || data?.type) === 'virtual' ? 'selected' : ''}>Virtual</option>
+                    <option value="human" ${data?.type === 'human' ? 'selected' : ''}>Human</option>
+                    <option value="virtual" ${data?.type === 'virtual' ? 'selected' : ''}>Virtual</option>
                 </select>
                 
                 <div class="form-section">
@@ -943,6 +982,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
                 <label for="mime_type">MIME 类型:</label><input type="text" id="mime_type" name="mime_type" required value="${data?.mime_type || ''}" placeholder="例如: image/jpeg, audio/mpeg, video/mp4">
                 <label for="file_id">文件 ID:</label><input type="text" id="file_id" name="file_id" required value="${data?.file_id || ''}" placeholder="在存储源中的文件标识符">
+            `,
+            site_config: `
+                <input type="hidden" name="config_key" value="${data?.key || ''}">
+                <label for="key">配置键:</label>
+                <select id="key" name="key" required ${data ? 'disabled' : ''}>
+                    <option value="site_title" ${data?.key === 'site_title' ? 'selected' : ''}>网站标题 (site_title)</option>
+                    <option value="home_title" ${data?.key === 'home_title' ? 'selected' : ''}>主页标题 (home_title)</option>
+                    <option value="player_title" ${data?.key === 'player_title' ? 'selected' : ''}>播放器页标题 (player_title)</option>
+                    <option value="admin_title" ${data?.key === 'admin_title' ? 'selected' : ''}>管理后台标题 (admin_title)</option>
+                    <option value="totp_secret" ${data?.key === 'totp_secret' ? 'selected' : ''}>TOTP 密钥 (totp_secret)</option>
+                    <option value="jwt_secret" ${data?.key === 'jwt_secret' ? 'selected' : ''}>JWT 密钥 (jwt_secret)</option>
+                </select>
+                <label for="value">配置值:</label>
+                <input type="text" id="value" name="value" required value="${data?.value || ''}" placeholder="请输入配置值">
+                <label for="description">描述 (可选):</label>
+                <input type="text" id="description" name="description" value="${data?.description || ''}" placeholder="配置项的描述信息">
+                ${data?.key === 'totp_secret' || data?.key === 'jwt_secret' ? 
+                    '<small class="security-warning">⚠️ 敏感配置，请妥善保管</small>' : 
+                    '<small>配置修改后立即生效</small>'}
             `
         };
         return (fields[target] || '<p>Form not implemented for this type.</p>') + '<button type="submit">Submit</button>';
@@ -1106,7 +1164,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function createCreatorRow(creator = { creator_uuid: '', role: '' }, allCreators = []) {
         console.log("[Edit UI] Show creator:", creator)
-        const creatorUuid = creator.creator?.uuid || creator.creator_uuid;
+        // Handle different data structures:
+        // 1. creator.creator_uuid (direct UUID field)
+        // 2. creator.creator.uuid (nested creator object)
+        // 3. creator.uuid (when creator data is the actual creator object)
+        const creatorUuid = creator.creator_uuid || creator.creator?.uuid || creator.uuid || '';
         const creatorRole = creator.role || '';
         const creatorOptions = allCreators.map(c => 
             `<option value="${c.uuid}" ${creatorUuid === c.uuid ? 'selected' : ''}>${c.name}</option>`
@@ -1347,6 +1409,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         icon_class: formData.get('icon_class') || null,
                     };
                     break;
+                case 'site_config':
+                    body = {
+                        key: formData.get('key'),
+                        value: formData.get('value'),
+                        description: formData.get('description') || null,
+                    };
+                    break;
                 default:
                     throw new Error('Invalid form target.');
             }
@@ -1360,6 +1429,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     method = 'PUT';
                 } else {
                     endpoint = '/footer/settings';
+                }
+            } else if (target === 'site_config') {
+                if (isUpdate) {
+                    endpoint = `/config/${formData.get('config_key')}`;
+                    method = 'PUT';
+                } else {
+                    endpoint = `/config/${formData.get('key')}`;
+                    method = 'PUT'; // site_config always uses PUT for upsert
                 }
             } else {
                 endpoint = isUpdate ? `/update/${apiTarget}` : `/input/${apiTarget}`;
@@ -1490,6 +1567,55 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // --- Migration Logic ---
+    // Config management buttons
+    const configStatusButton = document.getElementById('config-status-button');
+    const configStatusResult = document.getElementById('config-status-result');
+    const configInitButton = document.getElementById('config-init-button');
+    const configInitResult = document.getElementById('config-init-result');
+
+    // Check config status
+    configStatusButton.addEventListener('click', async () => {
+        try {
+            configStatusResult.className = 'config-status-result';
+            configStatusResult.innerHTML = '正在检查配置状态...';
+            configStatusResult.classList.add('show');
+            
+            const response = await apiFetch('/config/status', { method: 'GET' });
+            displayResult(configStatusResult, response, true);
+        } catch (error) {
+            displayResult(configStatusResult, { error: error.message }, false);
+        }
+    });
+
+    // Initialize config
+    configInitButton.addEventListener('click', async () => {
+        if (!confirm('确定要初始化站点配置吗？\n\n此操作将创建配置表并初始化默认配置。如果配置已存在，将更新缺失的配置项。')) {
+            return;
+        }
+
+        try {
+            configInitResult.className = 'config-init-result';
+            configInitResult.innerHTML = '正在初始化配置...';
+            configInitResult.classList.add('show');
+
+            const response = await apiFetch('/input/config-init', { method: 'POST' });
+            
+            displayResult(configInitResult, response, response.success !== false);
+            
+            if (response.success !== false) {
+                alert('配置初始化完成！');
+                // Refresh config status after successful init
+                configStatusButton.click();
+            } else {
+                alert(`配置初始化失败: ${response.error || '未知错误'}`);
+            }
+        } catch (error) {
+            displayResult(configInitResult, { error: error.message }, false);
+            alert(`配置初始化失败: ${error.message}`);
+        }
+    });
+
+    // Migration buttons
     const migrationStatusButton = document.getElementById('migration-status-button');
     const migrationStatusResult = document.getElementById('migration-status-result');
     const executeMigrationButton = document.getElementById('execute-migration-button');

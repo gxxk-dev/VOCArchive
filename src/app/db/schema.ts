@@ -44,6 +44,12 @@ export const externalSource = sqliteTable('external_source', {
     endpoint: text('endpoint').notNull(),
 });
 
+export const siteConfig = sqliteTable('site_config', {
+    key: text('key').primaryKey(),
+    value: text('value').notNull(),
+    description: text('description'),
+});
+
 // Dependent tables (with foreign key relationships)
 
 export const creatorWiki = sqliteTable('creator_wiki', {

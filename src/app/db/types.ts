@@ -18,6 +18,7 @@ import {
     footerSettings,
     externalSource,
     externalObject,
+    siteConfig,
 } from './schema';
 
 // Basic table types
@@ -90,6 +91,18 @@ export type NewExternalSource = InferInsertModel<typeof externalSource>;
 
 export type ExternalObject = InferSelectModel<typeof externalObject>;
 export type NewExternalObject = InferInsertModel<typeof externalObject>;
+
+export type SiteConfig = InferSelectModel<typeof siteConfig>;
+export type NewSiteConfig = InferInsertModel<typeof siteConfig>;
+
+// Site configuration key enum
+export type SiteConfigKey = 
+    | 'site_title'       // 网站标题（HTML title）
+    | 'home_title'       // 主页标题
+    | 'player_title'     // 播放器页标题
+    | 'admin_title'      // 管理后台标题
+    | 'totp_secret'      // TOTP 密钥
+    | 'jwt_secret';      // JWT 密钥
 
 // Composite types for complex queries (matching existing interfaces)
 

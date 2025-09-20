@@ -11,8 +11,8 @@ import { PlayerStyles } from './styles/player-styles'
 import { CommonStyles } from './styles/common-styles'
 import { PlayerScripts } from './scripts/player-scripts'
 
-export const PlayerPage = (props: { workInfo: any, footerSettings: FooterSetting[] }) => {
-    const { workInfo, footerSettings } = props;
+export const PlayerPage = (props: { workInfo: any, footerSettings: FooterSetting[], siteConfig: Record<string, string> }) => {
+    const { workInfo, footerSettings, siteConfig } = props;
     const userLang = "zh-cn";
 
     const additionalStyles = `${CommonStyles}${PlayerStyles}`;
@@ -30,7 +30,7 @@ export const PlayerPage = (props: { workInfo: any, footerSettings: FooterSetting
     );
 
     return BaseLayout({
-        title: "VOCArchive - 作品页面",
+        title: siteConfig?.player_title || "VOCArchive - 作品页面",
         footerSettings: footerSettings,
         additionalStyles: additionalStyles,
         additionalScripts: additionalScripts,

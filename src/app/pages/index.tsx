@@ -12,6 +12,7 @@ import { IndexScripts } from './scripts/index-scripts'
 export const IndexPage = (props: { 
     works: any[], 
     footerSettings: FooterSetting[],
+    siteConfig: Record<string, string>,
     currentPage: number,
     totalCount: number,
     pageSize: number,
@@ -46,7 +47,7 @@ export const IndexPage = (props: {
 
             <div class="page-container" id="pageContainer">
                 <header class="page-header">
-                    <h1 class="page-title">VOCArchive - 作品选择</h1>
+                    <h1 class="page-title">{props.siteConfig?.home_title || 'VOCArchive - 作品选择'}</h1>
                     {props.searchQuery && (
                         <div class="search-info">
                             <div class="search-indicator">
@@ -96,10 +97,10 @@ export const IndexPage = (props: {
     );
     
     const pageTitle = props.filterInfo 
-        ? `VOCArchive - ${props.filterInfo.name} (${props.filterInfo.type === 'tag' ? '标签' : '分类'})`
+        ? `${props.siteConfig?.site_title || 'VOCArchive'} - ${props.filterInfo.name} (${props.filterInfo.type === 'tag' ? '标签' : '分类'})`
         : props.searchQuery 
-        ? `VOCArchive - 搜索: ${props.searchQuery}`
-        : "VOCArchive - 作品选择";
+        ? `${props.siteConfig?.site_title || 'VOCArchive'} - 搜索: ${props.searchQuery}`
+        : props.siteConfig?.site_title || "VOCArchive";
     
     return BaseLayout({
         title: pageTitle,

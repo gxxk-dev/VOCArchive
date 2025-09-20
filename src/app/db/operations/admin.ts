@@ -4,8 +4,10 @@ import {
     footerSettings, 
     creator, work, workTitle, asset, mediaSource, workCreator, workRelation, 
     tag, category, workTag, workCategory,
-    externalSource, externalObject, assetExternalObject, mediaSourceExternalObject
+    externalSource, externalObject, assetExternalObject, mediaSourceExternalObject,
+    siteConfig
 } from '../schema';
+import { initializeDefaultConfig, initializeSecrets } from './config';
 
 // Types
 export interface FooterSetting {
@@ -951,6 +953,12 @@ async function initializeDatabaseManual(db: DrizzleDB): Promise<void> {
             text TEXT NOT NULL,
             url TEXT,
             icon_class TEXT
+        )`,
+        
+        `CREATE TABLE site_config (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            description TEXT
         )`,
         
         // External storage tables

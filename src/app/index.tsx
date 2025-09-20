@@ -9,12 +9,14 @@ import { inputInfo } from './routes/input'
 import { searchInfo } from './routes/search'
 import { auth } from './routes/auth'
 import footer from './routes/footer'
+import config from './routes/config'
 import { jwt } from 'hono/jwt'
 
 import { IndexPage } from './pages/index'
 import { PlayerPage } from './pages/player'
 import { createDrizzleClient } from './db/client'
 import { getFooterSettings, initializeDatabaseWithMigrations } from './db/operations/admin'
+import { getPublicSiteConfig } from './db/operations/config'
 import { getWorkByUUID, getWorkListWithPagination, getTotalWorkCount } from './db/operations/work'
 import { searchWorks, getAvailableLanguages } from './db/operations/search'
 import { getWorksByTag, getWorkCountByTag, getTagByUUID } from './db/operations/tag'
@@ -51,13 +53,7 @@ apiApp.route('/auth', auth)
 
 // ========== 站点配置 ==========
 apiApp.route('/footer', footer)
-
-apiApp.get('/config', (c:any) => {
-  return c.json({ 
-    // Configuration endpoint for future use
-    // asset_url removed - using external storage architecture
-  })
-})
+apiApp.route('/config', config)
 
 // ========== 信息读取(仅GET方法) ==========
 // ---------- 获取信息 ----------
@@ -114,10 +110,12 @@ app.get('/', async (c) => {
   }
   
   const footerSettings = await getFooterSettings(db)
+  const siteConfig = await getPublicSiteConfig(db)
   const availableLanguages = await getAvailableLanguages(db)
   return c.html(<IndexPage 
     works={works} 
     footerSettings={footerSettings}
+    siteConfig={siteConfig}
     currentPage={currentPage}
     totalCount={totalCount}
     pageSize={pageSize}
@@ -139,7 +137,8 @@ app.get('/player', async (c) => {
         return c.notFound()
     }
     const footerSettings = await getFooterSettings(db)
-    return c.html(<PlayerPage workInfo={workInfo} footerSettings={footerSettings} />)
+    const siteConfig = await getPublicSiteConfig(db)
+    return c.html(<PlayerPage workInfo={workInfo} footerSettings={footerSettings} siteConfig={siteConfig} />)
 })
 
 

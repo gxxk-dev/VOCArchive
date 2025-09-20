@@ -362,3 +362,30 @@ inputInfo.post('/migrate/repair', async (c: any) => {
         return c.json({ error: 'Internal server error' }, 500);
     }
 });
+
+// 手动初始化站点配置
+inputInfo.post('/config-init', async (c: any) => {
+    try {
+        const db = createDrizzleClient(c.env.DB);
+        
+        // 动态导入配置操作
+        const { initializeDefaultConfig, initializeSecrets } = await import('../db/operations/config');
+        
+        // 初始化默认配置
+        await initializeDefaultConfig(db);
+        
+        // 初始化密钥（从环境变量迁移）
+        await initializeSecrets(db, c.env.TOTP_SECRET, c.env.JWT_SECRET);
+        
+        return c.json({ 
+            message: 'Site configuration initialized successfully',
+            success: true 
+        }, 200);
+    } catch (error) {
+        console.error('Config initialization error:', error);
+        return c.json({ 
+            error: 'Failed to initialize site configuration',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        }, 500);
+    }
+});

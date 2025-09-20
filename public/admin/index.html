@@ -34,6 +34,7 @@
             <button class="tab-button" data-target="external_source">存储源 (Storage)</button>
             <button class="tab-button" data-target="external_object">外部对象 (External)</button>
             <button class="tab-button" data-target="footer">页脚 (Footer)</button>
+            <button class="tab-button" data-target="site_config">系统配置 (Config)</button>
         </nav>
         <main id="content">
             <!-- Data tables will be loaded here -->
@@ -59,6 +60,17 @@
             <div class="danger-item">
                 <button id="db-clear-button" class="danger-button">清空数据库 (DB Clear)</button>
                 <small>将删除所有用户数据表。<b>此操作不可逆！</b></small>
+            </div>
+            <h2>系统配置</h2>
+            <div class="danger-item">
+                <button id="config-status-button" class="danger-button">检查配置状态 (Config Status)</button>
+                <small>检查站点配置表是否存在以及默认配置状态。</small>
+                <div id="config-status-result" class="config-status-result"></div>
+            </div>
+            <div class="danger-item">
+                <button id="config-init-button" class="danger-button">初始化配置 (Config Init)</button>
+                <small>创建配置表并初始化默认配置。如果配置已存在，此操作将更新缺失的配置项。</small>
+                <div id="config-init-result" class="config-init-result"></div>
             </div>
             <h2>外部存储迁移</h2>
             <div class="danger-item">
