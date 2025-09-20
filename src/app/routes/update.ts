@@ -1,12 +1,16 @@
 import { createDrizzleClient } from '../db/client';
-import { updateWork, updateAsset } from '../db/operations/work';
+import { updateWork } from '../db/operations/work';
+import { updateAsset } from '../db/operations/asset';
 import { updateCreator } from '../db/operations/creator';
 import { updateMedia } from '../db/operations/media';
 import { updateRelation } from '../db/operations/relation';
 import { updateTag } from '../db/operations/tag';
 import { updateCategory } from '../db/operations/category';
 import { updateWorkTitle } from '../db/operations/work-title';
-import type { Work, WorkTitle, CreatorWithRole, WikiRef, Asset, MediaSource, WorkRelation } from '../db/operations/work';
+import { updateExternalSource } from '../db/operations/external_source';
+import { updateExternalObject } from '../db/operations/external_object';
+import { validateStorageSource } from '../db/utils/storage-handlers';
+import type { Work, WorkTitle, CreatorWithRole, WikiRef, Asset } from '../db/operations/work';
 import type { WorkTitleUpdate } from '../db/operations/work-title';
 import { Hono } from 'hono'
 
@@ -30,6 +34,7 @@ interface UpdateAssetRequestBody {
     asset_uuid: string;
     asset: Asset;
     creator?: CreatorWithRole[];
+    external_objects?: string[];
 }
 
 interface UpdateMediaRequestBody {
@@ -40,6 +45,7 @@ interface UpdateMediaRequestBody {
     url: string;
     mime_type: string;
     info: string;
+    external_objects?: string[];
 }
 
 interface UpdateRelationRequestBody {
@@ -70,7 +76,12 @@ const updateHandlers = {
     },
     asset: async (DB: any, body: UpdateAssetRequestBody) => {
         const db = createDrizzleClient(DB);
-        return await updateAsset(db, body.asset_uuid, body.asset, body.creator);
+        const assetForDb = {
+            ...body.asset,
+            language: body.asset.language || null,
+            is_previewpic: body.asset.is_previewpic ?? null,
+        };
+        return await updateAsset(db, body.asset_uuid, assetForDb as any, body.creator, body.external_objects);
     },
     relation: async (DB: any, body: UpdateRelationRequestBody) => {
         const db = createDrizzleClient(DB);
@@ -87,7 +98,7 @@ const updateHandlers = {
             mime_type: body.mime_type,
             info: body.info
         };
-        return await updateMedia(db, body.media_uuid, full_media_source);
+        return await updateMedia(db, body.media_uuid, full_media_source, body.external_objects);
     },
     tag: async (DB: any, body: { tag_uuid: string; name: string }) => {
         const db = createDrizzleClient(DB);
@@ -100,6 +111,36 @@ const updateHandlers = {
     'work-title': async (DB: any, body: UpdateWorkTitleRequestBody) => {
         const db = createDrizzleClient(DB);
         return await updateWorkTitle(db, body.title_uuid, body.updates);
+    },
+    'external_source': async (DB: any, body: { external_source_uuid: string; type: 'raw_url' | 'private_b2'; name: string; endpoint: string }) => {
+        // 验证存储源配置
+        const validation = validateStorageSource({
+            uuid: body.external_source_uuid,
+            type: body.type,
+            name: body.name,
+            endpoint: body.endpoint
+        });
+        
+        if (!validation.valid) {
+            throw new Error(validation.error);
+        }
+        
+        const db = createDrizzleClient(DB);
+        const sourceData = {
+            type: body.type,
+            name: body.name,
+            endpoint: body.endpoint
+        };
+        return await updateExternalSource(db, body.external_source_uuid, sourceData);
+    },
+    'external_object': async (DB: any, body: { external_object_uuid: string; external_source_uuid: string; mime_type: string; file_id: string }) => {
+        const db = createDrizzleClient(DB);
+        const objectData = {
+            external_source_uuid: body.external_source_uuid,
+            mime_type: body.mime_type,
+            file_id: body.file_id
+        };
+        return await updateExternalObject(db, body.external_object_uuid, objectData);
     }
 };
 

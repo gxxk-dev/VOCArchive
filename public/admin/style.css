@@ -294,6 +294,154 @@ pre {
     color: #721c24;
 }
 
+/* Migration specific styles */
+.migration-status-result, .validation-result {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    display: none;
+}
+
+.migration-status-result.show, .validation-result.show {
+    display: block;
+}
+
+.migration-status-result.success, .validation-result.success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.migration-status-result.error, .validation-result.error {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.danger-item input[type="text"], .danger-item input[type="number"] {
+    padding: 6px 10px;
+    margin: 5px;
+    border: 1px solid #dc3545;
+    border-radius: 4px;
+    width: 200px;
+}
+
+.danger-item label {
+    display: inline-block;
+    margin-right: 10px;
+    color: #721c24;
+    font-weight: bold;
+}
+
+/* External objects list styles */
+.external-objects-list {
+    margin: 15px 0;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: #f9f9f9;
+}
+
+.external-objects-info {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #e3f2fd;
+    border-radius: 4px;
+    border-left: 4px solid #2196f3;
+}
+
+.external-objects-info p {
+    margin: 0 0 10px 0;
+    color: #1976d2;
+    font-size: 0.9em;
+}
+
+.refresh-button {
+    padding: 6px 12px;
+    background-color: #2196f3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.refresh-button:hover {
+    background-color: #1976d2;
+}
+
+#external-object-filter {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+}
+
+.external-object-item {
+    margin: 8px 0;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background-color: white;
+    transition: all 0.2s ease;
+}
+
+.external-object-item:hover {
+    border-color: #2196f3;
+    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.1);
+}
+
+.external-object-item label {
+    display: flex;
+    align-items: flex-start;
+    cursor: pointer;
+    margin: 0;
+    color: inherit;
+    font-weight: normal;
+}
+
+.external-object-item input[type="checkbox"] {
+    margin-right: 12px;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.external-object-details {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.external-object-info {
+    flex: 1;
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+
+.external-object-info strong {
+    color: #333;
+}
+
+.external-object-uuid {
+    margin-left: 15px;
+    font-size: 0.8em;
+}
+
+.external-object-uuid .uuid {
+    font-family: monospace;
+    background-color: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid #ddd;
+}
+
 .actions {
     display: flex;
     gap: 5px;
@@ -893,4 +1041,177 @@ input.copied {
     display: flex;
     flex-direction: column;
     gap: 5px;
+}
+
+/* Storage Source and External Object Styles */
+.storage-type-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.storage-type-badge.raw_url {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    border: 1px solid #90caf9;
+}
+
+.storage-type-badge.private_b2 {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+    border: 1px solid #ce93d8;
+}
+
+.endpoint-template {
+    font-family: monospace;
+    font-size: 0.85em;
+    color: #666;
+    background-color: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.external-source-ref {
+    display: inline-block;
+    padding: 2px 6px;
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 0.85em;
+    color: #495057;
+}
+
+.external-objects-selector {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    background-color: #fdfdfd;
+}
+
+.external-objects-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.external-objects-info {
+    background-color: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 4px;
+    padding: 12px;
+    margin-bottom: 15px;
+}
+
+.external-objects-info p {
+    margin: 0 0 10px 0;
+    color: #004085;
+    font-size: 0.9em;
+}
+
+.refresh-button {
+    padding: 6px 12px;
+    background-color: #17a2b8;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+}
+
+.refresh-button:hover {
+    background-color: #138496;
+}
+
+#external-objects-container {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 10px;
+    background-color: white;
+}
+
+.external-object-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s;
+}
+
+.external-object-item:last-child {
+    border-bottom: none;
+}
+
+.external-object-item:hover {
+    background-color: #f8f9fa;
+}
+
+.external-object-item input[type="checkbox"] {
+    margin: 0;
+}
+
+.external-object-details {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr;
+    gap: 10px;
+    font-size: 0.85em;
+}
+
+.external-object-details .source-name {
+    font-weight: 500;
+    color: #495057;
+}
+
+.external-object-details .mime-type {
+    color: #6c757d;
+    font-family: monospace;
+}
+
+.external-object-details .file-id {
+    color: #28a745;
+    font-family: monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Filter input for external objects */
+#external-object-filter {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+/* Improve form section styling for external objects */
+.form-section .external-objects-selector {
+    background-color: white;
+    border: 1px solid #e0e0e0;
+}
+
+/* Storage type selector styling */
+select#type {
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 8px;
+}
+
+select#type option[value="raw_url"] {
+    color: #1976d2;
+}
+
+select#type option[value="private_b2"] {
+    color: #7b1fa2;
 }

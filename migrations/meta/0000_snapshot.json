@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "031a4b3c-cbc2-4242-a6c3-d1fad5200e01",
+  "id": "63783b3f-d79f-4701-94fc-cde53cedfc9f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "asset": {
@@ -143,6 +143,65 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "asset_external_object": {
+      "name": "asset_external_object",
+      "columns": {
+        "asset_uuid": {
+          "name": "asset_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "external_object_uuid": {
+          "name": "external_object_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "asset_external_object_asset_uuid_asset_uuid_fk": {
+          "name": "asset_external_object_asset_uuid_asset_uuid_fk",
+          "tableFrom": "asset_external_object",
+          "tableTo": "asset",
+          "columnsFrom": [
+            "asset_uuid"
+          ],
+          "columnsTo": [
+            "uuid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "asset_external_object_external_object_uuid_external_object_uuid_fk": {
+          "name": "asset_external_object_external_object_uuid_external_object_uuid_fk",
+          "tableFrom": "asset_external_object",
+          "tableTo": "external_object",
+          "columnsFrom": [
+            "external_object_uuid"
+          ],
+          "columnsTo": [
+            "uuid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "asset_external_object_asset_uuid_external_object_uuid_pk": {
+          "columns": [
+            "asset_uuid",
+            "external_object_uuid"
+          ],
+          "name": "asset_external_object_asset_uuid_external_object_uuid_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "category": {
       "name": "category",
       "columns": {
@@ -266,6 +325,96 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "external_object": {
+      "name": "external_object",
+      "columns": {
+        "uuid": {
+          "name": "uuid",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "external_source_uuid": {
+          "name": "external_source_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "mime_type": {
+          "name": "mime_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "file_id": {
+          "name": "file_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "external_object_external_source_uuid_external_source_uuid_fk": {
+          "name": "external_object_external_source_uuid_external_source_uuid_fk",
+          "tableFrom": "external_object",
+          "tableTo": "external_source",
+          "columnsFrom": [
+            "external_source_uuid"
+          ],
+          "columnsTo": [
+            "uuid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "external_source": {
+      "name": "external_source",
+      "columns": {
+        "uuid": {
+          "name": "uuid",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "endpoint": {
+          "name": "endpoint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "footer_settings": {
       "name": "footer_settings",
       "columns": {
@@ -381,6 +530,65 @@
         }
       },
       "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "media_source_external_object": {
+      "name": "media_source_external_object",
+      "columns": {
+        "media_source_uuid": {
+          "name": "media_source_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "external_object_uuid": {
+          "name": "external_object_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "media_source_external_object_media_source_uuid_media_source_uuid_fk": {
+          "name": "media_source_external_object_media_source_uuid_media_source_uuid_fk",
+          "tableFrom": "media_source_external_object",
+          "tableTo": "media_source",
+          "columnsFrom": [
+            "media_source_uuid"
+          ],
+          "columnsTo": [
+            "uuid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "media_source_external_object_external_object_uuid_external_object_uuid_fk": {
+          "name": "media_source_external_object_external_object_uuid_external_object_uuid_fk",
+          "tableFrom": "media_source_external_object",
+          "tableTo": "external_object",
+          "columnsFrom": [
+            "external_object_uuid"
+          ],
+          "columnsTo": [
+            "uuid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "media_source_external_object_media_source_uuid_external_object_uuid_pk": {
+          "columns": [
+            "media_source_uuid",
+            "external_object_uuid"
+          ],
+          "name": "media_source_external_object_media_source_uuid_external_object_uuid_pk"
+        }
+      },
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
@@ -731,6 +939,13 @@
     "work_title": {
       "name": "work_title",
       "columns": {
+        "uuid": {
+          "name": "uuid",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
         "work_uuid": {
           "name": "work_uuid",
           "type": "text",
@@ -744,6 +959,14 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "is_for_search": {
+          "name": "is_for_search",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
         },
         "language": {
           "name": "language",
@@ -776,15 +999,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "work_title_work_uuid_language_pk": {
-          "columns": [
-            "work_uuid",
-            "language"
-          ],
-          "name": "work_title_work_uuid_language_pk"
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
     },

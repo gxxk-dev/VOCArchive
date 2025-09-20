@@ -6,6 +6,8 @@ import { deleteRelation } from '../db/operations/relation';
 import { deleteTag, removeWorkTags, removeAllWorkTags } from '../db/operations/tag';
 import { deleteCategory, removeWorkCategories, removeAllWorkCategories } from '../db/operations/category';
 import { deleteWorkTitle } from '../db/operations/work-title';
+import { deleteExternalSource } from '../db/operations/external_source';
+import { deleteExternalObject } from '../db/operations/external_object';
 import { dropUserTables } from '../db/operations/admin';
 import { Hono } from "hono";
 
@@ -275,6 +277,40 @@ deleteInfo.post('/work-categories-all', async (c: any) => {
         } else {
             return c.json({ error: 'Failed to remove work categories' }, 500);
         }
+    } catch (error) {
+        return c.json({ error: 'Internal server error' }, 500);
+    }
+});
+
+// 删除外部存储源
+deleteInfo.post('/external_source', async (c: any) => {
+    try {
+        const body: { external_source_uuid: string } = await c.req.json();
+        const db = createDrizzleClient(c.env.DB);
+        const result = await deleteExternalSource(db, body.external_source_uuid);
+        
+        if (!result) {
+            return c.json({ error: 'External source not found or delete failed.' }, 404);
+        }
+        
+        return c.json({ message: 'External source deleted successfully.' }, 200);
+    } catch (error) {
+        return c.json({ error: 'Internal server error' }, 500);
+    }
+});
+
+// 删除外部对象
+deleteInfo.post('/external_object', async (c: any) => {
+    try {
+        const body: { external_object_uuid: string } = await c.req.json();
+        const db = createDrizzleClient(c.env.DB);
+        const result = await deleteExternalObject(db, body.external_object_uuid);
+        
+        if (!result) {
+            return c.json({ error: 'External object not found or delete failed.' }, 404);
+        }
+        
+        return c.json({ message: 'External object deleted successfully.' }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);
     }

@@ -1,14 +1,26 @@
 import { createDrizzleClient } from '../db/client';
-import { inputWork, inputAsset } from '../db/operations/work';
+import { inputWork } from '../db/operations/work';
+import { inputAsset } from '../db/operations/asset';
 import { inputCreator } from '../db/operations/creator';
 import { inputMedia } from '../db/operations/media';
 import { inputRelation } from '../db/operations/relation';
 import { inputTag, addWorkTags } from '../db/operations/tag';
 import { inputCategory, addWorkCategories } from '../db/operations/category';
 import { inputWorkTitle } from '../db/operations/work-title';
-import { initializeDatabaseWithMigrations } from '../db/operations/admin';
+import { inputExternalSource } from '../db/operations/external_source';
+import { inputExternalObject } from '../db/operations/external_object';
+import { 
+    initializeDatabaseWithMigrations, 
+    migrateToExternalStorage, 
+    validateMigration, 
+    getMigrationStatus,
+    repairCorruptedExternalObjects,
+    type MigrationResult,
+    type MigrationStatus
+} from '../db/operations/admin';
 import type { Work, WorkTitle, CreatorWithRole, WikiRef, Asset, MediaSource, WorkRelation, Tag, Category } from '../db/operations/work';
 import type { WorkTitleInput } from '../db/operations/work-title';
+import { validateStorageSource } from '../db/utils/storage-handlers';
 import { Hono } from "hono";
 
 // Request body interfaces
@@ -28,6 +40,7 @@ interface InputCreatorRequestBody {
 interface InputAssetRequestBody {
     asset: Asset;
     creator?: CreatorWithRole[];
+    external_objects?: string[];
 }
 
 interface InputMediaRequestBody {
@@ -38,6 +51,7 @@ interface InputMediaRequestBody {
     url: string;
     mime_type: string;
     info: string;
+    external_objects?: string[];
 }
 
 interface InputRelationRequestBody {
@@ -78,7 +92,12 @@ inputInfo.post('/asset', async (c: any) => {
     try {
         const body: InputAssetRequestBody = await c.req.json();
         const db = createDrizzleClient(c.env.DB);
-        await inputAsset(db, body.asset, body.creator || []);
+        const assetForDb = {
+            ...body.asset,
+            language: body.asset.language || null,
+            is_previewpic: body.asset.is_previewpic ?? null,
+        };
+        await inputAsset(db, assetForDb as any, body.creator || [], body.external_objects);
         return c.json({ message: "Asset added successfully." }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);
@@ -102,7 +121,19 @@ inputInfo.post('/media', async (c: any) => {
     try {
         const body: InputMediaRequestBody = await c.req.json();
         const db = createDrizzleClient(c.env.DB);
-        await inputMedia(db, body);
+        
+        // 构建 MediaSource 对象
+        const mediaData: MediaSource = {
+            uuid: body.uuid,
+            work_uuid: body.work_uuid,
+            is_music: body.is_music,
+            file_name: body.file_name,
+            url: body.url,
+            mime_type: body.mime_type,
+            info: body.info
+        };
+        
+        await inputMedia(db, mediaData, body.external_objects);
         return c.json({ message: "Media source added successfully." }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);
@@ -201,5 +232,133 @@ inputInfo.post('/dbinit', async (c: any) => {
     } catch (error) {
         console.error('Database initialization error:', error);
         return c.json({ error: 'Failed to initialize database' }, 500);
+    }
+});
+
+// 添加外部存储源
+inputInfo.post('/external_source', async (c: any) => {
+    try {
+        const body: { uuid: string; type: 'raw_url' | 'private_b2'; name: string; endpoint: string } = await c.req.json();
+        
+        // 验证存储源配置
+        const validation = validateStorageSource(body);
+        if (!validation.valid) {
+            return c.json({ error: validation.error }, 400);
+        }
+        
+        const db = createDrizzleClient(c.env.DB);
+        await inputExternalSource(db, body);
+        return c.json({ message: "External source added successfully." }, 200);
+    } catch (error) {
+        return c.json({ error: 'Internal server error' }, 500);
+    }
+});
+
+// 添加外部对象
+inputInfo.post('/external_object', async (c: any) => {
+    try {
+        const body: { uuid: string; external_source_uuid: string; mime_type: string; file_id: string } = await c.req.json();
+        const db = createDrizzleClient(c.env.DB);
+        await inputExternalObject(db, body);
+        return c.json({ message: "External object added successfully." }, 200);
+    } catch (error) {
+        return c.json({ error: 'Internal server error' }, 500);
+    }
+});
+
+// 执行外部存储迁移
+inputInfo.post('/migrate/external-storage', async (c: any) => {
+    try {
+        const body: { asset_url: string; batch_size?: number } = await c.req.json();
+        
+        if (!body.asset_url) {
+            return c.json({ error: 'asset_url is required' }, 400);
+        }
+        
+        const db = createDrizzleClient(c.env.DB);
+        const batchSize = body.batch_size || 50;
+        
+        console.log(`Starting migration with ASSET_URL: ${body.asset_url}, batch size: ${batchSize}`);
+        
+        const result: MigrationResult = await migrateToExternalStorage(db, body.asset_url, batchSize);
+        
+        if (result.success) {
+            return c.json({
+                message: result.message,
+                status: result.status
+            }, 200);
+        } else {
+            return c.json({
+                error: result.message,
+                status: result.status
+            }, 500);
+        }
+    } catch (error) {
+        console.error('Migration endpoint error:', error);
+        return c.json({ error: 'Internal server error during migration' }, 500);
+    }
+});
+
+// 获取迁移状态
+inputInfo.get('/migrate/status', async (c: any) => {
+    try {
+        const db = createDrizzleClient(c.env.DB);
+        const status: MigrationStatus = await getMigrationStatus(db);
+        
+        return c.json({
+            status,
+            message: status.completed 
+                ? 'Migration completed successfully' 
+                : status.inProgress 
+                    ? 'Migration in progress' 
+                    : 'Migration not started or incomplete'
+        }, 200);
+    } catch (error) {
+        console.error('Migration status endpoint error:', error);
+        return c.json({ error: 'Internal server error' }, 500);
+    }
+});
+
+// 验证迁移完整性
+inputInfo.post('/migrate/validate', async (c: any) => {
+    try {
+        const db = createDrizzleClient(c.env.DB);
+        const status: MigrationStatus = await validateMigration(db);
+        
+        return c.json({
+            status,
+            valid: status.completed && status.errors.length === 0,
+            message: status.errors.length > 0 
+                ? `Validation found ${status.errors.length} issues` 
+                : 'Migration validation passed'
+        }, 200);
+    } catch (error) {
+        console.error('Migration validation endpoint error:', error);
+        return c.json({ error: 'Internal server error' }, 500);
+    }
+});
+
+// 修复损坏的外部对象文件ID
+inputInfo.post('/migrate/repair', async (c: any) => {
+    try {
+        const body = await c.req.json();
+        if (!body.asset_url || typeof body.asset_url !== 'string') {
+            return c.json({ error: 'asset_url is required' }, 400);
+        }
+
+        const db = createDrizzleClient(c.env.DB);
+        const result = await repairCorruptedExternalObjects(db, body.asset_url);
+        
+        return c.json({
+            success: result.errors.length === 0,
+            repaired: result.repaired,
+            errors: result.errors,
+            message: result.errors.length === 0
+                ? `Successfully repaired ${result.repaired} corrupted external objects`
+                : `Repaired ${result.repaired} objects with ${result.errors.length} errors`
+        }, 200);
+    } catch (error) {
+        console.error('Repair endpoint error:', error);
+        return c.json({ error: 'Internal server error' }, 500);
     }
 });

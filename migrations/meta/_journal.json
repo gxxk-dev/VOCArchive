@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1757436310358,
-      "tag": "0000_database_init",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1757861907093,
-      "tag": "0001_work-title_with_title-uuid",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1757861907094,
-      "tag": "0002_add_forsearch_to_work_title",
+      "when": 1758216242361,
+      "tag": "0000_chunky_flatman",
       "breakpoints": true
     }
   ]

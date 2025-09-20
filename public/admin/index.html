@@ -31,6 +31,8 @@
             <button class="tab-button" data-target="relation">关系 (relation)</button>
             <button class="tab-button" data-target="tag">标签 (tag)</button>
             <button class="tab-button" data-target="category">分类 (category)</button>
+            <button class="tab-button" data-target="external_source">存储源 (Storage)</button>
+            <button class="tab-button" data-target="external_object">外部对象 (External)</button>
             <button class="tab-button" data-target="footer">页脚 (Footer)</button>
         </nav>
         <main id="content">
@@ -57,6 +59,25 @@
             <div class="danger-item">
                 <button id="db-clear-button" class="danger-button">清空数据库 (DB Clear)</button>
                 <small>将删除所有用户数据表。<b>此操作不可逆！</b></small>
+            </div>
+            <h2>外部存储迁移</h2>
+            <div class="danger-item">
+                <button id="migration-status-button" class="danger-button">检查迁移状态 (Migration Status)</button>
+                <small>查看当前外部存储迁移的状态信息。</small>
+                <div id="migration-status-result" class="migration-status-result"></div>
+            </div>
+            <div class="danger-item">
+                <label for="asset-url-input">ASSET_URL:</label>
+                <input type="text" id="asset-url-input" placeholder="https://assets.example.com" />
+                <label for="batch-size-input">批处理大小:</label>
+                <input type="number" id="batch-size-input" value="50" min="10" max="500" />
+                <button id="execute-migration-button" class="danger-button">执行外部存储迁移 (Execute Migration)</button>
+                <small>将现有的assets和media sources迁移到外部存储系统。<b>请确保先备份数据库！</b></small>
+            </div>
+            <div class="danger-item">
+                <button id="validate-migration-button" class="danger-button">验证迁移完整性 (Validate Migration)</button>
+                <small>检查迁移的完整性和数据一致性。</small>
+                <div id="validation-result" class="validation-result"></div>
             </div>
         </div>
     </div>

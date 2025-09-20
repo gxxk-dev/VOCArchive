@@ -16,6 +16,8 @@ import {
     workTag,
     workCategory,
     footerSettings,
+    externalSource,
+    externalObject,
 } from './schema';
 
 // Basic table types
@@ -37,8 +39,24 @@ export type NewWorkLicense = InferInsertModel<typeof workLicense>;
 export type MediaSource = InferSelectModel<typeof mediaSource>;
 export type NewMediaSource = InferInsertModel<typeof mediaSource>;
 
+// Application-layer MediaSource type that excludes redundant fields
+export type MediaSourceForApplication = Omit<MediaSource, 'url'>;
+
+// Custom type for media source input where url is optional (redundant with external objects)
+export type MediaSourceInput = Omit<NewMediaSource, 'url'> & {
+    url?: string | null;
+};
+
 export type Asset = InferSelectModel<typeof asset>;
 export type NewAsset = InferInsertModel<typeof asset>;
+
+// Application-layer Asset type that excludes redundant fields
+export type AssetForApplication = Omit<Asset, 'file_id'>;
+
+// Custom type for asset input where file_id is optional (redundant with external objects)
+export type AssetInput = Omit<NewAsset, 'file_id'> & {
+    file_id?: string | null;
+};
 
 export type WorkCreator = InferSelectModel<typeof workCreator>;
 export type NewWorkCreator = InferInsertModel<typeof workCreator>;
@@ -67,6 +85,12 @@ export type NewWorkCategory = InferInsertModel<typeof workCategory>;
 export type FooterSettings = InferSelectModel<typeof footerSettings>;
 export type NewFooterSettings = InferInsertModel<typeof footerSettings>;
 
+export type ExternalSource = InferSelectModel<typeof externalSource>;
+export type NewExternalSource = InferInsertModel<typeof externalSource>;
+
+export type ExternalObject = InferSelectModel<typeof externalObject>;
+export type NewExternalObject = InferInsertModel<typeof externalObject>;
+
 // Composite types for complex queries (matching existing interfaces)
 
 export interface WikiRef {
@@ -82,8 +106,13 @@ export interface CreatorWithRole {
     wikis?: WikiRef[];
 }
 
-export interface AssetWithCreators extends Asset {
+export interface AssetWithCreators extends AssetForApplication {
     creator: CreatorWithRole[];
+    external_objects?: ExternalObject[];
+}
+
+export interface MediaSourceWithExternalObjects extends MediaSourceForApplication {
+    external_objects?: ExternalObject[];
 }
 
 export interface CategoryWithChildren extends Category {
@@ -107,7 +136,7 @@ export interface WorkInfo {
     work: Work;
     titles: WorkTitle[];
     license?: string;
-    media_sources: MediaSource[];
+    media_sources: MediaSourceWithExternalObjects[];
     asset: AssetWithCreators[];
     creator: CreatorWithRole[];
     relation: WorkRelationWithTitles[];
@@ -132,6 +161,7 @@ export type CreatorType = 'human' | 'virtual';
 export type AssetType = 'lyrics' | 'picture';
 export type RelationType = 'original' | 'remix' | 'cover' | 'remake' | 'picture' | 'lyrics';
 export type FooterItemType = 'link' | 'social' | 'copyright';
+export type ExternalSourceType = 'raw_url' | 'private_b2';
 
 // Utility types for API responses
 export interface PaginationParams {

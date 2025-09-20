@@ -18,7 +18,7 @@ export function nullToUndefined<T>(value: T | null): T | undefined {
  */
 export function convertAssetData(asset: {
     uuid: string;
-    file_id: string;
+    file_id?: string;
     work_uuid: string;
     asset_type: 'lyrics' | 'picture';
     file_name: string;
@@ -27,12 +27,12 @@ export function convertAssetData(asset: {
 }): Asset {
     return {
         uuid: asset.uuid,
-        file_id: asset.file_id,
+        // file_id: asset.file_id, // Removed - use external objects for file info
         work_uuid: asset.work_uuid,
         asset_type: asset.asset_type,
         file_name: asset.file_name,
         is_previewpic: nullToUndefined(asset.is_previewpic),
-        language: nullToUndefined(asset.language),
+        language: nullToUndefined(asset.language), // Convert null to undefined to match Asset type
     };
 }
 

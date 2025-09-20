@@ -54,7 +54,8 @@ apiApp.route('/footer', footer)
 
 apiApp.get('/config', (c:any) => {
   return c.json({ 
-    asset_url: c.env.ASSET_URL 
+    // Configuration endpoint for future use
+    // asset_url removed - using external storage architecture
   })
 })
 

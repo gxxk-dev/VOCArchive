@@ -37,6 +37,13 @@ export const footerSettings = sqliteTable('footer_settings', {
     icon_class: text('icon_class'),
 });
 
+export const externalSource = sqliteTable('external_source', {
+    uuid: text('uuid').primaryKey(),
+    type: text('type', { enum: ['raw_url', 'private_b2'] }).notNull(),
+    name: text('name').notNull(),
+    endpoint: text('endpoint').notNull(),
+});
+
 // Dependent tables (with foreign key relationships)
 
 export const creatorWiki = sqliteTable('creator_wiki', {
@@ -74,14 +81,14 @@ export const mediaSource = sqliteTable('media_source', {
     }),
     is_music: integer('is_music', { mode: 'boolean' }).notNull(),
     file_name: text('file_name').notNull(),
-    url: text('url').notNull(),
+    url: text('url'), // Made nullable - now redundant with external_object
     mime_type: text('mime_type').notNull(),
     info: text('info').notNull(),
 });
 
 export const asset = sqliteTable('asset', {
     uuid: text('uuid').primaryKey(),
-    file_id: text('file_id').notNull(),
+    file_id: text('file_id'), // Made nullable - now redundant with external_object
     work_uuid: text('work_uuid').notNull().references(() => work.uuid, { 
         onDelete: 'cascade' 
     }),
@@ -160,6 +167,39 @@ export const workCategory = sqliteTable('work_category', {
     pk: primaryKey({ columns: [table.work_uuid, table.category_uuid] }),
 }));
 
+export const externalObject = sqliteTable('external_object', {
+    uuid: text('uuid').primaryKey(),
+    external_source_uuid: text('external_source_uuid').notNull().references(() => externalSource.uuid, { 
+        onDelete: 'cascade' 
+    }),
+    mime_type: text('mime_type').notNull(),
+    file_id: text('file_id').notNull(),
+});
+
+// Junction tables for many-to-many relationships
+
+export const assetExternalObject = sqliteTable('asset_external_object', {
+    asset_uuid: text('asset_uuid').notNull().references(() => asset.uuid, { 
+        onDelete: 'cascade' 
+    }),
+    external_object_uuid: text('external_object_uuid').notNull().references(() => externalObject.uuid, { 
+        onDelete: 'cascade' 
+    }),
+}, (table) => ({
+    pk: primaryKey({ columns: [table.asset_uuid, table.external_object_uuid] }),
+}));
+
+export const mediaSourceExternalObject = sqliteTable('media_source_external_object', {
+    media_source_uuid: text('media_source_uuid').notNull().references(() => mediaSource.uuid, { 
+        onDelete: 'cascade' 
+    }),
+    external_object_uuid: text('external_object_uuid').notNull().references(() => externalObject.uuid, { 
+        onDelete: 'cascade' 
+    }),
+}, (table) => ({
+    pk: primaryKey({ columns: [table.media_source_uuid, table.external_object_uuid] }),
+}));
+
 // Relations
 
 export const creatorRelations = relations(creator, ({ many }) => ({
@@ -202,11 +242,12 @@ export const workLicenseRelations = relations(workLicense, ({ one }) => ({
     }),
 }));
 
-export const mediaSourceRelations = relations(mediaSource, ({ one }) => ({
+export const mediaSourceRelations = relations(mediaSource, ({ one, many }) => ({
     work: one(work, {
         fields: [mediaSource.work_uuid],
         references: [work.uuid],
     }),
+    mediaSourceExternalObjects: many(mediaSourceExternalObject),
 }));
 
 export const assetRelations = relations(asset, ({ one, many }) => ({
@@ -215,6 +256,7 @@ export const assetRelations = relations(asset, ({ one, many }) => ({
         references: [work.uuid],
     }),
     assetCreators: many(assetCreator),
+    assetExternalObjects: many(assetExternalObject),
 }));
 
 export const workCreatorRelations = relations(workCreator, ({ one }) => ({
@@ -292,5 +334,40 @@ export const workCategoryRelations = relations(workCategory, ({ one }) => ({
     category: one(category, {
         fields: [workCategory.category_uuid],
         references: [category.uuid],
+    }),
+}));
+
+export const externalSourceRelations = relations(externalSource, ({ many }) => ({
+    externalObjects: many(externalObject),
+}));
+
+export const externalObjectRelations = relations(externalObject, ({ one, many }) => ({
+    externalSource: one(externalSource, {
+        fields: [externalObject.external_source_uuid],
+        references: [externalSource.uuid],
+    }),
+    assetExternalObjects: many(assetExternalObject),
+    mediaSourceExternalObjects: many(mediaSourceExternalObject),
+}));
+
+export const assetExternalObjectRelations = relations(assetExternalObject, ({ one }) => ({
+    asset: one(asset, {
+        fields: [assetExternalObject.asset_uuid],
+        references: [asset.uuid],
+    }),
+    externalObject: one(externalObject, {
+        fields: [assetExternalObject.external_object_uuid],
+        references: [externalObject.uuid],
+    }),
+}));
+
+export const mediaSourceExternalObjectRelations = relations(mediaSourceExternalObject, ({ one }) => ({
+    mediaSource: one(mediaSource, {
+        fields: [mediaSourceExternalObject.media_source_uuid],
+        references: [mediaSource.uuid],
+    }),
+    externalObject: one(externalObject, {
+        fields: [mediaSourceExternalObject.external_object_uuid],
+        references: [externalObject.uuid],
     }),
 }));

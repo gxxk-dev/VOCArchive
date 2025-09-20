@@ -26,7 +26,6 @@ export interface CreatorWithRole {
 
 export interface Asset {
     uuid: string;
-    file_id: string;
     work_uuid: string;
     asset_type: 'lyrics' | 'picture';
     file_name: string;
@@ -127,7 +126,7 @@ export async function searchWorksByTitle(db: DrizzleDB, query: string): Promise<
         const previewAssets = await db
             .select({
                 uuid: asset.uuid,
-                file_id: asset.file_id,
+                // file_id: asset.file_id, // Removed - use external objects for file info
                 work_uuid: asset.work_uuid,
                 asset_type: asset.asset_type,
                 file_name: asset.file_name,
@@ -147,7 +146,7 @@ export async function searchWorksByTitle(db: DrizzleDB, query: string): Promise<
         const nonPreviewAssets = await db
             .select({
                 uuid: asset.uuid,
-                file_id: asset.file_id,
+                // file_id: asset.file_id, // Removed - use external objects for file info
                 work_uuid: asset.work_uuid,
                 asset_type: asset.asset_type,
                 file_name: asset.file_name,
@@ -241,7 +240,7 @@ export async function searchWorksByCreator(db: DrizzleDB, query: string): Promis
         const previewAssets = await db
             .select({
                 uuid: asset.uuid,
-                file_id: asset.file_id,
+                // file_id: asset.file_id, // Removed - use external objects for file info
                 work_uuid: asset.work_uuid,
                 asset_type: asset.asset_type,
                 file_name: asset.file_name,
@@ -261,7 +260,7 @@ export async function searchWorksByCreator(db: DrizzleDB, query: string): Promis
         const nonPreviewAssets = await db
             .select({
                 uuid: asset.uuid,
-                file_id: asset.file_id,
+                // file_id: asset.file_id, // Removed - use external objects for file info
                 work_uuid: asset.work_uuid,
                 asset_type: asset.asset_type,
                 file_name: asset.file_name,

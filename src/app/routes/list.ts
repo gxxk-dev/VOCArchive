@@ -7,6 +7,8 @@ import { listMedia } from '../db/operations/media';
 import { listTags, getWorksByTag, getWorkCountByTag } from '../db/operations/tag';
 import { listCategories, getWorksByCategory, getWorkCountByCategory } from '../db/operations/category';
 import { listWorkTitles } from '../db/operations/work-title';
+import { listExternalSources } from '../db/operations/external_source';
+import { listExternalObjects } from '../db/operations/external_object';
 import { Hono } from 'hono'
 
 export const listInfo = new Hono();
@@ -102,5 +104,28 @@ listInfo.get('/work-titles/:work_uuid', async (c: any) => {
     
     const db = createDrizzleClient(c.env.DB);
     const results = await listWorkTitles(db, work_uuid, include_for_search);
+    return c.json(results);
+});
+
+// 获取外部存储源列表
+listInfo.get('/external_sources', async (c: any) => {
+    const db = createDrizzleClient(c.env.DB);
+    const results = await listExternalSources(db, 1, 999);
+    return c.json(results);
+});
+
+// 获取外部对象列表（无分页参数版本）
+listInfo.get('/external_objects', async (c: any) => {
+    const db = createDrizzleClient(c.env.DB);
+    const results = await listExternalObjects(db, 1, 999);
+    return c.json(results);
+});
+
+// 获取外部对象列表（带分页参数版本）
+listInfo.get('/external_objects/:page_num/:page_size?', async (c: any) => {
+    const page_num = Number(c.req.param("page_num")) || 1;
+    const page_size = Number(c.req.param("page_size")) || 10;
+    const db = createDrizzleClient(c.env.DB);
+    const results = await listExternalObjects(db, page_num, page_size);
     return c.json(results);
 });

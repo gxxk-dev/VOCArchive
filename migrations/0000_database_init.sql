@@ -18,6 +18,14 @@ CREATE TABLE `asset_creator` (
 	FOREIGN KEY (`creator_uuid`) REFERENCES `creator`(`uuid`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
+CREATE TABLE `asset_external_object` (
+	`asset_uuid` text NOT NULL,
+	`external_object_uuid` text NOT NULL,
+	PRIMARY KEY(`asset_uuid`, `external_object_uuid`),
+	FOREIGN KEY (`asset_uuid`) REFERENCES `asset`(`uuid`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`external_object_uuid`) REFERENCES `external_object`(`uuid`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
 CREATE TABLE `category` (
 	`uuid` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
@@ -39,6 +47,21 @@ CREATE TABLE `creator_wiki` (
 	FOREIGN KEY (`creator_uuid`) REFERENCES `creator`(`uuid`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE TABLE `external_object` (
+	`uuid` text PRIMARY KEY NOT NULL,
+	`external_source_uuid` text NOT NULL,
+	`mime_type` text NOT NULL,
+	`file_id` text NOT NULL,
+	FOREIGN KEY (`external_source_uuid`) REFERENCES `external_source`(`uuid`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE TABLE `external_source` (
+	`uuid` text PRIMARY KEY NOT NULL,
+	`type` text NOT NULL,
+	`name` text NOT NULL,
+	`endpoint` text NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE `footer_settings` (
 	`uuid` text PRIMARY KEY NOT NULL,
 	`item_type` text NOT NULL,
@@ -56,6 +79,14 @@ CREATE TABLE `media_source` (
 	`mime_type` text NOT NULL,
 	`info` text NOT NULL,
 	FOREIGN KEY (`work_uuid`) REFERENCES `work`(`uuid`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE TABLE `media_source_external_object` (
+	`media_source_uuid` text NOT NULL,
+	`external_object_uuid` text NOT NULL,
+	PRIMARY KEY(`media_source_uuid`, `external_object_uuid`),
+	FOREIGN KEY (`media_source_uuid`) REFERENCES `media_source`(`uuid`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`external_object_uuid`) REFERENCES `external_object`(`uuid`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `tag` (
@@ -110,11 +141,12 @@ CREATE TABLE `work_tag` (
 );
 --> statement-breakpoint
 CREATE TABLE `work_title` (
+	`uuid` text PRIMARY KEY NOT NULL,
 	`work_uuid` text NOT NULL,
 	`is_official` integer NOT NULL,
+	`is_for_search` integer DEFAULT false NOT NULL,
 	`language` text NOT NULL,
 	`title` text NOT NULL,
-	PRIMARY KEY(`work_uuid`, `language`),
 	FOREIGN KEY (`work_uuid`) REFERENCES `work`(`uuid`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint

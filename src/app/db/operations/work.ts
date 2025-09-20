@@ -59,7 +59,6 @@ export interface Category {
 
 export interface Asset {
     uuid: string;
-    file_id: string;
     work_uuid: string;
     asset_type: 'lyrics' | 'picture';
     file_name: string;
@@ -76,7 +75,7 @@ export interface MediaSource {
     work_uuid: string;
     is_music: boolean;
     file_name: string;
-    url: string;
+    url?: string | null;
     mime_type: string;
     info: string;
 }
@@ -212,7 +211,7 @@ export async function getWorkListWithPagination(
         const previewAssets = await db
             .select({
                 uuid: asset.uuid,
-                file_id: asset.file_id,
+                // file_id: asset.file_id, // Removed - use external objects for file info
                 work_uuid: asset.work_uuid,
                 asset_type: asset.asset_type,
                 file_name: asset.file_name,
@@ -232,7 +231,7 @@ export async function getWorkListWithPagination(
         const nonPreviewAssets = await db
             .select({
                 uuid: asset.uuid,
-                file_id: asset.file_id,
+                // file_id: asset.file_id, // Removed - use external objects for file info
                 work_uuid: asset.work_uuid,
                 asset_type: asset.asset_type,
                 file_name: asset.file_name,
@@ -348,7 +347,7 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
             work_uuid: mediaSource.work_uuid,
             is_music: mediaSource.is_music,
             file_name: mediaSource.file_name,
-            url: mediaSource.url,
+            // url: mediaSource.url, // Removed - use external objects for file info
             mime_type: mediaSource.mime_type,
             info: mediaSource.info,
         })
@@ -381,7 +380,6 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
         if (!assetMap.has(row.uuid)) {
             assetMap.set(row.uuid, {
                 uuid: row.uuid,
-                file_id: row.file_id,
                 work_uuid: row.work_uuid,
                 asset_type: row.asset_type,
                 file_name: row.file_name,
@@ -733,7 +731,6 @@ export async function listAssets(db: DrizzleDB, page: number, pageSize: number):
     const assets = await db
         .select({
             uuid: asset.uuid,
-            file_id: asset.file_id,
             work_uuid: asset.work_uuid,
             asset_type: asset.asset_type,
             file_name: asset.file_name,
@@ -768,7 +765,7 @@ export async function inputAsset(
         // Insert asset
         await db.insert(asset).values({
             uuid: assetData.uuid,
-            file_id: assetData.file_id,
+            // file_id: assetData.file_id, // Removed - using external objects for file management
             work_uuid: assetData.work_uuid,
             asset_type: assetData.asset_type,
             file_name: assetData.file_name,
@@ -810,7 +807,7 @@ export async function updateAsset(
         await db
             .update(asset)
             .set({
-                file_id: assetData.file_id,
+                // file_id: assetData.file_id, // Removed - using external objects for file management
                 work_uuid: assetData.work_uuid,
                 asset_type: assetData.asset_type,
                 file_name: assetData.file_name,

@@ -1,15 +1,4 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    // --- Config ---
-    try {
-        const response = await fetch('/api/config');
-        if (!response.ok) throw new Error('Config fetch failed');
-        const config = await response.json();
-        window.ASSET_URL = config.asset_url || 'https://assets.vocarchive.com';
-    } catch (error) {
-        console.error('Could not fetch config:', error);
-        window.ASSET_URL = 'https://assets.vocarchive.com';
-    }
-
     // --- DOM Elements ---
     const loginContainer = document.getElementById('login-container');
     const adminPanel = document.getElementById('admin-panel');
@@ -32,6 +21,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentEditUUID = null; // To track the item being edited
     let allCreators = [];
     let allWorks = [];
+    let allExternalSources = [];
+    let allExternalObjects = [];
 
     // --- API & Helper Functions ---
     function showLogin() {
@@ -41,12 +32,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         jwtToken = null;
     }
 
-    function showAdminPanel() {
+    async function showAdminPanel() {
         loginContainer.classList.add('hidden');
         adminPanel.classList.remove('hidden');
         const activeTab = document.querySelector('.tab-button.active');
         currentTab = activeTab ? activeTab.dataset.target : 'work';
+        
+        // Load external sources and objects for reference in other tables
+        await loadExternalSources();
+        await loadExternalObjects();
+        
         loadContent(currentTab);
+    }
+
+    async function loadExternalSources() {
+        try {
+            allExternalSources = await apiFetch('/list/external_sources');
+        } catch (error) {
+            console.error('Failed to load external sources:', error);
+            allExternalSources = [];
+        }
+    }
+
+    async function loadExternalObjects() {
+        try {
+            allExternalObjects = await apiFetch('/list/external_objects');
+        } catch (error) {
+            console.error('Failed to load external objects:', error);
+            allExternalObjects = [];
+        }
     }
 
     async function apiFetch(endpoint, options = {}) {
@@ -55,7 +69,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             headers['Authorization'] = `Bearer ${jwtToken}`;
         }
         const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
-        console.log("API交互：",response)
         if (response.status === 401) {
             showLogin();
             throw new Error('Unauthorized');
@@ -165,6 +178,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else if (target === 'category') {
                 endpoint = '/list/categories';
                 data = await apiFetch(endpoint);
+            } else if (target === 'external_source') {
+                endpoint = '/list/external_sources';
+                data = await apiFetch(endpoint);
+            } else if (target === 'external_object') {
+                endpoint = '/list/external_objects/1/999';
+                data = await apiFetch(endpoint);
             } else {
                 endpoint = `/list/${target}/1?pageSize=999`;
                 data = await apiFetch(endpoint);
@@ -220,6 +239,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         if (target === 'category') {
             renderCategoriesTable(data);
+            return;
+        }
+        
+        if (target === 'external_source') {
+            renderExternalSourcesTable(data);
+            return;
+        }
+        
+        if (target === 'external_object') {
+            renderExternalObjectsTable(data);
+            return;
+        }
+        
+        if (target === 'asset') {
+            renderAssetTable(data);
+            return;
+        }
+        
+        if (target === 'media') {
+            renderMediaSourceTable(data);
             return;
         }
         
@@ -321,6 +360,198 @@ document.addEventListener('DOMContentLoaded', async () => {
         }).join('');
     }
 
+    function renderExternalSourcesTable(data) {
+        if (!data) {
+            content.innerHTML = `<p class="error-message">无法加载存储源数据。</p>`;
+            return;
+        }
+        
+        content.innerHTML = `
+            <div class="controls">
+                <h2>存储源 (External Sources)</h2>
+                <button class="create-button" data-target="external_source">创建新存储源</button>
+            </div>
+            ${data.length === 0 ? `<p>暂无存储源。</p>` : `
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>UUID</th>
+                            <th>名称</th>
+                            <th>类型</th>
+                            <th>端点</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(source => `
+                            <tr data-uuid="${source.uuid}">
+                                <td><span class="uuid" title="${source.uuid}">${source.uuid.substring(0, 8)}...</span></td>
+                                <td class="source-name">${source.name}</td>
+                                <td><span class="storage-type-badge ${source.type}">${source.type === 'raw_url' ? '直接 URL' : 'Backblaze B2'}</span></td>
+                                <td class="endpoint-template">${source.endpoint}</td>
+                                <td>
+                                    <button class="edit-button" data-uuid="${source.uuid}" data-target="external_source">编辑</button>
+                                    <button class="delete-button" data-uuid="${source.uuid}" data-target="external_source">删除</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>`}
+        `;
+    }
+
+    function renderExternalObjectsTable(data) {
+        if (!data) {
+            content.innerHTML = `<p class="error-message">无法加载外部对象数据。</p>`;
+            return;
+        }
+        
+        content.innerHTML = `
+            <div class="controls">
+                <h2>外部对象 (External Objects)</h2>
+                <button class="create-button" data-target="external_object">创建新外部对象</button>
+            </div>
+            ${data.length === 0 ? `<p>暂无外部对象。</p>` : `
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>UUID</th>
+                            <th>存储源</th>
+                            <th>MIME 类型</th>
+                            <th>文件 ID</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(obj => `
+                            <tr data-uuid="${obj.uuid}">
+                                <td><span class="uuid" title="${obj.uuid}">${obj.uuid.substring(0, 8)}...</span></td>
+                                <td>
+                                    <span class="external-source-ref" title="${obj.source?.uuid || obj.external_source_uuid}">
+                                        ${obj.source?.name || allExternalSources.find(s => s.uuid === obj.external_source_uuid)?.name || obj.external_source_uuid.substring(0, 8) + '...'}
+                                    </span>
+                                </td>
+                                <td class="mime-type">${obj.mime_type}</td>
+                                <td class="file-id">${obj.file_id}</td>
+                                <td>
+                                    <button class="edit-button" data-uuid="${obj.uuid}" data-target="external_object">编辑</button>
+                                    <button class="delete-button" data-uuid="${obj.uuid}" data-target="external_object">删除</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>`}
+        `;
+    }
+
+    function renderAssetTable(data) {
+        content.innerHTML = `
+            <div class="controls">
+                <h2>资产 (Assets)</h2>
+                <button class="create-button" data-target="asset">创建新资产</button>
+            </div>
+            ${!data || data.length === 0 ? `<p>暂无资产。</p>` : `
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>UUID</th>
+                            <th>作品UUID</th>
+                            <th>文件名</th>
+                            <th>资产类型</th>
+                            <th>是否预览图</th>
+                            <th>语言</th>
+                            <th>创作者</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(asset => {
+                            const creators = asset.creator && Array.isArray(asset.creator) ? 
+                                asset.creator.map(c => `${c.creator_name || c.name || ''}(${c.role || ''})`).join(', ') : 
+                                (asset.creator ? `${asset.creator.creator_name || asset.creator.name || ''}(${asset.creator.role || ''})` : '');
+                            
+                            return `
+                            <tr data-uuid="${asset.uuid}">
+                                <td><span class="uuid" title="${asset.uuid}">${asset.uuid.substring(0, 8)}...</span></td>
+                                <td>
+                                    <span class="uuid" title="${asset.work_uuid || ''}">${asset.work_uuid ? asset.work_uuid.substring(0, 8) + '...' : ''}</span>
+                                </td>
+                                <td class="file-name">${asset.file_name || ''}</td>
+                                <td class="asset-type">${asset.asset_type || ''}</td>
+                                <td class="preview-pic">
+                                    ${asset.is_previewpic === null || asset.is_previewpic === undefined ? 
+                                        '<span class="null-value">NULL</span>' : 
+                                        (asset.is_previewpic ? '<span class="bool-true">是</span>' : '<span class="bool-false">否</span>')
+                                    }
+                                </td>
+                                <td class="language">${asset.language || '<span class="null-value">NULL</span>'}</td>
+                                <td class="creators">${creators || '<span class="null-value">无</span>'}</td>
+                                <td class="actions">
+                                    <button class="edit-button" data-uuid="${asset.uuid}" data-target="asset">编辑</button>
+                                    <button class="delete-button" data-uuid="${asset.uuid}" data-target="asset">删除</button>
+                                </td>
+                            </tr>
+                        `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>`}
+        `;
+    }
+
+    function renderMediaSourceTable(data) {
+        content.innerHTML = `
+            <div class="controls">
+                <h2>媒体源 (Media Sources)</h2>
+                <button class="create-button" data-target="media">创建新媒体源</button>
+            </div>
+            ${!data || data.length === 0 ? `<p>暂无媒体源。</p>` : `
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>UUID</th>
+                            <th>作品UUID</th>
+                            <th>文件名</th>
+                            <th>MIME类型</th>
+                            <th>是否音乐</th>
+                            <th>信息</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(media => `
+                            <tr data-uuid="${media.uuid}">
+                                <td><span class="uuid" title="${media.uuid}">${media.uuid.substring(0, 8)}...</span></td>
+                                <td>
+                                    <span class="uuid" title="${media.work_uuid || ''}">${media.work_uuid ? media.work_uuid.substring(0, 8) + '...' : ''}</span>
+                                </td>
+                                <td class="file-name">${media.file_name || ''}</td>
+                                <td class="mime-type">${media.mime_type || ''}</td>
+                                <td class="is-music">
+                                    ${media.is_music === null || media.is_music === undefined ? 
+                                        '<span class="null-value">NULL</span>' : 
+                                        (media.is_music ? '<span class="bool-true">是</span>' : '<span class="bool-false">否</span>')
+                                    }
+                                </td>
+                                <td class="info">${media.info || ''}</td>
+                                <td class="actions">
+                                    <button class="edit-button" data-uuid="${media.uuid}" data-target="media">编辑</button>
+                                    <button class="delete-button" data-uuid="${media.uuid}" data-target="media">删除</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>`}
+        `;
+    }
+
     function renderWorksGrid(target, data) {
         const capTarget = target.charAt(0).toUpperCase() + target.slice(1);
         content.innerHTML = `
@@ -332,7 +563,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div id="work-grid">
                 ${data.map(work => {
                     const title = work.titles.find(t => t.is_official)?.title || work.titles[0]?.title || 'Untitled';
-                    const imageUrl = work.preview_asset ? `${window.ASSET_URL}/${work.preview_asset.file_id}` : 'https://via.placeholder.com/300x200.png?text=No+Image';
+                    const imageUrl = work.preview_asset ? `/api/get/file/${work.preview_asset.uuid}` : 'https://via.placeholder.com/300x200.png?text=No+Image';
                     return `
                     <div class="work-card" data-uuid="${work.work_uuid}">
                         <div class="work-card-image">
@@ -374,7 +605,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        const endpointMap = { creator: 'creator', work: 'work' };
+        const endpointMap = { 
+            creator: 'creator', 
+            work: 'work',
+            asset: 'asset',
+            media: 'media'
+        };
         const getEndpoint = endpointMap[target] || target;
         try {
             const data = await apiFetch(`/get/${getEndpoint}/${uuid}`);
@@ -410,7 +646,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             asset: 'asset_uuid',
             relation: 'relation_uuid',
             tag: 'tag_uuid',
-            category: 'category_uuid'
+            category: 'category_uuid',
+            external_source: 'external_source_uuid',
+            external_object: 'external_object_uuid'
         };
         const endpointMap = { creator: 'creator', work: 'work' };
         const uuidKey = uuidKeyMap[target];
@@ -460,6 +698,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         modalForm.onsubmit = (e) => handleFormSubmit(e, target, !!data);
         modal.classList.remove('hidden');
 
+        // Initialize external objects list for asset and media forms
+        if (target === 'asset' || target === 'media') {
+            // Wait for DOM to be updated, then initialize external objects list
+            setTimeout(() => {
+                const container = document.getElementById('external-objects-container');
+                if (container) {
+                    renderExternalObjectsList(allExternalObjects, container, data?.external_objects || []);
+                }
+            }, 100);
+        }
+
         // Logic to toggle license field visibility for 'work'
         if (target === 'work') {
             const copyrightBasisSelect = document.getElementById('copyright_basis');
@@ -482,7 +731,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function generateFormFields(target, data = null, options = {}) {
-        const s = (val) => JSON.stringify(val, null, 2);
         
         const data_wikis = (data?.wikis || []).map(createWikiRow).join('');
         console.log(data)
@@ -524,31 +772,46 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <option value="false" ${!data?.is_music ? 'selected' : ''}>No</option>
                 </select>
                 <label for="file_name">File Name:</label><input type="text" id="file_name" name="file_name" required value="${data?.file_name || ''}">
-                <label for="url">URL:</label><input type="url" id="url" name="url" required value="${data?.url || ''}">
+                <!-- URL removed - using external objects for file management -->
                 <label for="mime_type">MIME Type:</label><input type="text" id="mime_type" name="mime_type" required value="${data?.mime_type || ''}">
                 <label for="info">Info:</label><input type="text" id="info" name="info" required value="${data?.info || ''}">
+                
+                <div class="form-section">
+                    <h4>外部对象 (External Objects)</h4>
+                    <div id="external-objects-selector" class="external-objects-selector">
+                        ${createExternalObjectsSelector(allExternalSources, data?.external_objects)}
+                    </div>
+                </div>
             `,
             asset: `
-                <input type="hidden" name="asset_uuid" value="${data?.asset?.uuid || ''}">
-                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.asset?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
-                <label for="file_id">File ID:</label><input type="text" id="file_id" name="file_id" required value="${data?.asset?.file_id || ''}">
+                <input type="hidden" name="asset_uuid" value="${data?.uuid || ''}">
+                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
+                <!-- File ID removed - using external objects for file management -->
                 <label for="work_uuid">Work UUID:</label>
                 <div class="input-with-quick-select">
-                    <input type="text" id="work_uuid_asset" name="work_uuid" required value="${data?.asset?.work_uuid || ''}" class="uuid">
-                    ${createQuickSelect('work-quick-select-asset', 'work-quick-select-asset-name', options.works, 'work_uuid', 'titles', data?.asset?.work_uuid, 'work_uuid_asset')}
+                    <input type="text" id="work_uuid_asset" name="work_uuid" required value="${data?.work_uuid || ''}" class="uuid">
+                    ${createQuickSelect('work-quick-select-asset', 'work-quick-select-asset-name', options.works, 'work_uuid', 'titles', data?.work_uuid, 'work_uuid_asset')}
                 </div>
                 <label for="asset_type">Asset Type:</label><select id="asset_type" name="asset_type">
-                    <option value="lyrics" ${data?.asset?.asset_type === 'lyrics' ? 'selected' : ''}>Lyrics</option>
-                    <option value="picture" ${data?.asset?.asset_type === 'picture' ? 'selected' : ''}>Picture</option>
+                    <option value="lyrics" ${data?.asset_type === 'lyrics' ? 'selected' : ''}>Lyrics</option>
+                    <option value="picture" ${data?.asset_type === 'picture' ? 'selected' : ''}>Picture</option>
                 </select>
-                <label for="file_name">File Name:</label><input type="text" id="file_name" name="file_name" required value="${data?.asset?.file_name || ''}">
+                <label for="file_name">File Name:</label><input type="text" id="file_name" name="file_name" required value="${data?.file_name || ''}">
                 <label for="is_previewpic">Is Preview Pic:</label><select id="is_previewpic" name="is_previewpic">
-                    <option value="false" ${!data?.asset?.is_previewpic ? 'selected' : ''}>No</option>
-                    <option value="true" ${data?.asset?.is_previewpic ? 'selected' : ''}>Yes</option>
+                    <option value="false" ${!data?.is_previewpic ? 'selected' : ''}>No</option>
+                    <option value="true" ${data?.is_previewpic ? 'selected' : ''}>Yes</option>
                 </select>
-                <label for="language">Language:</label><input type="text" id="language" name="language" value="${data?.asset?.language || ''}">
+                <label for="language">Language:</label><input type="text" id="language" name="language" value="${data?.language || ''}">
+                
                 <div class="form-section">
-                    <h4>creator</h4>
+                    <h4>外部对象 (External Objects)</h4>
+                    <div id="external-objects-selector" class="external-objects-selector">
+                        ${createExternalObjectsSelector(allExternalSources, data?.external_objects)}
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h4>创作者 (Creators)</h4>
                     <div id="asset-creator-list" class="dynamic-list">
                         ${data_creators}
                     </div>
@@ -658,6 +921,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <input type="text" id="parent_uuid" name="parent_uuid" value="${data?.parent_uuid || ''}" class="uuid" placeholder="留空表示顶级分类">
                     ${options.categories ? createCategoryQuickSelect('parent-category-quick-select', 'parent-category-quick-select-name', options.categories, data?.parent_uuid, 'parent_uuid') : ''}
                 </div>
+            `,
+            external_source: `
+                <input type="hidden" name="external_source_uuid" value="${data?.uuid || ''}">
+                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
+                <label for="type">存储类型:</label><select id="type" name="type" required>
+                    <option value="raw_url" ${data?.type === 'raw_url' ? 'selected' : ''}>直接 URL</option>
+                    <option value="private_b2" ${data?.type === 'private_b2' ? 'selected' : ''}>Backblaze B2</option>
+                </select>
+                <label for="name">存储源名称:</label><input type="text" id="name" name="name" required value="${data?.name || ''}" placeholder="例如: 主要存储, 备份存储">
+                <label for="endpoint">访问端点:</label><input type="text" id="endpoint" name="endpoint" required value="${data?.endpoint || ''}" placeholder="例如: https://example.com/{FILE_ID} 或 https://f001.backblazeb2.com/file/bucket/{FILE_ID}">
+                <small>使用 {FILE_ID} 标记文件标识符位置</small>
+            `,
+            external_object: `
+                <input type="hidden" name="external_object_uuid" value="${data?.uuid || ''}">
+                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
+                <label for="external_source_uuid">存储源:</label>
+                <div class="input-with-quick-select">
+                    <input type="text" id="external_source_uuid" name="external_source_uuid" required value="${data?.external_source_uuid || ''}" class="uuid">
+                    ${createQuickSelect('source-quick-select', 'source-quick-select-name', allExternalSources, 'uuid', 'name', data?.external_source_uuid, 'external_source_uuid')}
+                </div>
+                <label for="mime_type">MIME 类型:</label><input type="text" id="mime_type" name="mime_type" required value="${data?.mime_type || ''}" placeholder="例如: image/jpeg, audio/mpeg, video/mp4">
+                <label for="file_id">文件 ID:</label><input type="text" id="file_id" name="file_id" required value="${data?.file_id || ''}" placeholder="在存储源中的文件标识符">
             `
         };
         return (fields[target] || '<p>Form not implemented for this type.</p>') + '<button type="submit">Submit</button>';
@@ -785,6 +1070,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         `;
     }
 
+    function createExternalObjectsSelector(externalSources = [], selectedExternalObjects = []) {
+        if (!externalSources || externalSources.length === 0) {
+            return '<p>暂无可用存储源</p>';
+        }
+
+        return `
+            <div class="external-objects-list">
+                <input type="text" id="external-object-filter" placeholder="搜索外部对象..." oninput="filterExternalObjects(this.value)">
+                <div id="external-object-checkboxes">
+                    <div class="external-objects-info">
+                        <p>选择关联的外部对象。这些对象将用于在不同存储源中访问此资产的文件。</p>
+                        <button type="button" id="refresh-external-objects" class="refresh-button">刷新外部对象列表</button>
+                    </div>
+                    <div id="external-objects-container">
+                        <p>正在加载外部对象...</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     function createTitleRow(title = { title: '', language: 'ja', is_official: false, is_for_search: false }) {
         console.log("[Edit UI] Show title:", title)
         return `
@@ -884,6 +1190,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     };
                     break;
                 case 'media':
+                    // Collect selected external objects
+                    const selectedMediaExternalObjects = [];
+                    document.querySelectorAll('input[name="external_objects"]:checked').forEach(checkbox => {
+                        selectedMediaExternalObjects.push(checkbox.value);
+                    });
+
                     body = {
                         media_uuid: formData.get('media_uuid'),
                         uuid: formData.get('uuid'),
@@ -893,6 +1205,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         url: formData.get('url'),
                         mime_type: formData.get('mime_type'),
                         info: formData.get('info'),
+                        external_objects: selectedMediaExternalObjects,
                     };
                     break;
                 case 'asset':
@@ -903,6 +1216,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                             role: item.querySelector('input[name="asset_creator_role"]').value,
                         });
                     });
+
+                    // Collect selected external objects
+                    const selectedExternalObjects = [];
+                    document.querySelectorAll('input[name="external_objects"]:checked').forEach(checkbox => {
+                        selectedExternalObjects.push(checkbox.value);
+                    });
+
                      body = {
                         asset_uuid: formData.get('asset_uuid'),
                         asset: {
@@ -915,6 +1235,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             language: formData.get('language') || null,
                         },
                         creator: creator,
+                        external_objects: selectedExternalObjects,
                     };
                     break;
                 case 'relation':
@@ -928,7 +1249,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     break;
                 case 'work':
                     titles = [];
-                    document.querySelectorAll('#titles-list .dynamic-list-item').forEach((item, index) => {
+                    document.querySelectorAll('#titles-list .dynamic-list-item').forEach((item) => {
                         titles.push({
                             title: item.querySelector('input[name="title_text"]').value,
                             language: item.querySelector('input[name="title_lang"]').value,
@@ -997,6 +1318,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (isUpdate) {
                         body.category_uuid = formData.get('category_uuid');
                     }
+                    break;
+                case 'external_source':
+                    body = {
+                        uuid: formData.get('uuid'),
+                        type: formData.get('type'),
+                        name: formData.get('name'),
+                        endpoint: formData.get('endpoint'),
+                    };
+                    if (isUpdate) {
+                        body.external_source_uuid = formData.get('external_source_uuid');
+                    }
+                    break;
+                case 'external_object':
+                    body = {
+                        uuid: formData.get('uuid'),
+                        external_source_uuid: formData.get('external_source_uuid'),
+                        mime_type: formData.get('mime_type'),
+                        file_id: formData.get('file_id'),
+                        ...(isUpdate && { external_object_uuid: formData.get('external_object_uuid') })
+                    };
                     break;
                 case 'footer':
                     body = {
@@ -1148,8 +1489,127 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // --- Migration Logic ---
+    const migrationStatusButton = document.getElementById('migration-status-button');
+    const migrationStatusResult = document.getElementById('migration-status-result');
+    const executeMigrationButton = document.getElementById('execute-migration-button');
+    const assetUrlInput = document.getElementById('asset-url-input');
+    const batchSizeInput = document.getElementById('batch-size-input');
+    const validateMigrationButton = document.getElementById('validate-migration-button');
+    const validationResult = document.getElementById('validation-result');
+
+    // Helper function to display results
+    function displayResult(element, data, isSuccess = true) {
+        element.className = `${element.className.split(' ')[0]} show ${isSuccess ? 'success' : 'error'}`;
+        element.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+    }
+
+    // Check migration status
+    migrationStatusButton.addEventListener('click', async () => {
+        try {
+            migrationStatusResult.className = 'migration-status-result';
+            migrationStatusResult.innerHTML = '正在检查迁移状态...';
+            migrationStatusResult.classList.add('show');
+            
+            const response = await apiFetch('/input/migrate/status', { method: 'GET' });
+            displayResult(migrationStatusResult, response, true);
+        } catch (error) {
+            displayResult(migrationStatusResult, { error: error.message }, false);
+        }
+    });
+
+    // Execute migration
+    executeMigrationButton.addEventListener('click', async () => {
+        const assetUrl = assetUrlInput.value.trim();
+        const batchSize = parseInt(batchSizeInput.value) || 50;
+
+        if (!assetUrl) {
+            alert('请输入 ASSET_URL');
+            return;
+        }
+
+        if (!confirm(`确定要执行外部存储迁移吗？\n\nASSET_URL: ${assetUrl}\n批处理大小: ${batchSize}\n\n此操作将修改数据库结构，建议先备份数据！`)) {
+            return;
+        }
+
+        try {
+            // Clear previous results
+            migrationStatusResult.className = 'migration-status-result';
+            migrationStatusResult.innerHTML = '正在执行迁移...';
+            migrationStatusResult.classList.add('show');
+
+            const response = await apiFetch('/input/migrate/external-storage', {
+                method: 'POST',
+                body: JSON.stringify({
+                    asset_url: assetUrl,
+                    batch_size: batchSize
+                })
+            });
+            
+            displayResult(migrationStatusResult, response, response.success !== false);
+            
+            if (response.success !== false) {
+                alert(`迁移完成！\n\n资产迁移: ${response.migratedAssets || 0} 个\n媒体源迁移: ${response.migratedMediaSources || 0} 个`);
+            } else {
+                alert(`迁移失败: ${response.message || '未知错误'}`);
+            }
+        } catch (error) {
+            displayResult(migrationStatusResult, { error: error.message }, false);
+            alert(`迁移失败: ${error.message}`);
+        }
+    });
+
+    // Validate migration
+    validateMigrationButton.addEventListener('click', async () => {
+        if (!confirm('确定要验证迁移完整性吗？这将检查数据一致性和完整性。')) {
+            return;
+        }
+
+        try {
+            validationResult.className = 'validation-result';
+            validationResult.innerHTML = '正在验证迁移完整性...';
+            validationResult.classList.add('show');
+
+            const response = await apiFetch('/input/migrate/validate', { method: 'POST' });
+            
+            displayResult(validationResult, response, response.success !== false);
+            
+            if (response.success !== false) {
+                const summary = response.validationSummary || {};
+                alert(`验证完成！\n\n检查项目:\n• 孤立外部对象: ${summary.orphanedExternalObjects || 0}\n• 缺失源引用: ${summary.missingSourceReferences || 0}\n• 关联错误: ${summary.associationErrors || 0}\n\n${response.validationDetails ? '详细信息请查看结果区域' : ''}`);
+            } else {
+                alert(`验证失败: ${response.message || '未知错误'}`);
+            }
+        } catch (error) {
+            displayResult(validationResult, { error: error.message }, false);
+            alert(`验证失败: ${error.message}`);
+        }
+    });
+
     document.addEventListener('click', (e) => {
         const target = e.target;
+        
+        // Handle refresh external objects button
+        if (target.id === 'refresh-external-objects') {
+            e.preventDefault();
+            
+            // Get currently selected external objects
+            const selectedCheckboxes = document.querySelectorAll('input[name="external_objects"]:checked');
+            const currentSelectedObjects = Array.from(selectedCheckboxes).map(checkbox => ({
+                uuid: checkbox.value
+            }));
+            
+            loadExternalObjects().then(() => {
+                // Re-render the external objects list after refresh, preserving selections
+                const container = document.getElementById('external-objects-container');
+                if (container) {
+                    renderExternalObjectsList(allExternalObjects, container, currentSelectedObjects);
+                }
+            });
+            return;
+        }
+        
+        // Handle UUID copying
         if (target.classList.contains('uuid') || target.id === 'generated-uuid-result') {
             let textToCopy = '';
             if (target.tagName.toLowerCase() === 'input' || target.tagName.toLowerCase() === 'textarea') {
@@ -1171,7 +1631,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         navigator.clipboard.writeText(text).then(() => {
             // Optional: Add a visual cue
             if (element) {
-                const originalClass = element.className;
                 element.classList.add('copied');
                 setTimeout(() => {
                     element.classList.remove('copied');
@@ -1180,6 +1639,64 @@ document.addEventListener('DOMContentLoaded', async () => {
         }).catch(err => {
             console.error('Failed to copy: ', err);
         });
+    }
+
+    // External objects filtering function
+    function filterExternalObjects(searchTerm) {
+        const container = document.getElementById('external-objects-container');
+        if (!container) return;
+
+        // Get currently selected external objects
+        const selectedCheckboxes = document.querySelectorAll('input[name="external_objects"]:checked');
+        const currentSelectedObjects = Array.from(selectedCheckboxes).map(checkbox => ({
+            uuid: checkbox.value
+        }));
+
+        const filteredObjects = allExternalObjects.filter(obj => {
+            const sourceName = obj.source?.name || allExternalSources.find(s => s.uuid === obj.external_source_uuid)?.name || '';
+            return (
+                obj.file_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                obj.mime_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                sourceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                obj.uuid.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        });
+
+        renderExternalObjectsList(filteredObjects, container, currentSelectedObjects);
+    }
+
+    // Render external objects list
+    function renderExternalObjectsList(objects, container, selectedObjects = []) {
+        if (!objects || objects.length === 0) {
+            container.innerHTML = '<p>无可用的外部对象。</p>';
+            return;
+        }
+
+        // Create a Set of selected UUIDs for faster lookup
+        const selectedUuids = new Set(selectedObjects.map(obj => obj.uuid));
+
+        container.innerHTML = objects.map(obj => {
+            const sourceName = obj.source?.name || allExternalSources.find(s => s.uuid === obj.external_source_uuid)?.name || '未知源';
+            const isSelected = selectedUuids.has(obj.uuid);
+            
+            return `
+                <div class="external-object-item">
+                    <label>
+                        <input type="checkbox" name="external_objects" value="${obj.uuid}" ${isSelected ? 'checked' : ''}>
+                        <div class="external-object-details">
+                            <div class="external-object-info">
+                                <strong>文件ID:</strong> ${obj.file_id}<br>
+                                <strong>存储源:</strong> ${sourceName}<br>
+                                <strong>MIME类型:</strong> ${obj.mime_type}
+                            </div>
+                            <div class="external-object-uuid">
+                                <span class="uuid" title="${obj.uuid}">${obj.uuid.substring(0, 8)}...</span>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            `;
+        }).join('');
     }
 });
 

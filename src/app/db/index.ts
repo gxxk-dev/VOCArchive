@@ -14,6 +14,8 @@ export * as CategoryOperations from './operations/category';
 export * as WorkTitleOperations from './operations/work-title';
 export * as SearchOperations from './operations/search';
 export * as AdminOperations from './operations/admin';
+export * as ExternalSourceOperations from './operations/external_source';
+export * as ExternalObjectOperations from './operations/external_object';
 
 // Convenience re-exports of common functions
 export {
@@ -42,7 +44,7 @@ export {
     inputMedia,
     updateMedia,
     deleteMedia,
-    getFileURLByUUID
+    getFileURLByUUIDWithExternalStorage
 } from './operations/media';
 
 export {
@@ -110,3 +112,25 @@ export {
     exportAllTables,
     initializeDatabaseWithMigrations
 } from './operations/admin';
+
+export {
+    // External source operations
+    getExternalSourceByUUID,
+    listExternalSources,
+    inputExternalSource,
+    updateExternalSource,
+    deleteExternalSource,
+    getExternalSourceCount
+} from './operations/external_source';
+
+export {
+    // External object operations
+    getExternalObjectByUUID,
+    listExternalObjects,
+    getExternalObjectsBySource,
+    inputExternalObject,
+    updateExternalObject,
+    deleteExternalObject,
+    getExternalObjectCount,
+    buildExternalObjectURL
+} from './operations/external_object';

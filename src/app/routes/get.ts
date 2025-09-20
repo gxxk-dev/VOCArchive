@@ -5,28 +5,30 @@ import {
     getCreatorByUUID, 
     getMediaByUUID, 
     getAssetByUUID,
-    getFileURLByUUID,
+    getFileURLByUUIDWithExternalStorage,
     getTagByUUID, 
     getCategoryByUUID
 } from "../db";
 import { getWorkTitleByUUID } from '../db/operations/work-title';
+import { getExternalSourceByUUID } from '../db/operations/external_source';
+import { getExternalObjectByUUID } from '../db/operations/external_object';
 
 export const getInfo = new Hono();
 
 // 获取文件重定向
 getInfo.get('/file/:uuid', async (c: any) => {
     const file_uuid = c.req.param('uuid');
-    const asset_url = c.env.ASSET_URL as string;
-    
-    if (!asset_url) {
-        return c.json({ error: 'Asset URL not configured' }, 500);
-    }
-    
     const db = createDrizzleClient(c.env.DB);
-    const file_url = await getFileURLByUUID(db, file_uuid, asset_url);
+    
+    // Use external storage architecture only
+    const file_url = await getFileURLByUUIDWithExternalStorage(db, file_uuid);
     
     if (!file_url) {
-        return c.json({ error: 'File not found' }, 404);
+        return c.json({ 
+            error: 'File not found or not migrated to external storage', 
+            message: 'The file UUID was not found in the external storage system. If this is an old asset, please ensure it has been migrated to external storage.',
+            uuid: file_uuid
+        }, 404);
     }
     
     return c.redirect(file_url, 302);
@@ -78,5 +80,19 @@ getInfo.get('/category/:uuid', async (c: any) => {
 getInfo.get('/work-title/:uuid', async (c: any) => {
     const db = createDrizzleClient(c.env.DB);
     const result = await getWorkTitleByUUID(db, c.req.param('uuid'));
+    return c.json(result);
+});
+
+// 获取外部存储源详情
+getInfo.get('/external_source/:uuid', async (c: any) => {
+    const db = createDrizzleClient(c.env.DB);
+    const result = await getExternalSourceByUUID(db, c.req.param('uuid'));
+    return c.json(result);
+});
+
+// 获取外部对象详情
+getInfo.get('/external_object/:uuid', async (c: any) => {
+    const db = createDrizzleClient(c.env.DB);
+    const result = await getExternalObjectByUUID(db, c.req.param('uuid'));
     return c.json(result);
 });
