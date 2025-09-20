@@ -161,7 +161,7 @@ export type CreatorType = 'human' | 'virtual';
 export type AssetType = 'lyrics' | 'picture';
 export type RelationType = 'original' | 'remix' | 'cover' | 'remake' | 'picture' | 'lyrics';
 export type FooterItemType = 'link' | 'social' | 'copyright';
-export type ExternalSourceType = 'raw_url' | 'private_b2';
+export type ExternalSourceType = 'raw_url' | 'ipfs';
 
 // Utility types for API responses
 export interface PaginationParams {

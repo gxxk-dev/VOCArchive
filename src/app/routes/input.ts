@@ -238,7 +238,7 @@ inputInfo.post('/dbinit', async (c: any) => {
 // 添加外部存储源
 inputInfo.post('/external_source', async (c: any) => {
     try {
-        const body: { uuid: string; type: 'raw_url' | 'private_b2'; name: string; endpoint: string } = await c.req.json();
+        const body: { uuid: string; type: 'raw_url' | 'ipfs'; name: string; endpoint: string } = await c.req.json();
         
         // 验证存储源配置
         const validation = validateStorageSource(body);

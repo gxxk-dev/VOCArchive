@@ -39,7 +39,7 @@ export const footerSettings = sqliteTable('footer_settings', {
 
 export const externalSource = sqliteTable('external_source', {
     uuid: text('uuid').primaryKey(),
-    type: text('type', { enum: ['raw_url', 'private_b2'] }).notNull(),
+    type: text('type', { enum: ['raw_url', 'ipfs'] }).notNull(),
     name: text('name').notNull(),
     endpoint: text('endpoint').notNull(),
 });

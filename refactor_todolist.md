@@ -8,9 +8,9 @@
 ### 1. 设计 external_objects 和 external_sources 表结构
 - **external_sources 表**：存储源配置信息
   - uuid (主键) - 存储源标识符
-  - type (TEXT) - 存储类型：'raw_url', 'private_b2'
+  - type (TEXT) - 存储类型：'raw_url', 'ipfs'
   - name (TEXT) - 用户友好的存储源名称
-  - endpoint (TEXT) - 访问端点，使用特殊标识符标记ID位置
+  - endpoint (TEXT) - 访问端点，使用 {ID} 标记文件标识符位置
 
 - **external_objects 表**：外部资源映射
   - uuid (主键) - 外部对象标识符
@@ -65,10 +65,10 @@
 
 ## 存储处理器
 
-### 9. 实现存储源类型处理器（rawurl/private_b2）
+### 9. 实现存储源类型处理器（rawurl/ipfs）
 - 创建 `src/app/db/utils/storage-handlers.ts` 文件
 - RawUrlHandler：直接URL访问
-- B2Handler：Backblaze B2私有存储
+- IpfsHandler：IPFS分布式存储网关
 
 ### 10. 更新 asset/media_source 输入/更新端点处理外部对象
 - 在 `src/app/routes/input.ts` 中修改 asset/media_source 创建工作流支持外部对象分配

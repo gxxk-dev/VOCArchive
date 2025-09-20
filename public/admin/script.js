@@ -927,11 +927,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
                 <label for="type">存储类型:</label><select id="type" name="type" required>
                     <option value="raw_url" ${data?.type === 'raw_url' ? 'selected' : ''}>直接 URL</option>
-                    <option value="private_b2" ${data?.type === 'private_b2' ? 'selected' : ''}>Backblaze B2</option>
+                    <option value="ipfs" ${data?.type === 'ipfs' ? 'selected' : ''}>IPFS</option>
                 </select>
                 <label for="name">存储源名称:</label><input type="text" id="name" name="name" required value="${data?.name || ''}" placeholder="例如: 主要存储, 备份存储">
-                <label for="endpoint">访问端点:</label><input type="text" id="endpoint" name="endpoint" required value="${data?.endpoint || ''}" placeholder="例如: https://example.com/{FILE_ID} 或 https://f001.backblazeb2.com/file/bucket/{FILE_ID}">
-                <small>使用 {FILE_ID} 标记文件标识符位置</small>
+                <label for="endpoint">访问端点:</label><input type="text" id="endpoint" name="endpoint" required value="${data?.endpoint || ''}" placeholder="例如: https://example.com/{ID} 或 https://ipfs.io/ipfs/{ID}">
+                <small>使用 {ID} 标记文件标识符位置</small>
             `,
             external_object: `
                 <input type="hidden" name="external_object_uuid" value="${data?.uuid || ''}">

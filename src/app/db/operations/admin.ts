@@ -956,7 +956,7 @@ async function initializeDatabaseManual(db: DrizzleDB): Promise<void> {
         // External storage tables
         `CREATE TABLE external_source (
             uuid TEXT PRIMARY KEY,
-            type TEXT NOT NULL CHECK(type IN ('raw_url', 'private_b2')),
+            type TEXT NOT NULL CHECK(type IN ('raw_url', 'ipfs')),
             name TEXT NOT NULL,
             endpoint TEXT NOT NULL
         )`,
@@ -998,7 +998,7 @@ async function ensureExternalStorageTables(db: DrizzleDB): Promise<void> {
         // External storage tables
         `CREATE TABLE IF NOT EXISTS external_source (
             uuid TEXT PRIMARY KEY,
-            type TEXT NOT NULL CHECK(type IN ('raw_url', 'private_b2')),
+            type TEXT NOT NULL CHECK(type IN ('raw_url', 'ipfs')),
             name TEXT NOT NULL,
             endpoint TEXT NOT NULL
         )`,

@@ -71,11 +71,11 @@ After external storage migration completion:
 #### External Storage Architecture
 The application supports a flexible multi-storage source architecture:
 
-- **external_source**: Defines storage configurations (raw_url, private_b2)
+- **external_source**: Defines storage configurations (raw_url, ipfs)
   - `uuid`: Unique identifier
-  - `type`: Storage type ('raw_url' for direct URLs, 'private_b2' for Backblaze B2)
+  - `type`: Storage type ('raw_url' for direct URLs, 'ipfs' for IPFS distributed storage)
   - `name`: Human-readable name
-  - `endpoint`: URL template with {FILE_ID} placeholder
+  - `endpoint`: URL template with {ID} placeholder
 
 - **external_object**: Maps files to storage sources
   - `uuid`: Unique identifier (can be used directly for file access)
@@ -121,10 +121,10 @@ This architecture allows:
 #### External Storage Management - *Requires Authentication*
 - **Storage Source Management**:
     - `POST /api/input/external_source`: Create new storage source
-      - Body: `{ uuid, type: 'raw_url'|'private_b2', name, endpoint }`
+      - Body: `{ uuid, type: 'raw_url'|'ipfs', name, endpoint }`
       - Example endpoint templates:
-        - `https://assets.example.com/{FILE_ID}` (raw_url)
-        - `https://f001.backblazeb2.com/file/bucket/{FILE_ID}` (private_b2)
+        - `https://assets.example.com/{ID}` (raw_url)
+        - `https://ipfs.io/ipfs/{ID}` (ipfs)
     - `POST /api/update/external_source`: Update storage source
     - `POST /api/delete/external_source`: Delete storage source
     - `GET /api/get/external_source/{uuid}`: Get storage source details
@@ -352,13 +352,16 @@ The external storage system provides a flexible architecture for supporting mult
 
 **Raw URL (`raw_url`)**
 - Direct URL access to files
-- Endpoint template: `https://your-domain.com/{FILE_ID}`
+- Endpoint template: `https://your-domain.com/{ID}`
 - Best for: CDNs, direct HTTP access
 
-**Backblaze B2 (`private_b2`)**
-- Backblaze B2 private bucket access
-- Endpoint template: `https://f001.backblazeb2.com/file/bucket/{FILE_ID}`
-- Best for: Private file storage with B2 authentication
+**IPFS (`ipfs`)**
+- IPFS gateway access to distributed storage
+- Endpoint template: `https://ipfs.io/ipfs/{ID}` or `https://gateway.pinata.cloud/ipfs/{ID}`
+- Uses Content Identifier (CID) for file addressing
+- Best for: Decentralized content distribution, permanent storage
+- Supports custom IPFS gateways and self-hosted nodes
+
 
 #### Adding New Storage Sources
 
@@ -371,7 +374,19 @@ curl -X POST \
        "uuid": "new-storage-uuid",
        "type": "raw_url",
        "name": "CDN Storage",
-       "endpoint": "https://cdn.example.com/{FILE_ID}"
+       "endpoint": "https://cdn.example.com/{ID}"
+     }' \
+     https://your-app.workers.dev/api/input/external_source
+
+# Add an IPFS storage source
+curl -X POST \
+     -H "Authorization: Bearer $JWT_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "uuid": "ipfs-storage-uuid",
+       "type": "ipfs",
+       "name": "IPFS Gateway",
+       "endpoint": "https://ipfs.io/ipfs/{ID}"
      }' \
      https://your-app.workers.dev/api/input/external_source
 ```

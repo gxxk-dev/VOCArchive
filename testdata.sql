@@ -89,11 +89,11 @@ INSERT INTO "work_title" VALUES('a1606e26-3047-48db-bdf2-7b9cf3ac9cb7','21d591dd
 INSERT INTO "work_title" VALUES('9f429db8-88ba-40d2-b8c8-c454f2009cc6','21d591dd-0042-4cf0-a798-6ea3676a9d23',0,0,'zh-cn','虚荣屠夫');
 CREATE TABLE external_source (
             uuid TEXT PRIMARY KEY,
-            type TEXT NOT NULL CHECK(type IN ('raw_url', 'private_b2')),
+            type TEXT NOT NULL CHECK(type IN ('raw_url', 'ipfs')),
             name TEXT NOT NULL,
             endpoint TEXT NOT NULL
         );
-INSERT INTO "external_source" VALUES('c9b29b2e-4de6-4bc9-8066-c49ac5fcdc2a','raw_url','Default Asset Storage','https://assets.vocarchive.com/{id}');
+INSERT INTO "external_source" VALUES('c9b29b2e-4de6-4bc9-8066-c49ac5fcdc2a','raw_url','Default Asset Storage','https://assets.vocarchive.com/{ID}');
 CREATE TABLE external_object (
             uuid TEXT PRIMARY KEY,
             external_source_uuid TEXT NOT NULL REFERENCES external_source(uuid) ON DELETE CASCADE,

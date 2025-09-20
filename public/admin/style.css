@@ -1059,11 +1059,12 @@ input.copied {
     border: 1px solid #90caf9;
 }
 
-.storage-type-badge.private_b2 {
-    background-color: #f3e5f5;
-    color: #7b1fa2;
-    border: 1px solid #ce93d8;
+.storage-type-badge.ipfs {
+    background-color: #e8f5e8;
+    color: #388e3c;
+    border: 1px solid #81c784;
 }
+
 
 .endpoint-template {
     font-family: monospace;
@@ -1212,6 +1213,7 @@ select#type option[value="raw_url"] {
     color: #1976d2;
 }
 
-select#type option[value="private_b2"] {
-    color: #7b1fa2;
+select#type option[value="ipfs"] {
+    color: #388e3c;
 }
+

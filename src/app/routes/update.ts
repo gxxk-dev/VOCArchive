@@ -112,7 +112,7 @@ const updateHandlers = {
         const db = createDrizzleClient(DB);
         return await updateWorkTitle(db, body.title_uuid, body.updates);
     },
-    'external_source': async (DB: any, body: { external_source_uuid: string; type: 'raw_url' | 'private_b2'; name: string; endpoint: string }) => {
+    'external_source': async (DB: any, body: { external_source_uuid: string; type: 'raw_url' | 'ipfs'; name: string; endpoint: string }) => {
         // 验证存储源配置
         const validation = validateStorageSource({
             uuid: body.external_source_uuid,
