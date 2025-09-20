@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "63783b3f-d79f-4701-94fc-cde53cedfc9f",
+  "id": "d87f6401-0997-42de-83ce-f533c01ea9ad",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "asset": {
@@ -18,7 +18,7 @@
           "name": "file_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "work_uuid": {
@@ -495,7 +495,7 @@
           "name": "url",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "mime_type": {

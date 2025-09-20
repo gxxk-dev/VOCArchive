@@ -1,6 +1,6 @@
 CREATE TABLE `asset` (
 	`uuid` text PRIMARY KEY NOT NULL,
-	`file_id` text NOT NULL,
+	`file_id` text,
 	`work_uuid` text NOT NULL,
 	`asset_type` text NOT NULL,
 	`file_name` text NOT NULL,
@@ -75,7 +75,7 @@ CREATE TABLE `media_source` (
 	`work_uuid` text NOT NULL,
 	`is_music` integer NOT NULL,
 	`file_name` text NOT NULL,
-	`url` text NOT NULL,
+	`url` text,
 	`mime_type` text NOT NULL,
 	`info` text NOT NULL,
 	FOREIGN KEY (`work_uuid`) REFERENCES `work`(`uuid`) ON UPDATE no action ON DELETE cascade
