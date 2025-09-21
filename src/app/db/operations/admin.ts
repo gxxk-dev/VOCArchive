@@ -7,7 +7,7 @@ import {
     externalSource, externalObject, assetExternalObject, mediaSourceExternalObject,
     siteConfig
 } from '../schema';
-import { initializeDefaultConfig, initializeSecrets } from './config';
+import { initializeDefaultConfig, initializeSecrets, generateSecretKey } from './config';
 
 // Types
 export interface FooterSetting {
@@ -720,6 +720,75 @@ export async function exportAllTables(db: DrizzleDB): Promise<Record<string, any
         return exportData;
     } catch (error) {
         console.error('Error exporting tables:', error);
+        throw error;
+    }
+}
+
+/**
+ * Check if the database has been initialized
+ * Returns true if site_config table exists and has data
+ */
+export async function isDatabaseInitialized(db: DrizzleDB): Promise<boolean> {
+    try {
+        // Try to query the site_config table
+        const configData = await db.select().from(siteConfig).limit(1);
+        return configData.length > 0;
+    } catch (error) {
+        // If table doesn't exist or query fails, database is not initialized
+        console.log('Database not initialized:', error);
+        return false;
+    }
+}
+
+/**
+ * Initialize database with configuration
+ * Handles both database schema initialization and configuration setup
+ */
+export async function initializeDatabaseWithConfig(
+    db: DrizzleDB, 
+    config: {
+        siteTitle?: string;
+        totpSecret?: string;
+        jwtSecret?: string;
+        assetUrl?: string;
+    }
+): Promise<{ totpSecret: string; jwtSecret: string }> {
+    try {
+        // First, initialize database schema
+        await initializeDatabaseWithMigrations(db);
+        
+        // Initialize site configuration
+        await initializeDefaultConfig(db);
+        
+        // Generate or use provided secrets
+        const totpSecret = config.totpSecret || generateSecretKey();
+        const jwtSecret = config.jwtSecret || generateSecretKey();
+        
+        // Initialize secrets
+        await initializeSecrets(db, totpSecret, jwtSecret);
+        
+        // Set custom site title if provided
+        if (config.siteTitle) {
+            const { upsertSiteConfig } = await import('./config');
+            await upsertSiteConfig(db, 'site_title', config.siteTitle, '网站标题（浏览器标签页显示）');
+        }
+        
+        // Initialize default external storage source if asset URL provided
+        if (config.assetUrl) {
+            const cleanAssetUrl = config.assetUrl.replace(/\/$/, '');
+            const defaultSourceUuid = crypto.randomUUID();
+            
+            await db.insert(externalSource).values({
+                uuid: defaultSourceUuid,
+                type: 'raw_url',
+                name: 'Default Asset Storage',
+                endpoint: `${cleanAssetUrl}/{FILE_ID}`,
+            });
+        }
+        
+        return { totpSecret, jwtSecret };
+    } catch (error) {
+        console.error('Error initializing database with config:', error);
         throw error;
     }
 }

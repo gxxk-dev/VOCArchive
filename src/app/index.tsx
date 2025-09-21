@@ -8,14 +8,16 @@ import { updateInfo } from './routes/update'
 import { inputInfo } from './routes/input'
 import { searchInfo } from './routes/search'
 import { auth } from './routes/auth'
+import { initRoutes } from './routes/init'
 import footer from './routes/footer'
 import config from './routes/config'
 import { jwt } from 'hono/jwt'
 
 import { IndexPage } from './pages/index'
 import { PlayerPage } from './pages/player'
+import { InitPage } from './pages/init'
 import { createDrizzleClient } from './db/client'
-import { getFooterSettings, initializeDatabaseWithMigrations } from './db/operations/admin'
+import { getFooterSettings, initializeDatabaseWithMigrations, isDatabaseInitialized } from './db/operations/admin'
 import { getPublicSiteConfig } from './db/operations/config'
 import { getWorkByUUID, getWorkListWithPagination, getTotalWorkCount } from './db/operations/work'
 import { searchWorks, getAvailableLanguages } from './db/operations/search'
@@ -51,6 +53,9 @@ apiApp.route('/input', inputInfo)
 // ========== 配置/权限 ==========
 apiApp.route('/auth', auth)
 
+// ========== 初始化 API（无需认证）==========
+apiApp.route('/init', initRoutes)
+
 // ========== 站点配置 ==========
 apiApp.route('/footer', footer)
 apiApp.route('/config', config)
@@ -66,6 +71,38 @@ apiApp.route('/list', listInfo)
 const app = new Hono<{ Bindings: CloudflareBindings }>()
 
 app.route('/api', apiApp)
+
+// ========== 初始化检查中间件 ==========
+// 检查数据库是否已初始化，如果未初始化则重定向到 /init
+app.use('/*', async (c, next) => {
+  const path = c.req.path;
+  
+  // 跳过对 /init、/api/init、静态资源的检查
+  if (path.startsWith('/init') || path.startsWith('/api/init') || path.startsWith('/admin') || path.startsWith('/static') || path.includes('.')) {
+    return next();
+  }
+  
+  try {
+    const db = createDrizzleClient(c.env.DB);
+    const isInitialized = await isDatabaseInitialized(db);
+    
+    if (!isInitialized && path !== '/init') {
+      return c.redirect('/init');
+    }
+  } catch (error) {
+    console.error('Database initialization check failed:', error);
+    if (path !== '/init') {
+      return c.redirect('/init');
+    }
+  }
+  
+  return next();
+});
+
+// ========== 初始化页面路由 ==========
+app.get('/init', async (c) => {
+  return c.html(<InitPage />);
+});
 
 app.get('/', async (c) => {
   const { search, page, type, tag, category, lang } = c.req.query()
@@ -141,5 +178,8 @@ app.get('/player', async (c) => {
     return c.html(<PlayerPage workInfo={workInfo} footerSettings={footerSettings} siteConfig={siteConfig} />)
 })
 
+// ========== 静态文件服务 ==========
+app.use('/init/*', serveStatic({ root: './public' }))
+app.use('/admin/*', serveStatic({ root: './public' }))
 
 export default app
