@@ -64,9 +64,8 @@ export async function migrateToExternalStorage(
     };
 
     try {
-        // Ensure database tables exist before migration
-        console.log('Ensuring database tables exist...');
-        await ensureExternalStorageTables(db);
+        // Note: Tables should already exist via migrations or dashboard
+        console.log('Starting migration (tables should already exist)...');
         
         // Check if migration already exists
         const existingSource = await db.select()
@@ -409,64 +408,32 @@ export async function validateMigration(db: DrizzleDB): Promise<MigrationStatus>
     };
 
     try {
-        // Count total assets and media sources
-        const allAssets = await db.select({ uuid: asset.uuid }).from(asset);
-        const allMediaSources = await db.select({ uuid: mediaSource.uuid }).from(mediaSource);
+        // Use optimized helper functions
+        const { 
+            getAssociationCounts, 
+            getDefaultExternalSource, 
+            validateDatabaseIntegrity 
+        } = await import('../migrations/helper');
         
-        status.totalAssets = allAssets.length;
-        status.totalMediaSources = allMediaSources.length;
+        // Get counts using optimized queries
+        const counts = await getAssociationCounts(db);
+        status.totalAssets = counts.totalAssets;
+        status.totalMediaSources = counts.totalMediaSources;
+        status.migratedAssets = counts.migratedAssets;
+        status.migratedMediaSources = counts.migratedMediaSources;
 
-        // Count migrated assets (those with external object associations)
-        const migratedAssets = await db.select({ asset_uuid: assetExternalObject.asset_uuid })
-            .from(assetExternalObject);
-        
-        // Count migrated media sources (those with external object associations)
-        const migratedMediaSources = await db.select({ media_source_uuid: mediaSourceExternalObject.media_source_uuid })
-            .from(mediaSourceExternalObject);
-
-        status.migratedAssets = migratedAssets.length;
-        status.migratedMediaSources = migratedMediaSources.length;
-
-        // Check for orphaned external objects  
-        const orphanedExternalObjects = await db.select({ uuid: externalObject.uuid })
-            .from(externalObject)
-            .leftJoin(assetExternalObject, eq(externalObject.uuid, assetExternalObject.external_object_uuid))
-            .leftJoin(mediaSourceExternalObject, eq(externalObject.uuid, mediaSourceExternalObject.external_object_uuid))
-            .where(
-                // Both joins should be null (not associated with any asset or media source)
-                and(
-                    isNull(assetExternalObject.external_object_uuid),
-                    isNull(mediaSourceExternalObject.external_object_uuid)
-                )
-            );
-
-        if (orphanedExternalObjects.length > 0) {
-            status.errors.push(`Found ${orphanedExternalObjects.length} orphaned external objects`);
-        }
-
-        // Check for missing default source
-        const defaultSource = await db.select()
-            .from(externalSource)
-            .where(eq(externalSource.name, 'Default Asset Storage'))
-            .limit(1);
-
-        if (defaultSource.length === 0) {
-            status.errors.push('Default Asset Storage source not found');
+        // Check for default source
+        const defaultSource = await getDefaultExternalSource(db);
+        if (defaultSource) {
+            status.defaultSourceUuid = defaultSource.uuid;
         } else {
-            status.defaultSourceUuid = defaultSource[0].uuid;
+            status.errors.push('Default Asset Storage source not found');
         }
 
-        // Check for broken external object references
-        const brokenExternalObjects = await db.select({
-            uuid: externalObject.uuid,
-            external_source_uuid: externalObject.external_source_uuid
-        })
-        .from(externalObject)
-        .leftJoin(externalSource, eq(externalObject.external_source_uuid, externalSource.uuid))
-        .where(isNull(externalSource.uuid));
-
-        if (brokenExternalObjects.length > 0) {
-            status.errors.push(`Found ${brokenExternalObjects.length} external objects with missing source references`);
+        // Validate database integrity
+        const validation = await validateDatabaseIntegrity(db);
+        if (!validation.isValid) {
+            status.errors.push(...validation.errors);
         }
 
         // Determine if migration is completed
@@ -579,25 +546,19 @@ export async function getMigrationStatus(db: DrizzleDB): Promise<MigrationStatus
     };
 
     try {
-        // Quick count without detailed validation
-        const assetCount = await db.select({ count: asset.uuid }).from(asset);
-        const mediaCount = await db.select({ count: mediaSource.uuid }).from(mediaSource);
-        const migratedAssetCount = await db.select({ count: assetExternalObject.asset_uuid }).from(assetExternalObject);
-        const migratedMediaCount = await db.select({ count: mediaSourceExternalObject.media_source_uuid }).from(mediaSourceExternalObject);
-
-        status.totalAssets = assetCount.length;
-        status.totalMediaSources = mediaCount.length;
-        status.migratedAssets = migratedAssetCount.length;
-        status.migratedMediaSources = migratedMediaCount.length;
+        // Use optimized count queries from helper
+        const { getAssociationCounts, getDefaultExternalSource } = await import('../migrations/helper');
+        
+        const counts = await getAssociationCounts(db);
+        status.totalAssets = counts.totalAssets;
+        status.totalMediaSources = counts.totalMediaSources;
+        status.migratedAssets = counts.migratedAssets;
+        status.migratedMediaSources = counts.migratedMediaSources;
 
         // Check for default source
-        const defaultSource = await db.select()
-            .from(externalSource)
-            .where(eq(externalSource.name, 'Default Asset Storage'))
-            .limit(1);
-
-        if (defaultSource.length > 0) {
-            status.defaultSourceUuid = defaultSource[0].uuid;
+        const defaultSource = await getDefaultExternalSource(db);
+        if (defaultSource) {
+            status.defaultSourceUuid = defaultSource.uuid;
         }
 
         // Simple completion check
@@ -699,123 +660,62 @@ export async function deleteFooterSetting(db: DrizzleDB, uuid: string): Promise<
 }
 
 /**
- * Drop all user data tables (for database reset)
- * Uses Drizzle schema table references for type safety
+ * Clear all user data tables (preserving table structure)
+ * Uses Drizzle delete operations instead of DROP TABLE
  */
-export async function dropUserTables(db: DrizzleDB): Promise<void> {
-    // Import all table schemas
-    const {
-        workCategory,
-        workTag,
-        workWiki,
-        workRelation,
-        assetCreator,
-        assetExternalObject,        // Junction table (new)
-        mediaSourceExternalObject, // Junction table (new)
-        asset,
-        mediaSource,
-        workLicense,
-        workTitle,
-        workCreator,
-        creatorWiki,
-        externalObject,             // External object table (new)
-        externalSource,             // External source table (new)
-        creator,
-        work,
-        category,
-        tag,
-        footerSettings
-    } = await import('../schema');
-
-    // Define drop order to respect foreign key constraints
-    const tablesToDrop = [
-        // Junction tables first (no dependencies)
-        workCategory,            // Junction table first
-        workTag,                 // Junction table first
-        assetExternalObject,     // Junction table (new)
-        mediaSourceExternalObject, // Junction table (new)
-        
-        // Tables with foreign keys
-        workWiki,                // Foreign key to work
-        workRelation,            // Foreign key to work
-        assetCreator,            // Junction table for asset
-        asset,                   // Foreign key to work
-        mediaSource,             // Foreign key to work
-        workLicense,             // Foreign key to work
-        workTitle,               // Foreign key to work
-        workCreator,             // Foreign key to work and creator
-        creatorWiki,             // Foreign key to creator
-        externalObject,          // Foreign key to external_source (new)
-        
-        // Referenced tables
-        externalSource,          // Referenced by external_object (new)
-        creator,                 // Referenced by multiple tables
-        work,                    // Referenced by multiple tables
-        category,                // Self-referencing and work-referenced
-        tag,                     // Referenced by work_tag
-        footerSettings           // Independent table
-    ];
-
-    // Execute drop statements using table names from schema
-    for (const table of tablesToDrop) {
-        try {
-            const tableName = (table as any)._.name || 
-                                             (table as any).tableName ||
-                                             String(table);
-            await db.run(`DROP TABLE IF EXISTS ${tableName}`);
-        } catch (error) {
-            // Ignore errors for tables that don't exist
-            console.warn(`Warning dropping table ${table}: ${error}`);
-        }
-    }
+export async function clearUserDataTables(db: DrizzleDB): Promise<void> {
+    const { truncateAllTables } = await import('../migrations/helper');
+    return truncateAllTables(db);
 }
 
 /**
- * Export all table data as JSON
+ * Export all table data as JSON using pure Drizzle queries
  */
 export async function exportAllTables(db: DrizzleDB): Promise<Record<string, any[]>> {
     const exportData: Record<string, any[]> = {};
 
     try {
-        // Export all main tables using Drizzle queries
-        exportData.creator = await db.select().from(creator);
-        exportData.work = await db.select().from(work);
-        exportData.work_title = await db.select().from(workTitle);
-        exportData.asset = await db.select().from(asset);
-        exportData.media_source = await db.select().from(mediaSource);
-        exportData.work_creator = await db.select().from(workCreator);
-        exportData.work_relation = await db.select().from(workRelation);
-        exportData.tag = await db.select().from(tag);
-        exportData.category = await db.select().from(category);
-        exportData.work_tag = await db.select().from(workTag);
-        exportData.work_category = await db.select().from(workCategory);
-        exportData.footer_settings = await db.select().from(footerSettings);
-        
-        // Export new external storage tables
-        exportData.external_source = await db.select().from(externalSource);
-        exportData.external_object = await db.select().from(externalObject);
-        exportData.asset_external_object = await db.select().from(assetExternalObject);
-        exportData.media_source_external_object = await db.select().from(mediaSourceExternalObject);
+        // Import all table schemas
+        const {
+            creator, work, workTitle, asset, mediaSource, workCreator, workRelation,
+            tag, category, workTag, workCategory, footerSettings, siteConfig,
+            externalSource, externalObject, assetExternalObject, mediaSourceExternalObject,
+            creatorWiki, workLicense, workWiki, assetCreator
+        } = await import('../schema');
 
-        // Additional tables that might exist
-        const additionalTables = [
-            'creator_wiki',
-            'work_license', 
-            'work_wiki',
-            'asset_creator'
+        // Export all main tables using Drizzle queries
+        const exportPromises = [
+            db.select().from(creator).then(data => { exportData.creator = data; }),
+            db.select().from(work).then(data => { exportData.work = data; }),
+            db.select().from(workTitle).then(data => { exportData.work_title = data; }),
+            db.select().from(asset).then(data => { exportData.asset = data; }),
+            db.select().from(mediaSource).then(data => { exportData.media_source = data; }),
+            db.select().from(workCreator).then(data => { exportData.work_creator = data; }),
+            db.select().from(workRelation).then(data => { exportData.work_relation = data; }),
+            db.select().from(tag).then(data => { exportData.tag = data; }),
+            db.select().from(category).then(data => { exportData.category = data; }),
+            db.select().from(workTag).then(data => { exportData.work_tag = data; }),
+            db.select().from(workCategory).then(data => { exportData.work_category = data; }),
+            db.select().from(footerSettings).then(data => { exportData.footer_settings = data; }),
+            db.select().from(siteConfig).then(data => { exportData.site_config = data; }),
+            
+            // Export external storage tables
+            db.select().from(externalSource).then(data => { exportData.external_source = data; }),
+            db.select().from(externalObject).then(data => { exportData.external_object = data; }),
+            db.select().from(assetExternalObject).then(data => { exportData.asset_external_object = data; }),
+            db.select().from(mediaSourceExternalObject).then(data => { exportData.media_source_external_object = data; }),
         ];
 
-        for (const tableName of additionalTables) {
-            try {
-                const result = await db.all(`SELECT * FROM ${tableName}`);
-                if (result && result.length > 0) {
-                    exportData[tableName] = result;
-                }
-            } catch (error) {
-                // Table might not exist, skip it
-                console.warn(`Warning exporting table ${tableName}: ${error}`);
-            }
-        }
+        // Export optional tables with error handling
+        const optionalExports = [
+            db.select().from(creatorWiki).then(data => { exportData.creator_wiki = data; }).catch(() => {}),
+            db.select().from(workLicense).then(data => { exportData.work_license = data; }).catch(() => {}),
+            db.select().from(workWiki).then(data => { exportData.work_wiki = data; }).catch(() => {}),
+            db.select().from(assetCreator).then(data => { exportData.asset_creator = data; }).catch(() => {}),
+        ];
+
+        // Execute all exports in parallel
+        await Promise.all([...exportPromises, ...optionalExports]);
 
         return exportData;
     } catch (error) {
@@ -864,179 +764,23 @@ export async function initializeDatabaseWithMigrations(db: DrizzleDB): Promise<v
         console.log('Database initialized with Drizzle migrations');
     } catch (error) {
         console.error('Error initializing database with migrations:', error);
-        // Fallback to manual initialization if migration fails
-        await initializeDatabaseManual(db);
+        // Fallback to simplified initialization if migration fails
+        await initializeDatabase(db);
     }
 }
 
 /**
- * Manual database initialization (fallback method)
+ * Initialize database using modern Drizzle approach
+ * Note: In production, tables should be created via migrations or dashboard
  */
-async function initializeDatabaseManual(db: DrizzleDB): Promise<void> {
-    // Fallback initialization using original initdb.sql statements
-    const statements = [
-        `PRAGMA defer_foreign_keys=TRUE`,
-        
-        `CREATE TABLE creator ( 
-            uuid TEXT PRIMARY KEY, 
-            name TEXT NOT NULL, 
-            type TEXT CHECK(type IN ('human', 'virtual')) NOT NULL 
-        )`,
-        
-        `CREATE TABLE creator_wiki ( 
-            creator_uuid TEXT NOT NULL REFERENCES creator(uuid) ON DELETE CASCADE, 
-            platform TEXT NOT NULL, 
-            identifier TEXT NOT NULL, 
-            PRIMARY KEY (creator_uuid, platform) 
-        )`,
-        
-        `CREATE TABLE work ( 
-            uuid TEXT PRIMARY KEY, 
-            copyright_basis TEXT NOT NULL CHECK(copyright_basis IN ('none', 'accept', 'license')) 
-        )`,
-        
-        `CREATE TABLE work_title (
-            uuid TEXT PRIMARY KEY,
-            work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE,
-            is_official INTEGER NOT NULL,
-            is_for_search INTEGER NOT NULL DEFAULT false,
-            language TEXT NOT NULL,
-            title TEXT NOT NULL
-        )`,
-        
-        `CREATE TABLE asset (
-            uuid TEXT PRIMARY KEY,
-            file_id TEXT NOT NULL,
-            work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE,
-            asset_type TEXT NOT NULL,
-            file_name TEXT NOT NULL,
-            is_previewpic INTEGER,
-            language TEXT
-        )`,
-        
-        `CREATE TABLE media_source (
-            uuid TEXT PRIMARY KEY,
-            work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE,
-            is_music INTEGER NOT NULL,
-            file_name TEXT NOT NULL,
-            url TEXT NOT NULL,
-            mime_type TEXT NOT NULL,
-            info TEXT NOT NULL
-        )`,
-        
-        `CREATE TABLE tag (
-            uuid TEXT PRIMARY KEY,
-            name TEXT NOT NULL UNIQUE
-        )`,
-        
-        `CREATE TABLE category (
-            uuid TEXT PRIMARY KEY,
-            name TEXT NOT NULL UNIQUE,
-            parent_uuid TEXT
-        )`,
-        
-        `CREATE TABLE work_tag (
-            work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE,
-            tag_uuid TEXT NOT NULL REFERENCES tag(uuid) ON DELETE CASCADE,
-            PRIMARY KEY (work_uuid, tag_uuid)
-        )`,
-        
-        `CREATE TABLE work_category (
-            work_uuid TEXT NOT NULL REFERENCES work(uuid) ON DELETE CASCADE,
-            category_uuid TEXT NOT NULL REFERENCES category(uuid) ON DELETE CASCADE,
-            PRIMARY KEY (work_uuid, category_uuid)
-        )`,
-        
-        `CREATE TABLE footer_settings (
-            uuid TEXT PRIMARY KEY,
-            item_type TEXT NOT NULL CHECK(item_type IN ('link', 'social', 'copyright')),
-            text TEXT NOT NULL,
-            url TEXT,
-            icon_class TEXT
-        )`,
-        
-        `CREATE TABLE site_config (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL,
-            description TEXT
-        )`,
-        
-        // External storage tables
-        `CREATE TABLE external_source (
-            uuid TEXT PRIMARY KEY,
-            type TEXT NOT NULL CHECK(type IN ('raw_url', 'ipfs')),
-            name TEXT NOT NULL,
-            endpoint TEXT NOT NULL
-        )`,
-        
-        `CREATE TABLE external_object (
-            uuid TEXT PRIMARY KEY,
-            external_source_uuid TEXT NOT NULL REFERENCES external_source(uuid) ON DELETE CASCADE,
-            mime_type TEXT NOT NULL,
-            file_id TEXT NOT NULL
-        )`,
-        
-        `CREATE TABLE asset_external_object (
-            asset_uuid TEXT NOT NULL REFERENCES asset(uuid) ON DELETE CASCADE,
-            external_object_uuid TEXT NOT NULL REFERENCES external_object(uuid) ON DELETE CASCADE,
-            PRIMARY KEY (asset_uuid, external_object_uuid)
-        )`,
-        
-        `CREATE TABLE media_source_external_object (
-            media_source_uuid TEXT NOT NULL REFERENCES media_source(uuid) ON DELETE CASCADE,
-            external_object_uuid TEXT NOT NULL REFERENCES external_object(uuid) ON DELETE CASCADE,
-            PRIMARY KEY (media_source_uuid, external_object_uuid)
-        )`,
-    ];
+export async function initializeDatabase(db: DrizzleDB): Promise<void> {
+    console.log('Database initialization should be handled via:');
+    console.log('1. Drizzle migrations: npm run db:generate && npm run db:push');
+    console.log('2. Cloudflare dashboard SQL editor');
+    console.log('3. Manual SQL execution from schema.ts definitions');
     
-    for (const statement of statements) {
-        try {
-            await db.run(statement);
-        } catch (error) {
-            console.warn(`Warning creating table: ${error}`);
-        }
-    }
+    // For development, you can use the helper functions
+    const { ensureTablesExist } = await import('../migrations/helper');
+    await ensureTablesExist(db);
 }
 
-/**
- * Ensure external storage tables exist before migration
- */
-async function ensureExternalStorageTables(db: DrizzleDB): Promise<void> {
-    const externalStorageTables = [
-        // External storage tables
-        `CREATE TABLE IF NOT EXISTS external_source (
-            uuid TEXT PRIMARY KEY,
-            type TEXT NOT NULL CHECK(type IN ('raw_url', 'ipfs')),
-            name TEXT NOT NULL,
-            endpoint TEXT NOT NULL
-        )`,
-        
-        `CREATE TABLE IF NOT EXISTS external_object (
-            uuid TEXT PRIMARY KEY,
-            external_source_uuid TEXT NOT NULL REFERENCES external_source(uuid) ON DELETE CASCADE,
-            mime_type TEXT NOT NULL,
-            file_id TEXT NOT NULL
-        )`,
-        
-        `CREATE TABLE IF NOT EXISTS asset_external_object (
-            asset_uuid TEXT NOT NULL REFERENCES asset(uuid) ON DELETE CASCADE,
-            external_object_uuid TEXT NOT NULL REFERENCES external_object(uuid) ON DELETE CASCADE,
-            PRIMARY KEY (asset_uuid, external_object_uuid)
-        )`,
-        
-        `CREATE TABLE IF NOT EXISTS media_source_external_object (
-            media_source_uuid TEXT NOT NULL REFERENCES media_source(uuid) ON DELETE CASCADE,
-            external_object_uuid TEXT NOT NULL REFERENCES external_object(uuid) ON DELETE CASCADE,
-            PRIMARY KEY (media_source_uuid, external_object_uuid)
-        )`,
-    ];
-    
-    for (const statement of externalStorageTables) {
-        try {
-            await db.run(statement);
-            console.log('Created/verified table:', statement.match(/CREATE TABLE IF NOT EXISTS (\w+)/)?.[1]);
-        } catch (error) {
-            console.warn(`Warning creating external storage table: ${error}`);
-        }
-    }
-}

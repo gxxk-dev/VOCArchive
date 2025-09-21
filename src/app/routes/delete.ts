@@ -8,7 +8,7 @@ import { deleteCategory, removeWorkCategories, removeAllWorkCategories } from '.
 import { deleteWorkTitle } from '../db/operations/work-title';
 import { deleteExternalSource } from '../db/operations/external_source';
 import { deleteExternalObject } from '../db/operations/external_object';
-import { dropUserTables } from '../db/operations/admin';
+import { clearUserDataTables } from '../db/operations/admin';
 import { Hono } from "hono";
 
 // Request body interfaces
@@ -191,7 +191,7 @@ deleteInfo.post('/worksbycreator', async (c: any) => {
 deleteInfo.post('/dbclear', async (c: any) => {
     try {
         const db = createDrizzleClient(c.env.DB);
-        await dropUserTables(db);
+        await clearUserDataTables(db);
         return c.json({ message: "OK." }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);

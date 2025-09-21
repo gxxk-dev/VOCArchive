@@ -66,29 +66,10 @@ export async function deleteSiteConfig(db: DrizzleDB, key: string): Promise<void
 }
 
 /**
- * 确保站点配置表存在
- */
-export async function ensureSiteConfigTable(db: DrizzleDB): Promise<void> {
-    try {
-        await db.run(`
-            CREATE TABLE IF NOT EXISTS site_config (
-                key TEXT PRIMARY KEY,
-                value TEXT NOT NULL,
-                description TEXT
-            )
-        `);
-    } catch (error) {
-        console.error('Error creating site_config table:', error);
-        throw error;
-    }
-}
-
-/**
- * 初始化默认配置
+ * 初始化默认配置（使用事务支持）
  */
 export async function initializeDefaultConfig(db: DrizzleDB): Promise<void> {
-    // 首先确保表存在
-    await ensureSiteConfigTable(db);
+    // Note: site_config table should already exist via migrations or schema
     
     const defaultConfigs = [
         {
@@ -132,8 +113,7 @@ export function generateSecretKey(): string {
  * 初始化安全密钥（如果不存在）
  */
 export async function initializeSecrets(db: DrizzleDB, envTotpSecret?: string, envJwtSecret?: string): Promise<void> {
-    // 首先确保表存在
-    await ensureSiteConfigTable(db);
+    // Note: site_config table should already exist via migrations or schema
     
     // 初始化 TOTP 密钥
     const totpConfig = await getSiteConfig(db, 'totp_secret');

@@ -108,7 +108,7 @@ export {
     insertFooterSetting,
     updateFooterSetting,
     deleteFooterSetting,
-    dropUserTables,
+    clearUserDataTables,
     exportAllTables,
     initializeDatabaseWithMigrations
 } from './operations/admin';
