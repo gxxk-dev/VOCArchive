@@ -632,6 +632,49 @@ body {
     color: #7c77c6 !important;
 }
 
+[data-theme="dark"] .external-objects-list {
+    background-color: rgba(15, 15, 15, 0.85);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .external-objects-info {
+    background-color: rgba(120, 119, 198, 0.1);
+    border-color: rgba(120, 119, 198, 0.2);
+    border-left-color: rgba(120, 119, 198, 0.6);
+}
+
+[data-theme="dark"] #external-objects-container {
+    background-color: rgba(25, 25, 25, 0.6);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .external-object-item {
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .external-object-item:hover {
+    background-color: rgba(120, 119, 198, 0.08);
+}
+
+[data-theme="dark"] .external-object-item input[type="checkbox"] {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="dark"] .external-object-item input[type="checkbox"]:hover {
+    border-color: rgba(120, 119, 198, 0.6);
+    background-color: rgba(120, 119, 198, 0.04);
+}
+
+[data-theme="dark"] .external-object-item input[type="checkbox"]:checked {
+    background-color: rgba(120, 119, 198, 0.9);
+    border-color: rgba(120, 119, 198, 0.9);
+}
+
+[data-theme="dark"] .form-section .external-objects-selector {
+    background-color: rgba(15, 15, 15, 0.85);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
 [data-theme="dark"] .external-object-filter-field {
     background-color: #2b2930;
     border-color: #938f99;
@@ -1278,24 +1321,24 @@ pre {
 .external-objects-list {
     margin: 15px 0;
     padding: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid #e0e0e0;
     border-radius: 12px;
-    background-color: rgba(15, 15, 15, 0.85);
+    background-color: #f8f9fa;
     backdrop-filter: blur(10px);
 }
 
 .external-objects-info {
     margin-bottom: 15px;
     padding: 12px;
-    background-color: rgba(120, 119, 198, 0.1);
-    border: 1px solid rgba(120, 119, 198, 0.2);
+    background-color: #e7f3ff;
+    border: 1px solid #b3d9ff;
     border-radius: 8px;
-    border-left: 4px solid rgba(120, 119, 198, 0.6);
+    border-left: 4px solid #007bff;
 }
 
 .external-objects-info p {
     margin: 0 0 10px 0;
-    color: rgba(120, 119, 198, 0.9);
+    color: #004085;
     font-size: 0.9em;
 }
 
@@ -2048,11 +2091,10 @@ input.copied {
 #external-objects-container {
     max-height: 200px;
     overflow-y: auto;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid #e0e0e0;
     border-radius: 8px;
     padding: 10px;
-    background-color: rgba(25, 25, 25, 0.6);
-    backdrop-filter: blur(5px);
+    background-color: #fff;
 }
 
 .external-object-details {
@@ -2164,7 +2206,7 @@ input.copied {
 }
 
 .external-object-item:hover {
-    background-color: rgba(120, 119, 198, 0.08);
+    background-color: #f8f9fa;
 }
 
 .external-object-item input[type="checkbox"] {
@@ -2173,7 +2215,7 @@ input.copied {
     height: 20px;
     appearance: none;
     -webkit-appearance: none;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: 2px solid #ccc;
     border-radius: 4px;
     background-color: transparent;
     cursor: pointer;
@@ -2183,13 +2225,13 @@ input.copied {
 }
 
 .external-object-item input[type="checkbox"]:hover {
-    border-color: rgba(120, 119, 198, 0.6);
-    background-color: rgba(120, 119, 198, 0.04);
+    border-color: #007bff;
+    background-color: #f0f8ff;
 }
 
 .external-object-item input[type="checkbox"]:checked {
-    background-color: rgba(120, 119, 198, 0.9);
-    border-color: rgba(120, 119, 198, 0.9);
+    background-color: #007bff;
+    border-color: #007bff;
 }
 
 .external-object-item input[type="checkbox"]:checked::after {
@@ -2216,10 +2258,9 @@ input.copied {
 
 /* Improve form section styling for external objects */
 .form-section .external-objects-selector {
-    background-color: rgba(15, 15, 15, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
     border-radius: 12px;
-    backdrop-filter: blur(10px);
 }
 
 /* Storage type selector styling */
