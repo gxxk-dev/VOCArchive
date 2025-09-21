@@ -21,7 +21,12 @@
     <div id="admin-panel" class="hidden">
         <header>
             <h1>管理后台</h1>
-            <button id="logout-button">登出</button>
+            <div class="header-controls">
+                <button id="theme-toggle" class="theme-toggle" title="切换深色模式">
+                    <i class="fas fa-moon" id="theme-icon"></i>
+                </button>
+                <button id="logout-button">登出</button>
+            </div>
         </header>
         <nav id="tabs">
             <button class="tab-button active" data-target="work">作品 (work)</button>
@@ -83,6 +88,7 @@
                 <input type="text" id="asset-url-input" placeholder="https://assets.example.com" />
                 <label for="batch-size-input">批处理大小:</label>
                 <input type="number" id="batch-size-input" value="50" min="10" max="500" />
+                <br/>
                 <button id="execute-migration-button" class="danger-button">执行外部存储迁移 (Execute Migration)</button>
                 <small>将现有的assets和media sources迁移到外部存储系统。<b>请确保先备份数据库！</b></small>
             </div>
@@ -106,6 +112,7 @@
         </div>
     </div>
 
+    <script src="md3-select.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

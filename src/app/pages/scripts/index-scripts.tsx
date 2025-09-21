@@ -1,4 +1,59 @@
 export const IndexScripts = (props: { works: any[] }) => `
+// MD3 Select Enhancement for Frontend
+class MD3SelectFrontend {
+    constructor() {
+        this.init();
+    }
+
+    init() {
+        this.initializeExistingFields();
+        this.setupMutationObserver();
+    }
+
+    initializeExistingFields() {
+        const selectFields = document.querySelectorAll('.md3-select-field');
+        selectFields.forEach(field => this.enhanceSelectField(field));
+    }
+
+    setupMutationObserver() {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === Node.ELEMENT_NODE && node.classList && node.classList.contains('md3-select-field')) {
+                        this.enhanceSelectField(node);
+                    }
+                });
+            });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    enhanceSelectField(field) {
+        const select = field.querySelector('select');
+        if (!select || select.hasAttribute('data-md3-enhanced')) return;
+        
+        select.setAttribute('data-md3-enhanced', 'true');
+        
+        const updateFieldState = () => {
+            const hasValue = select.value && select.value.trim() !== '';
+            if (hasValue) {
+                field.classList.add('has-value');
+            } else {
+                field.classList.remove('has-value');
+            }
+        };
+        
+        select.addEventListener('change', updateFieldState);
+        select.addEventListener('focus', () => field.classList.add('focused'));
+        select.addEventListener('blur', () => {
+            field.classList.remove('focused');
+            updateFieldState();
+        });
+        
+        updateFieldState();
+    }
+}
+
 const workList = document.getElementById('workList');
 const searchInput = document.getElementById('searchInput');
 const searchButton = document.getElementById('searchButton');
@@ -130,6 +185,9 @@ function changeLanguage(language) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize MD3 selects
+    new MD3SelectFrontend();
+    
     setupEventListeners();
 
     const params = new URLSearchParams(window.location.search);

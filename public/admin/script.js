@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const authCodeInput = document.getElementById('auth-code');
     const loginError = document.getElementById('login-error');
     const logoutButton = document.getElementById('logout-button');
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
     const tabs = document.getElementById('tabs');
     const content = document.getElementById('content');
     const modal = document.getElementById('form-modal');
@@ -39,6 +41,44 @@ document.addEventListener('DOMContentLoaded', async () => {
         'footer': '页脚',
         'site_config': '系统配置'
     };
+
+    // Initialize theme
+    initializeTheme();
+
+    // --- Theme Management ---
+    function getTheme() {
+        return localStorage.getItem('theme') || 'light';
+    }
+
+    function setTheme(theme) {
+        localStorage.setItem('theme', theme);
+        document.documentElement.setAttribute('data-theme', theme);
+        updateThemeIcon(theme);
+    }
+
+    function updateThemeIcon(theme) {
+        if (themeIcon) {
+            if (theme === 'dark') {
+                themeIcon.className = 'fas fa-sun';
+                themeToggle.title = '切换到浅色模式';
+            } else {
+                themeIcon.className = 'fas fa-moon';
+                themeToggle.title = '切换到深色模式';
+            }
+        }
+    }
+
+    function toggleTheme() {
+        const currentTheme = getTheme();
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        setTheme(newTheme);
+    }
+
+    // Initialize theme on page load
+    function initializeTheme() {
+        const savedTheme = getTheme();
+        setTheme(savedTheme);
+    }
 
     // --- API & Helper Functions ---
     function showLogin() {
@@ -149,6 +189,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     logoutButton.addEventListener('click', showLogin);
 
+    // Theme toggle event listener
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleTheme);
+    }
 
     tabs.addEventListener('click', (e) => {
         if (e.target.classList.contains('tab-button')) {
@@ -379,12 +423,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function renderCategoriesTable(data) {
+        console.log('Rendering categories:', data); // Debug log
+        
+        if (!data) {
+            content.innerHTML = `
+                <div class="controls">
+                    <h2>分类 (Categories)</h2>
+                    <button class="create-button" data-target="category">创建新分类</button>
+                </div>
+                <p class="error-message">无法加载分类数据。</p>
+            `;
+            return;
+        }
+        
         content.innerHTML = `
             <div class="controls">
                 <h2>分类 (Categories)</h2>
                 <button class="create-button" data-target="category">创建新分类</button>
             </div>
-            ${!data || data.length === 0 ? `<p>暂无分类。</p>` : `
+            ${data.length === 0 ? `<p>暂无分类。</p>` : `
             <div class="category-tree">
                 ${renderCategoryTree(data)}
             </div>`}
@@ -792,6 +849,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (container) {
                     renderExternalObjectsList(allExternalObjects, container, data?.external_objects || []);
                 }
+                
+                // Initialize MD3 enhancement for the external object filter field
+                const filterField = document.querySelector('.external-object-filter-field');
+                if (filterField) {
+                    enhanceExternalObjectFilter(filterField);
+                }
             }, 100);
         }
 
@@ -831,10 +894,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <input type="hidden" name="creator_uuid" value="${data?.uuid || ''}">
                 <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
                 <label for="name">Name:</label><input type="text" id="name" name="name" required value="${data?.name || ''}">
-                <label for="type">Type:</label><select id="type" name="type">
-                    <option value="human" ${data?.type === 'human' ? 'selected' : ''}>Human</option>
-                    <option value="virtual" ${data?.type === 'virtual' ? 'selected' : ''}>Virtual</option>
-                </select>
+                ${createMD3Select('type', 'type', 'Type', [
+                    { value: 'human', text: 'Human' },
+                    { value: 'virtual', text: 'Virtual' }
+                ], data?.type, false)}
                 
                 <div class="form-section">
                     <h4>Wikis</h4>
@@ -852,10 +915,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <input type="text" id="work_uuid" name="work_uuid" required value="${data?.work_uuid || ''}" class="uuid">
                     ${createQuickSelect('work-quick-select', 'work-quick-select-name', options.works, 'work_uuid', 'titles', data?.work_uuid, 'work_uuid')}
                 </div>
-                <label for="is_music">Is Music:</label><select id="is_music" name="is_music">
-                    <option value="true" ${data?.is_music ? 'selected' : ''}>Yes</option>
-                    <option value="false" ${!data?.is_music ? 'selected' : ''}>No</option>
-                </select>
+                ${createMD3Select('is_music', 'is_music', 'Is Music', [
+                    { value: 'true', text: 'Yes' },
+                    { value: 'false', text: 'No' }
+                ], data?.is_music ? 'true' : 'false', false)}
                 <label for="file_name">File Name:</label><input type="text" id="file_name" name="file_name" required value="${data?.file_name || ''}">
                 <!-- URL removed - using external objects for file management -->
                 <label for="mime_type">MIME Type:</label><input type="text" id="mime_type" name="mime_type" required value="${data?.mime_type || ''}">
@@ -877,15 +940,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <input type="text" id="work_uuid_asset" name="work_uuid" required value="${data?.work_uuid || ''}" class="uuid">
                     ${createQuickSelect('work-quick-select-asset', 'work-quick-select-asset-name', options.works, 'work_uuid', 'titles', data?.work_uuid, 'work_uuid_asset')}
                 </div>
-                <label for="asset_type">Asset Type:</label><select id="asset_type" name="asset_type">
-                    <option value="lyrics" ${data?.asset_type === 'lyrics' ? 'selected' : ''}>Lyrics</option>
-                    <option value="picture" ${data?.asset_type === 'picture' ? 'selected' : ''}>Picture</option>
-                </select>
+                ${createMD3Select('asset_type', 'asset_type', 'Asset Type', [
+                    { value: 'lyrics', text: 'Lyrics' },
+                    { value: 'picture', text: 'Picture' }
+                ], data?.asset_type, false)}
                 <label for="file_name">File Name:</label><input type="text" id="file_name" name="file_name" required value="${data?.file_name || ''}">
-                <label for="is_previewpic">Is Preview Pic:</label><select id="is_previewpic" name="is_previewpic">
-                    <option value="false" ${!data?.is_previewpic ? 'selected' : ''}>No</option>
-                    <option value="true" ${data?.is_previewpic ? 'selected' : ''}>Yes</option>
-                </select>
+                ${createMD3Select('is_previewpic', 'is_previewpic', 'Is Preview Pic', [
+                    { value: 'false', text: 'No' },
+                    { value: 'true', text: 'Yes' }
+                ], data?.is_previewpic ? 'true' : 'false', false)}
                 <label for="language">Language:</label><input type="text" id="language" name="language" value="${data?.language || ''}">
                 
                 <div class="form-section">
@@ -917,9 +980,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ${createQuickSelect('to-work-quick-select', 'to-work-quick-select-name', options.works, 'work_uuid', 'titles', data?.to_work_uuid, 'to_work_uuid')}
                 </div>
                 <label for="relation_type">Relation Type:</label>
-                <select id="relation_type" name="relation_type">
-                    ${data_relations}
-                </select>
+                <div class="md3-select-field">
+                    <select id="relation_type" name="relation_type">
+                        ${data_relations}
+                    </select>
+                    <label class="md3-label">Relation Type</label>
+                    <div class="md3-state-layer"></div>
+                </div>
             `,
             work: `
                 <div class="form-section">
@@ -928,11 +995,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <label for="work-uuid">Work UUID:</label>
                     <input type="text" id="work-uuid" name="work_uuid_field" required value="${data?.work?.uuid || crypto.randomUUID()}" readonly class="uuid">
                     <label for="work-copyright-basis">Copyright Basis:</label>
-                    <select id="copyright_basis" name="copyright_basis">
-                        <option value="none" ${(data?.work?.copyright_basis || 'none') === 'none' ? 'selected' : ''}>未知/不明</option>
-                        <option value="license" ${(data?.work?.copyright_basis || 'license') === 'license' ? 'selected' : ''}>按许可证授权</option>
-                        <option value="accept" ${(data?.work?.copyright_basis || 'accept') === 'accept' ? 'selected' : ''}>已获授权</option>
-                    </select>
+                    ${createMD3Select('copyright_basis', 'copyright_basis', 'Copyright Basis', [
+                        { value: 'none', text: '未知/不明' },
+                        { value: 'license', text: '按许可证授权' },
+                        { value: 'accept', text: '已获授权' }
+                    ], data?.work?.copyright_basis || 'none', false)}
                     <div id="license-container">
                         <label for="license">License:</label>
                         <input type="text" id="license" name="license" value="${data?.license || ''}">
@@ -979,12 +1046,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             `,
             footer: `
                 <input type="hidden" name="uuid" value="${data?.uuid || ''}">
-                <label for="item_type">Type:</label>
-                <select id="item_type" name="item_type" required>
-                    <option value="link" ${data?.item_type === 'link' ? 'selected' : ''}>Link</option>
-                    <option value="social" ${data?.item_type === 'social' ? 'selected' : ''}>Social</option>
-                    <option value="copyright" ${data?.item_type === 'copyright' ? 'selected' : ''}>Copyright</option>
-                </select>
+                ${createMD3Select('item_type', 'item_type', 'Type', [
+                    { value: 'link', text: 'Link' },
+                    { value: 'social', text: 'Social' },
+                    { value: 'copyright', text: 'Copyright' }
+                ], data?.item_type, true)}
                 <label for="text">Text:</label>
                 <input type="text" id="text" name="text" required value="${data?.text || ''}">
                 <label for="url">URL (optional):</label>
@@ -1010,10 +1076,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             external_source: `
                 <input type="hidden" name="external_source_uuid" value="${data?.uuid || ''}">
                 <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
-                <label for="type">存储类型:</label><select id="type" name="type" required>
-                    <option value="raw_url" ${data?.type === 'raw_url' ? 'selected' : ''}>直接 URL</option>
-                    <option value="ipfs" ${data?.type === 'ipfs' ? 'selected' : ''}>IPFS</option>
-                </select>
+                ${createMD3Select('type', 'type', '存储类型', [
+                    { value: 'raw_url', text: '直接 URL' },
+                    { value: 'ipfs', text: 'IPFS' }
+                ], data?.type, true)}
                 <label for="name">存储源名称:</label><input type="text" id="name" name="name" required value="${data?.name || ''}" placeholder="例如: 主要存储, 备份存储">
                 <label for="endpoint">访问端点:</label><input type="text" id="endpoint" name="endpoint" required value="${data?.endpoint || ''}" placeholder="例如: https://example.com/{ID} 或 https://ipfs.io/ipfs/{ID}">
                 <small>使用 {ID} 标记文件标识符位置</small>
@@ -1032,14 +1098,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             site_config: `
                 <input type="hidden" name="config_key" value="${data?.key || ''}">
                 <label for="key">配置键:</label>
-                <select id="key" name="key" required ${data ? 'disabled' : ''}>
-                    <option value="site_title" ${data?.key === 'site_title' ? 'selected' : ''}>网站标题 (site_title)</option>
-                    <option value="home_title" ${data?.key === 'home_title' ? 'selected' : ''}>主页标题 (home_title)</option>
-                    <option value="player_title" ${data?.key === 'player_title' ? 'selected' : ''}>播放器页标题 (player_title)</option>
-                    <option value="admin_title" ${data?.key === 'admin_title' ? 'selected' : ''}>管理后台标题 (admin_title)</option>
-                    <option value="totp_secret" ${data?.key === 'totp_secret' ? 'selected' : ''}>TOTP 密钥 (totp_secret)</option>
-                    <option value="jwt_secret" ${data?.key === 'jwt_secret' ? 'selected' : ''}>JWT 密钥 (jwt_secret)</option>
-                </select>
+                ${createMD3Select('key', 'key', '配置键', [
+                    { value: 'site_title', text: '网站标题 (site_title)' },
+                    { value: 'home_title', text: '主页标题 (home_title)' },
+                    { value: 'player_title', text: '播放器页标题 (player_title)' },
+                    { value: 'admin_title', text: '管理后台标题 (admin_title)' },
+                    { value: 'totp_secret', text: 'TOTP 密钥 (totp_secret)' },
+                    { value: 'jwt_secret', text: 'JWT 密钥 (jwt_secret)' }
+                ], data?.key, true)}
+                ${data ? '<div style="margin-top: 8px;"><small style="color: #666;">配置键不可修改</small></div>' : ''}
                 ${data?.key?.includes('title') ? `
                     <div class="placeholder-help" style="margin: 10px 0; padding: 10px; background-color: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 4px; font-size: 0.9em;">
                         <strong>💡 可用占位符：</strong><br>
@@ -1065,6 +1132,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
 
+    // Helper function to create MD3 select field
+    function createMD3Select(id, name, labelText, options, selectedValue = '', required = false) {
+        const requiredAttr = required ? 'required' : '';
+        const optionsHtml = options.map(option => {
+            const value = typeof option === 'object' ? option.value : option;
+            const text = typeof option === 'object' ? option.text : option;
+            const selected = value === selectedValue ? 'selected' : '';
+            return `<option value="${value}" ${selected}>${text}</option>`;
+        }).join('');
+        
+        return `
+            <div class="md3-select-field">
+                <select id="${id}" name="${name}" ${requiredAttr}>
+                    ${optionsHtml}
+                </select>
+            </div>
+        `;
+    }
+
     function createQuickSelect(id, name, data, valueField, displayField, selectedValue, targetInputId) {
         if (!data || data.length === 0) return '';
     
@@ -1084,10 +1170,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }).join('');
     
         return `
-            <select id="${id}" name="${name}" class="quick-select" data-target-input="${targetInputId}">
-                <option value="">--快速选择--</option>
-                ${options}
-            </select>
+            <div class="quick-select-container">
+                <span class="quick-select-hint">快速选择</span>
+                <div class="md3-select-field quick-select-field">
+                    <select id="${id}" name="${name}" class="quick-select" data-target-input="${targetInputId}">
+                        <option value="">--选择项目--</option>
+                        ${options}
+                    </select>
+                    <div class="md3-state-layer"></div>
+                </div>
+            </div>
         `;
     }
 
@@ -1113,10 +1205,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }).join('');
 
         return `
-            <select id="${id}" name="${name}" class="quick-select" data-target-input="${targetInputId}">
-                <option value="">--选择父分类--</option>
-                ${options}
-            </select>
+            <div class="quick-select-container">
+                <span class="quick-select-hint">选择父分类</span>
+                <div class="md3-select-field quick-select-field">
+                    <select id="${id}" name="${name}" class="quick-select" data-target-input="${targetInputId}">
+                        <option value="">--选择父分类--</option>
+                        ${options}
+                    </select>
+                    <div class="md3-state-layer"></div>
+                </div>
+            </div>
         `;
     }
 
@@ -1193,7 +1291,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         return `
             <div class="external-objects-list">
-                <input type="text" id="external-object-filter" placeholder="搜索外部对象..." oninput="filterExternalObjects(this.value)">
+                <div class="external-object-filter-field">
+                    <input type="text" id="external-object-filter" oninput="filterExternalObjects(this.value)">
+                    <label class="md3-label">搜索外部对象...</label>
+                    <div class="md3-state-layer"></div>
+                </div>
                 <div id="external-object-checkboxes">
                     <div class="external-objects-info">
                         <p>选择关联的外部对象。这些对象将用于在不同存储源中访问此资产的文件。</p>
@@ -1234,10 +1336,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         return `
             <div class="dynamic-list-item">
-                <select name="creator_uuid" required>
-                    <option value="">Select Creator</option>
-                    ${creatorOptions}
-                </select>
+                <div class="md3-select-field">
+                    <select name="creator_uuid" required>
+                        <option value="">Select Creator</option>
+                        ${creatorOptions}
+                    </select>
+                    <label class="md3-label">Creator</label>
+                    <div class="md3-state-layer"></div>
+                </div>
                 <input type="text" name="creator_role" placeholder="Role" required value="${creatorRole}">
                 <button type="button" class="remove-row-button">Remove</button>
             </div>
@@ -1847,6 +1953,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         renderExternalObjectsList(filteredObjects, container, currentSelectedObjects);
+    }
+
+    // Enhance external object filter with MD3 functionality  
+    function enhanceExternalObjectFilter(field) {
+        const input = field.querySelector('input[type="text"]');
+        if (!input || input.hasAttribute('data-md3-enhanced')) return;
+        
+        input.setAttribute('data-md3-enhanced', 'true');
+        
+        const updateFieldState = () => {
+            const hasValue = input.value && input.value.trim() !== '';
+            if (hasValue) {
+                field.classList.add('has-value');
+            } else {
+                field.classList.remove('has-value');
+            }
+        };
+        
+        input.addEventListener('input', updateFieldState);
+        input.addEventListener('focus', () => field.classList.add('focused'));
+        input.addEventListener('blur', () => {
+            field.classList.remove('focused');
+            updateFieldState();
+        });
+        
+        updateFieldState();
     }
 
     // Render external objects list

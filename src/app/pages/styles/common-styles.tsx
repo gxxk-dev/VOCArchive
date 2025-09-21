@@ -170,4 +170,116 @@ body {
     margin: 0;
     font-size: 0.85rem;
 }
+
+/* Material Design 3 Select Styles for Frontend */
+.md3-select-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin: 16px 0;
+    border-radius: 12px;
+    background-color: rgba(40, 40, 40, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 200ms ease-in-out;
+    overflow: hidden;
+}
+
+.md3-select-field:hover {
+    background-color: rgba(50, 50, 50, 0.9);
+    border-color: rgba(120, 119, 198, 0.3);
+}
+
+.md3-select-field:focus-within {
+    background-color: rgba(60, 60, 60, 0.95);
+    border-color: rgba(120, 119, 198, 0.5);
+    box-shadow: 0 0 0 1px rgba(120, 119, 198, 0.3);
+}
+
+.md3-select-field select {
+    width: 100%;
+    padding: 20px 16px 8px 16px;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 16px;
+    font-family: inherit;
+    color: var(--text-primary);
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.md3-select-field select:focus {
+    outline: none;
+}
+
+/* Floating Label */
+.md3-select-field .md3-label {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: transparent;
+    color: #888;
+    font-size: 16px;
+    font-weight: 400;
+    transition: all 200ms ease-in-out;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.md3-select-field.has-value .md3-label,
+.md3-select-field:focus-within .md3-label {
+    top: 8px;
+    transform: translateY(0);
+    font-size: 12px;
+    color: rgba(120, 119, 198, 0.8);
+    background-color: rgba(40, 40, 40, 0.8);
+    padding: 0 4px;
+}
+
+.md3-select-field:focus-within.has-value .md3-label {
+    background-color: rgba(60, 60, 60, 0.95);
+}
+
+/* Dropdown Arrow */
+.md3-select-field::after {
+    content: '';
+    position: absolute;
+    right: 16px;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid #888;
+    pointer-events: none;
+    transition: transform 200ms ease-in-out;
+}
+
+.md3-select-field:focus-within::after {
+    transform: rotate(180deg);
+    border-top-color: rgba(120, 119, 198, 0.8);
+}
+
+/* State Layer Effect */
+.md3-select-field .md3-state-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: transparent;
+    transition: background-color 200ms ease-in-out;
+    pointer-events: none;
+    border-radius: 12px;
+}
+
+.md3-select-field:hover .md3-state-layer {
+    background-color: rgba(120, 119, 198, 0.08);
+}
+
+.md3-select-field:focus-within .md3-state-layer {
+    background-color: rgba(120, 119, 198, 0.12);
+}
 `

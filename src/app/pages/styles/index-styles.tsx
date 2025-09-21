@@ -62,24 +62,72 @@ body {
 }
 
 .search-type-selector {
-    background: rgba(40, 40, 40, 0.8);
+    background: transparent !important;
     color: var(--text-primary);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 6px 10px;
+    border: none !important;
+    padding: 20px 16px 8px 16px !important;
     font-size: 0.85rem;
     outline: none;
     cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+/* MD3 Select Field for Search */
+.search-select-field {
+    background: rgba(40, 40, 40, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    margin: 0 !important;
+    min-width: 120px;
     transition: all 0.3s ease;
 }
 
-.search-type-selector:hover {
-    background: rgba(50, 50, 50, 0.9);
-    border-color: rgba(120, 119, 198, 0.3);
+.search-select-field:hover {
+    background: rgba(50, 50, 50, 0.9) !important;
+    border-color: rgba(120, 119, 198, 0.3) !important;
 }
 
-.search-type-selector:focus {
-    border-color: rgba(120, 119, 198, 0.5);
+.search-select-field:focus-within {
+    background: rgba(60, 60, 60, 0.95) !important;
+    border-color: rgba(120, 119, 198, 0.5) !important;
+    box-shadow: 0 0 0 1px rgba(120, 119, 198, 0.3);
+}
+
+.search-select-field .md3-label {
+    color: #888 !important;
+    background-color: transparent !important;
+    font-size: 10px !important;
+    top: 4px !important;
+    transform: translateY(0) !important;
+    padding: 0 2px !important;
+}
+
+.search-select-field:focus-within .md3-label,
+.search-select-field.has-value .md3-label {
+    color: rgba(120, 119, 198, 0.8) !important;
+}
+
+.search-select-field::after {
+    border-top-color: #888 !important;
+    right: 12px !important;
+}
+
+.search-select-field:focus-within::after {
+    border-top-color: rgba(120, 119, 198, 0.8) !important;
+}
+
+.search-select-field .md3-state-layer {
+    border-radius: 8px !important;
+}
+
+.search-select-field:hover .md3-state-layer {
+    background-color: rgba(120, 119, 198, 0.1) !important;
+}
+
+.search-select-field:focus-within .md3-state-layer {
+    background-color: rgba(120, 119, 198, 0.15) !important;
 }
 
 .floating-search-input::placeholder {
