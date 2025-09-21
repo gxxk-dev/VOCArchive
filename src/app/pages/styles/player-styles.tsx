@@ -403,6 +403,18 @@ a {
     color: #F57F17;
 }
 
+.copyright-status.onlymetadata {
+    background-color: rgba(33, 150, 243, 0.1);
+    border-color: #2196F3;
+    color: #7baae1ff;
+}
+
+.copyright-status.arr {
+    background-color: rgba(255, 152, 0, 0.1);
+    border-color: #FF9800;
+    color: #E65100;
+}
+
 .copyright-status.unclear {
     background-color: rgba(158, 158, 158, 0.1);
     border-color: #9E9E9E;

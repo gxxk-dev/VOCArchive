@@ -1043,7 +1043,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ${createMD3Select('copyright_basis', 'copyright_basis', 'Copyright Basis', [
                         { value: 'none', text: '未知/不明' },
                         { value: 'license', text: '按许可证授权' },
-                        { value: 'accept', text: '已获授权' }
+                        { value: 'accept', text: '已获授权' },
+                        { value: 'onlymetadata', text: '仅元数据 (文件引用自外部源)' },
+                        { value: 'arr', text: '版权保留 (如侵权请联系删除)' }
                     ], data?.work?.copyright_basis || 'none', false)}
                     <div id="license-container">
                         <label for="license">License:</label>

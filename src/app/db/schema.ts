@@ -12,7 +12,7 @@ export const creator = sqliteTable('creator', {
 export const work = sqliteTable('work', {
     uuid: text('uuid').primaryKey(),
     copyright_basis: text('copyright_basis', { 
-        enum: ['none', 'accept', 'license'] 
+        enum: ['none', 'accept', 'license', 'onlymetadata', 'arr'] 
     }).notNull(),
 });
 
