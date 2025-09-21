@@ -326,6 +326,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
         
+        if (target === 'creator') {
+            renderCreatorTable(data);
+            return;
+        }
+        
         if (target === 'tag') {
             renderTagsTable(data);
             return;
@@ -465,6 +470,47 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
             `;
         }).join('');
+    }
+
+    function renderCreatorTable(data) {
+        content.innerHTML = `
+            <div class="controls">
+                <h2>作者 (Creators)</h2>
+                <button class="create-button" data-target="creator">创建新作者</button>
+            </div>
+            ${!data || data.length === 0 ? `<p>暂无作者。</p>` : `
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>UUID</th>
+                            <th>名称</th>
+                            <th>类型</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(creator => {
+                            // Handle empty or null names with a placeholder
+                            const displayName = creator.name
+                                ? creator.name 
+                                : '<span class="null-value">NULL</span>';
+                            
+                            return `
+                            <tr data-uuid="${creator.uuid}">
+                                <td><span class="uuid" title="${creator.uuid}">${creator.uuid.substring(0, 8)}...</span></td>
+                                <td class="creator-name">${displayName}</td>
+                                <td class="creator-type">${creator.type}</td>
+                                <td>
+                                    <button class="edit-button" data-uuid="${creator.uuid}" data-target="creator">编辑</button>
+                                    <button class="delete-button" data-uuid="${creator.uuid}" data-target="creator">删除</button>
+                                </td>
+                            </tr>
+                        `}).join('')}
+                    </tbody>
+                </table>
+            </div>`}
+        `;
     }
 
     function renderExternalSourcesTable(data) {
@@ -880,9 +926,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function generateFormFields(target, data = null, options = {}) {
-        
+        console.log("Generate Form Fields", data)
         const data_wikis = (data?.wikis || []).map(createWikiRow).join('');
-        console.log(data)
         const data_creators = (data?.creator && Array.isArray(data.creator))
                         ? data.creator.map(creator => createCreatorRow(creator, options.creators)).join('')
                         : (data?.creator ? createCreatorRow(data.creator, options.creators) : '');
@@ -891,9 +936,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const fields = {
             creator: `
-                <input type="hidden" name="creator_uuid" value="${data?.uuid || ''}">
-                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
-                <label for="name">Name:</label><input type="text" id="name" name="name" required value="${data?.name || ''}">
+                <input type="hidden" name="creator_uuid" value="${data.creator?.uuid || ''}">
+                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data.creator?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
+                <label for="name">Name:</label><input type="text" id="name" name="name" required value="${data.creator?.name || ''}">
                 ${createMD3Select('type', 'type', 'Type', [
                     { value: 'human', text: 'Human' },
                     { value: 'virtual', text: 'Virtual' }
