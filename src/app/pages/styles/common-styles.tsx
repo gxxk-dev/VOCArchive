@@ -119,7 +119,6 @@ body {
     margin-top: var(--spacing-xl);
     color: var(--text-secondary);
     font-size: 0.9rem;
-    border-top: 1px solid var(--card-border);
 }
 
 .footer-content {
@@ -179,20 +178,16 @@ body {
     margin: 16px 0;
     border-radius: 12px;
     background-color: rgba(40, 40, 40, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 200ms ease-in-out;
     overflow: hidden;
 }
 
 .md3-select-field:hover {
     background-color: rgba(50, 50, 50, 0.9);
-    border-color: rgba(120, 119, 198, 0.3);
 }
 
 .md3-select-field:focus-within {
     background-color: rgba(60, 60, 60, 0.95);
-    border-color: rgba(120, 119, 198, 0.5);
-    box-shadow: 0 0 0 1px rgba(120, 119, 198, 0.3);
 }
 
 .md3-select-field select {

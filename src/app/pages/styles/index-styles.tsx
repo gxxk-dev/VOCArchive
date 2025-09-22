@@ -7,14 +7,10 @@ body {
 .page-container {
     max-width: 100%;
     margin: 0 auto;
-    background: var(--card-bg);
-    backdrop-filter: blur(25px);
+    background: rgba(15, 15, 15, 0.6);
+    backdrop-filter: blur(15px);
     border-radius: var(--card-radius);
     padding: var(--spacing-xl);
-    box-shadow: 
-        var(--shadow-md),
-        0 0 0 1px rgba(255, 255, 255, 0.08);
-    border: 1px solid var(--card-border);
     transition: all 0.5s ease;
     animation: fadeInUp 0.8s ease-out;
 }
@@ -28,14 +24,10 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(20, 20, 20, 0.85);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(20, 20, 20, 0.7);
+    backdrop-filter: blur(15px);
     border-radius: var(--element-radius);
     padding: var(--spacing-sm) 16px;
-    box-shadow: 
-        var(--shadow-md),
-        0 0 0 1px rgba(255, 255, 255, 0.05);
     transition: all 0.3s ease;
     min-width: 280px;
     animation: slideInRight 0.6s ease-out;
@@ -43,11 +35,7 @@ body {
 
 .floating-search:hover {
     background: rgba(25, 25, 25, 0.9);
-    border-color: rgba(120, 119, 198, 0.3);
     transform: translateY(-2px);
-    box-shadow: 
-        var(--shadow-lg),
-        0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .floating-search-input {
@@ -166,8 +154,7 @@ body {
 }
 
 .language-selector-btn {
-    background: rgba(40, 40, 40, 0.9);
-    border: 1px solid rgba(124, 119, 198, 0.3);
+    background: rgba(40, 40, 40, 0.7);
     border-radius: var(--element-radius);
     color: var(--text-primary);
     padding: var(--spacing-xs) var(--spacing-sm);
@@ -177,13 +164,12 @@ body {
     gap: var(--spacing-xs);
     font-size: 0.85rem;
     transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(8px);
     white-space: nowrap;
 }
 
 .language-selector-btn:hover {
     background: rgba(60, 60, 60, 0.9);
-    border-color: rgba(124, 119, 198, 0.5);
     transform: translateY(-1px);
 }
 
@@ -202,16 +188,14 @@ body {
     bottom: 100%;
     right: 0;
     margin-bottom: 5px;
-    background: rgba(40, 40, 40, 0.95);
-    border: 1px solid rgba(124, 119, 198, 0.3);
+    background: rgba(40, 40, 40, 0.8);
     border-radius: var(--element-radius);
-    backdrop-filter: blur(15px);
+    backdrop-filter: blur(12px);
     min-width: 150px;
     opacity: 0;
     visibility: hidden;
     transform: translateY(10px);
     transition: all 0.3s ease;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 .language-dropdown.open {
@@ -268,13 +252,12 @@ body {
 
 /* 筛选信息 */
 .filter-info, .search-info {
-    background: rgba(40, 40, 40, 0.8);
-    border: 1px solid rgba(124, 119, 198, 0.3);
+    background: rgba(40, 40, 40, 0.5);
     border-radius: var(--element-radius);
     padding: var(--spacing-md);
     margin: var(--spacing-lg) auto;
     max-width: 600px;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(8px);
 }
 
 .filter-indicator, .search-indicator {
@@ -293,7 +276,6 @@ body {
 
 .clear-filter-btn, .clear-search-btn {
     background: rgba(255, 77, 77, 0.2);
-    border: 1px solid rgba(255, 77, 77, 0.4);
     color: #ff6b6b;
     border-radius: 20px;
     padding: var(--spacing-xs) var(--spacing-sm);
@@ -334,10 +316,9 @@ body {
 
 /* 歌曲列表区域 */
 .work-list-section {
-    background: rgba(25, 25, 25, 0.6);
+    background: rgba(25, 25, 25, 0.4);
     border-radius: var(--element-radius);
     padding: var(--spacing-lg);
-    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .section-title {
@@ -363,7 +344,6 @@ body {
     align-items: center;
     gap: 6px;
     background: rgba(124, 119, 198, 0.15);
-    border: 1px solid rgba(124, 119, 198, 0.3);
     border-radius: 20px;
     padding: 4px 12px;
     margin-left: var(--spacing-sm);
@@ -383,7 +363,6 @@ body {
 
 .clear-filter-btn-inline {
     background: rgba(255, 77, 77, 0.2);
-    border: 1px solid rgba(255, 77, 77, 0.4);
     color: #ff6b6b;
     border-radius: 50%;
     width: 20px;
@@ -430,11 +409,10 @@ body {
     align-items: center;
     gap: var(--spacing-md);
     padding: var(--spacing-md);
-    background: rgba(35, 35, 35, 0.6);
+    background: rgba(35, 35, 35, 0.4);
     border-radius: var(--element-radius);
     cursor: pointer;
     transition: all 0.4s ease;
-    border: 1px solid rgba(255, 255, 255, 0.06);
     position: relative;
     overflow: hidden;
     animation: fadeInUp 0.5s ease-out;
@@ -457,10 +435,8 @@ body {
 }
 
 .work-item:hover {
-    background: rgba(50, 50, 50, 0.8);
-    transform: translateY(-6px) scale(1.02);
-    border-color: rgba(120, 119, 198, 0.3);
-    box-shadow: var(--shadow-lg);
+    background: rgba(50, 50, 50, 0.6);
+    transform: translateY(-3px) scale(1.01);
 }
 
 .work-preview {
@@ -521,7 +497,6 @@ body {
     white-space: nowrap;
     cursor: pointer;
     transition: all 0.3s ease;
-    border: 1px solid rgba(120, 119, 198, 0.3);
 }
 
 .tag-chip:hover, .category-chip:hover {
@@ -607,9 +582,8 @@ body {
 
 .pagination-btn {
     padding: var(--spacing-sm) 18px;
-    background: rgba(40, 40, 40, 0.7);
+    background: rgba(40, 40, 40, 0.5);
     color: #ccc;
-    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--element-radius);
     cursor: pointer;
     font-size: clamp(0.85rem, 2vw, 0.95rem);
@@ -676,32 +650,437 @@ body {
     }
 }
 
-@media (max-width: 768px) {
-    body {
-        padding: 15px;
+/* 平板端优化 */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .work-play-btn {
+        width: 52px;
+        height: 52px;
+        font-size: 1.3rem;
     }
-    
+
+    .floating-search-btn {
+        padding: 10px 16px;
+        font-size: 1rem;
+    }
+
+    .pagination-btn {
+        padding: 14px 20px;
+        min-width: 48px;
+        min-height: 48px;
+    }
+}
+
+/* 大手机/小平板 (414px - 768px) */
+@media (max-width: 768px) and (min-width: 415px) {
+    body {
+        padding: 18px;
+    }
+
     .page-container {
-        padding: 24px;
+        padding: 28px 28px 0 28px;
+        border-radius: 22px;
+    }
+
+    .work-list-section {
+        padding: 28px;
+        margin: 32px -28px 0 -28px;
+        border-radius: 0;
+        background: rgba(25, 25, 25, 0.3);
+    }
+
+    .work-item {
+        padding: 20px;
+        gap: 18px;
+    }
+
+    .work-play-btn {
+        width: 58px;
+        height: 58px;
+        font-size: 1.35rem;
+    }
+
+    .floating-search {
+        padding: 16px 20px;
+        border-radius: 18px;
+    }
+}
+
+/* 中等手机屏幕 (360px - 414px) */
+@media (max-width: 414px) and (min-width: 361px) {
+    body {
+        padding: 16px;
+    }
+
+    .page-container {
+        padding: 26px 26px 0 26px;
         border-radius: 20px;
     }
-    
+
     .work-list-section {
-        padding: 24px;
+        padding: 26px;
+        margin: 28px -26px 0 -26px;
+        border-radius: 0;
+        background: rgba(25, 25, 25, 0.3);
     }
-    
+
     .work-item {
         padding: 18px;
         gap: 16px;
     }
-    
+
+    .work-play-btn {
+        width: 56px;
+        height: 56px;
+        font-size: 1.3rem;
+    }
+
     .floating-search {
-        position: relative;
-        top: auto;
-        right: auto;
-        margin-bottom: 20px;
-        min-width: auto;
+        padding: 14px 18px;
+        border-radius: 18px;
+    }
+
+    .pagination-btn {
+        padding: 15px 18px;
+        min-width: 46px;
+        min-height: 46px;
+        font-size: 0.95rem;
+    }
+}
+
+/* 小手机屏幕 (320px - 360px) */
+@media (max-width: 360px) {
+    body {
+        padding: 12px;
+    }
+
+    .page-container {
+        padding: 22px 22px 0 22px;
+        border-radius: 18px;
+    }
+
+    .work-list-section {
+        padding: 22px;
+        margin: 24px -22px 0 -22px;
+        border-radius: 0;
+        background: rgba(25, 25, 25, 0.3);
+    }
+
+    .work-item {
+        padding: 16px;
+        gap: 14px;
+    }
+
+    .work-play-btn {
+        width: 54px;
+        height: 54px;
+        font-size: 1.25rem;
+    }
+
+    .floating-search {
+        padding: 12px 16px;
+        border-radius: 16px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .floating-search-btn {
         width: 100%;
+        order: 1;
+        margin-top: 6px;
+        padding: 12px;
+        font-size: 0.95rem;
+    }
+
+    .search-select-field {
+        min-width: 85px !important;
+    }
+
+    .pagination-btn {
+        padding: 12px 14px;
+        min-width: 42px;
+        min-height: 42px;
+        font-size: 0.9rem;
+    }
+
+    .work-title {
+        font-size: 1rem;
+        line-height: 1.25;
+    }
+
+    .work-artist {
+        font-size: 0.85rem;
+    }
+
+    .language-selector-container {
+        bottom: 12px;
+        right: 12px;
+    }
+
+    .language-selector-btn {
+        padding: 10px 12px;
+        min-height: 42px;
+        font-size: 0.8rem;
+    }
+
+    .language-option {
+        padding: 10px 12px;
+        min-height: 42px;
+        font-size: 0.8rem;
+    }
+}
+
+/* 移动端全屏列表卡片优化 */
+@media (max-width: 768px) {
+    body {
+        padding: 15px 15px 0 15px; /* 底部无padding，让列表延伸到底部 */
+    }
+
+    .page-container {
+        padding: 24px 24px 0 24px;
+        border-radius: 20px 20px 0 0; /* 只保留顶部圆角 */
+        margin-bottom: 0;
+    }
+
+    .work-list-section {
+        padding: 24px 15px; /* 左右与body padding保持一致 */
+        margin: 32px -24px 0 -24px;
+        border-radius: 0;
+        background: rgba(25, 25, 25, 0.4);
+        min-height: calc(100vh - 200px); /* 确保足够高度 */
+    }
+
+    /* 页面内容区域的间距调整 */
+    .page-header {
+        margin-bottom: 32px;
+    }
+
+    .floating-search {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        left: 15px;
+        margin: 0;
+        min-width: auto;
+        width: auto;
+        padding: 14px 18px;
+        border-radius: 20px;
+        z-index: 100;
+        background: rgba(30, 30, 30, 0.95);
+        backdrop-filter: blur(25px);
+    }
+
+    .floating-search-input {
+        font-size: 1rem;
+        padding: 8px 0;
+        min-height: 24px;
+    }
+
+    .search-select-field {
+        margin: 0 8px 0 0 !important;
+        min-width: 100px;
+        flex-shrink: 0;
+    }
+}
+
+    .work-item {
+        padding: 18px;
+        gap: 16px;
+    }
+
+    /* 移动端触控目标优化 */
+    .work-play-btn {
+        width: 56px;
+        height: 56px;
+        font-size: 1.4rem;
+        opacity: 1; /* 移动端始终显示播放按钮 */
+    }
+
+    .floating-search-btn {
+        padding: 12px 18px;
+        font-size: 1rem;
+        min-height: 44px;
+    }
+
+    .clear-search-btn, .clear-filter-btn {
+        padding: 8px 16px;
+        min-height: 44px;
+        font-size: 0.9rem;
+    }
+
+    .clear-filter-btn-inline {
+        width: 24px;
+        height: 24px;
+        font-size: 0.8em;
+    }
+
+    .pagination-btn {
+        padding: 16px 22px;
+        min-width: 48px;
+        min-height: 48px;
+        font-size: 1rem;
+    }
+
+    .tag-chip, .category-chip {
+        padding: 6px 12px;
+        min-height: 32px;
+        font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .language-selector-btn {
+        padding: 12px 16px;
+        min-height: 44px;
+        font-size: 0.9rem;
+    }
+
+    .language-option {
+        padding: 12px 16px;
+        min-height: 44px;
+        font-size: 0.9rem;
+    }
+
+
+    .work-item {
+        padding: 18px;
+        gap: 16px;
+    }
+
+    /* 移动端触控目标优化 */
+    .work-play-btn {
+        width: 56px;
+        height: 56px;
+        font-size: 1.4rem;
+        opacity: 1; /* 移动端始终显示播放按钮 */
+    }
+
+    .floating-search-btn {
+        padding: 12px 18px;
+        font-size: 1rem;
+        min-height: 44px;
+    }
+
+    .clear-search-btn, .clear-filter-btn {
+        padding: 8px 16px;
+        min-height: 44px;
+        font-size: 0.9rem;
+    }
+
+    .clear-filter-btn-inline {
+        width: 24px;
+        height: 24px;
+        font-size: 0.8em;
+    }
+
+    .pagination-btn {
+        padding: 16px 22px;
+        min-width: 48px;
+        min-height: 48px;
+        font-size: 1rem;
+    }
+
+    .tag-chip, .category-chip {
+        padding: 6px 12px;
+        min-height: 32px;
+        font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .language-selector-btn {
+        padding: 12px 16px;
+        min-height: 44px;
+        font-size: 0.9rem;
+    }
+
+    .language-option {
+        padding: 12px 16px;
+        min-height: 44px;
+        font-size: 0.9rem;
+    }
+
+
+/* 动画优化 - 移动端减少复杂动画 */
+@media (max-width: 768px) {
+    .work-item::before {
+        display: none; /* 移动端禁用扫光效果 */
+    }
+
+    .work-item:hover {
+        transform: translateY(-3px) scale(1.01); /* 减少移动端变形幅度 */
+        transition: all 0.2s ease; /* 加快动画速度 */
+    }
+
+    .floating-search {
+        animation: none; /* 禁用进入动画 */
+    }
+
+    .page-container {
+        animation: fadeInUp 0.4s ease-out; /* 加快页面加载动画 */
+    }
+
+    .work-item {
+        animation: none; /* 禁用列表项动画 */
+    }
+
+    .work-play-btn:hover {
+        transform: scale(1.05); /* 减少按钮缩放 */
+    }
+
+    .pagination-btn:hover,
+    .floating-search-btn:hover,
+    .clear-search-btn:hover,
+    .clear-filter-btn:hover {
+        transform: none; /* 移动端禁用悬停位移动画 */
+    }
+
+    .language-selector-btn:hover {
+        transform: none; /* 禁用语言选择器悬停动画 */
+    }
+
+    .tag-chip:hover,
+    .category-chip:hover {
+        transform: none; /* 禁用标签悬停动画 */
+    }
+}
+
+@media (max-width: 480px) {
+    /* 小屏幕进一步优化 */
+    .work-item:hover {
+        transform: translateY(-2px); /* 最小变形 */
+    }
+
+    .work-play-btn:hover {
+        transform: none; /* 完全禁用变形 */
+    }
+
+    * {
+        transition-duration: 0.15s !important; /* 全局加速动画 */
+    }
+
+    .background-overlay {
+        transition: none; /* 禁用背景过渡 */
+    }
+
+    .background-pattern {
+        display: none; /* 小屏幕隐藏背景图案 */
+    }
+}
+
+/* 减少动效首选项检测 */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .work-item::before {
+        display: none;
+    }
+
+    .background-pattern {
+        display: none;
     }
 }
 
@@ -709,24 +1088,73 @@ body {
     body {
         padding: 10px;
     }
-    
+
     .page-container {
-        padding: 20px;
+        padding: 20px 20px 0 20px; /* 底部无padding */
         border-radius: 16px;
     }
-    
+
     .work-list-section {
         padding: 20px;
+        margin: 24px -20px 0 -20px; /* 负边距让其铺满 */
+        border-radius: 0; /* 移动端去掉圆角 */
+        background: rgba(25, 25, 25, 0.3);
     }
-    
+
     .work-item {
         padding: 16px;
         gap: 12px;
     }
-    
+
+    /* 小屏幕优化 */
     .floating-search {
-        padding: 10px 14px;
-        border-radius: 12px;
+        padding: 12px 16px;
+        border-radius: 16px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .floating-search-input {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .search-select-field {
+        min-width: 90px !important;
+        margin: 0 !important;
+    }
+
+    .floating-search-btn {
+        width: 100%;
+        order: 1;
+        margin-top: 8px;
+    }
+
+    .work-play-btn {
+        width: 52px;
+        height: 52px;
+        font-size: 1.2rem;
+    }
+
+    .pagination-btn {
+        padding: 14px 16px;
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 0.95rem;
+    }
+
+    .language-selector-container {
+        bottom: 15px;
+        right: 15px;
+    }
+
+    .work-title {
+        font-size: 1.05rem;
+        line-height: 1.3;
+    }
+
+    .work-artist {
+        font-size: 0.9rem;
     }
 }
 

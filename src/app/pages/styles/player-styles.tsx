@@ -65,7 +65,6 @@ body {
     border-radius: var(--md-sys-shape-corner-extra-large);
     padding: 32px;
     box-shadow: var(--md-sys-elevation-level3);
-    border: 1px solid var(--md-sys-color-outline-variant);
     animation: fadeInUp 0.3s cubic-bezier(0.2, 0.0, 0, 1.0);
 }
 
@@ -73,6 +72,9 @@ body {
 .work-header {
     text-align: center;
     margin-bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .work-title {
@@ -82,6 +84,11 @@ body {
     letter-spacing: -0.5px;
     margin-bottom: 8px;
     color: var(--md-sys-color-on-surface);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: nowrap;
+    justify-content: center;
 }
 
 .work-creator {
@@ -110,9 +117,9 @@ body {
     display: flex;
     align-items: center;
     gap: 16px;
-    border: 1px solid var(--md-sys-color-outline-variant);
     transition: all 0.3s cubic-bezier(0.2, 0.0, 0, 1.0);
     cursor: pointer;
+    box-shadow: var(--md-sys-elevation-level1);
 }
 
 .version-card.active {
@@ -174,7 +181,7 @@ body {
     border-radius: var(--md-sys-shape-corner-large);
     padding: 24px;
     margin-bottom: 16px;
-    border: 1px solid var(--md-sys-color-outline-variant);
+    box-shadow: var(--md-sys-elevation-level1);
 }
 
 .setting-label {
@@ -202,12 +209,12 @@ body {
     text-align: center;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.2, 0.0, 0, 1.0);
-    border: 1px solid var(--md-sys-color-outline-variant);
+    box-shadow: var(--md-sys-elevation-level1);
 }
 
 .asset-card:hover {
-    border-color: var(--md-sys-color-primary);
-    box-shadow: var(--md-sys-elevation-level1);
+    box-shadow: var(--md-sys-elevation-level3);
+    transform: translateY(-2px);
 }
 
 .asset-card .material-symbols-outlined {
@@ -272,7 +279,7 @@ body {
     background-color: var(--md-sys-color-surface-container-low);
     border-radius: var(--md-sys-shape-corner-large);
     padding: 24px;
-    border: 1px solid var(--md-sys-color-outline-variant);
+    box-shadow: var(--md-sys-elevation-level1);
 }
 
 .search-terms {
@@ -288,7 +295,6 @@ body {
     border-radius: var(--md-sys-shape-corner-medium);
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.2, 0.0, 0, 1.0);
-    border: 1px solid var(--md-sys-color-outline-variant);
     font-weight: 400;
     font-size: 0.875rem;
     line-height: 1.25rem;
@@ -296,12 +302,13 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
+    box-shadow: var(--md-sys-elevation-level1);
 }
 
 .search-term:hover {
     background-color: var(--md-sys-color-surface-container-high);
-    border-color: var(--md-sys-color-outline);
-    box-shadow: var(--md-sys-elevation-level1);
+    box-shadow: var(--md-sys-elevation-level3);
+    transform: translateY(-1px);
 }
 
 .related-works-grid {
@@ -319,16 +326,15 @@ body {
     border-radius: var(--md-sys-shape-corner-extra-large);
     text-decoration: none;
     color: var(--md-sys-color-on-surface-variant);
-    border: 1px solid var(--md-sys-color-outline-variant);
     transition: all 0.2s cubic-bezier(0.2, 0.0, 0, 1.0);
     overflow: hidden;
+    box-shadow: var(--md-sys-elevation-level1);
 }
 
 .related-work-chip:hover {
     background-color: var(--md-sys-color-surface-container-high);
-    border-color: var(--md-sys-color-primary);
     transform: translateY(-2px);
-    box-shadow: var(--md-sys-elevation-level1);
+    box-shadow: var(--md-sys-elevation-level3);
 }
 
 .relation-type-badge {
@@ -368,7 +374,7 @@ a {
     border-radius: var(--md-sys-shape-corner-large);
     padding: 24px;
     margin-bottom: 32px;
-    border: 1px solid var(--md-sys-color-outline-variant);
+    box-shadow: var(--md-sys-elevation-level1);
 }
 
 .copyright-header {
@@ -445,6 +451,8 @@ a {
     position: relative;
     display: inline-flex;
     cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 4px;
 }
 
 .info-icon .material-symbols-outlined {
@@ -501,7 +509,6 @@ a {
     margin-top: 32px;
     color: var(--md-sys-color-on-surface-variant);
     font-size: 0.9rem;
-    border-top: 1px solid var(--md-sys-color-outline-variant);
     width: 100%;
     max-width: 900px;
     margin-left: auto;
@@ -554,30 +561,432 @@ a {
 }
 
 /* Responsive Design */
+@media (max-width: 1024px) and (min-width: 769px) {
+    body {
+        padding: 20px;
+    }
+
+    .player-container {
+        padding: 28px;
+    }
+
+    /* 平板端触控优化 */
+    .download-btn {
+        padding: 12px 24px;
+        min-height: 48px;
+        font-size: 1rem;
+    }
+
+    .asset-card {
+        padding: 20px;
+        min-height: 120px;
+    }
+}
+
+/* 大手机/小平板 (415px - 768px) */
+@media (max-width: 768px) and (min-width: 415px) {
+    body {
+        padding: 18px;
+    }
+
+    .player-container {
+        padding: 26px;
+        border-radius: 24px;
+    }
+
+    .work-title {
+        font-size: 2.2rem;
+        line-height: 2.7rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        flex-wrap: nowrap;
+        justify-content: center;
+    }
+
+    .info-icon {
+        margin-top: 3px;
+        flex-shrink: 0;
+    }
+
+    .version-card {
+        padding: 22px;
+        min-height: 85px;
+    }
+
+    .version-icon {
+        width: 62px;
+        height: 62px;
+        font-size: 30px;
+    }
+
+    .download-btn {
+        padding: 13px 26px;
+        min-height: 46px;
+        font-size: 0.95rem;
+        border-radius: 23px;
+    }
+
+    .asset-card {
+        padding: 18px;
+        min-height: 115px;
+    }
+
+    .asset-grid {
+        grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+        gap: 18px;
+    }
+}
+
+/* 中等手机屏幕 (361px - 414px) */
+@media (max-width: 414px) and (min-width: 361px) {
+    body {
+        padding: 17px;
+    }
+
+    .player-container {
+        padding: 25px;
+        border-radius: 22px;
+    }
+
+    .work-title {
+        font-size: 2.1rem;
+        line-height: 2.6rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        flex-wrap: nowrap;
+        justify-content: center;
+    }
+
+    .info-icon {
+        margin-top: 3px;
+        flex-shrink: 0;
+    }
+
+    .version-card {
+        padding: 21px;
+        min-height: 82px;
+    }
+
+    .version-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 29px;
+    }
+
+    .download-btn {
+        padding: 12px 24px;
+        min-height: 45px;
+        font-size: 0.95rem;
+        border-radius: 22px;
+    }
+
+    .asset-card {
+        padding: 17px;
+        min-height: 110px;
+    }
+
+    .search-term {
+        padding: 17px;
+        min-height: 54px;
+        font-size: 0.9rem;
+    }
+
+    .related-work-chip {
+        padding: 13px 18px;
+        min-height: 50px;
+        font-size: 0.9rem;
+    }
+
+    .asset-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 17px;
+    }
+}
+
+/* 小手机屏幕 (320px - 360px) */
+@media (max-width: 360px) {
+    body {
+        padding: 14px;
+    }
+
+    .player-container {
+        padding: 22px;
+        border-radius: 20px;
+    }
+
+    .work-title {
+        font-size: 1.8rem;
+        line-height: 2.3rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        flex-wrap: nowrap;
+        justify-content: center;
+    }
+
+    .info-icon {
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+
+    .work-creator {
+        font-size: 0.9rem;
+    }
+
+    .version-card {
+        padding: 18px;
+        min-height: 75px;
+    }
+
+    .version-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 26px;
+    }
+
+    .download-btn {
+        padding: 10px 20px;
+        min-height: 42px;
+        font-size: 0.9rem;
+        border-radius: 21px;
+    }
+
+    .asset-card {
+        padding: 14px;
+        min-height: 100px;
+    }
+
+    .search-term {
+        padding: 14px;
+        min-height: 50px;
+        font-size: 0.85rem;
+    }
+
+    .related-work-chip {
+        padding: 11px 16px;
+        min-height: 46px;
+        font-size: 0.85rem;
+    }
+
+    .tag-chip.clickable, .category-chip.clickable {
+        padding: 6px 12px;
+        min-height: 32px;
+        font-size: 0.75rem;
+    }
+
+    .section-header {
+        padding: 10px;
+        min-height: 44px;
+        font-size: 1.2rem;
+    }
+
+    .copyright-status {
+        padding: 16px 20px;
+        min-height: 60px;
+    }
+
+    .info-icon .material-symbols-outlined {
+        font-size: 24px;
+    }
+
+    .asset-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 14px;
+    }
+}
+
 @media (max-width: 768px) {
     body {
         padding: 16px;
     }
-    
+
     .player-container {
         padding: 24px;
     }
-    
+
     .work-title {
         font-size: 2rem;
         line-height: 2.5rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        flex-wrap: nowrap;
+        justify-content: center;
     }
-    
+
+    .info-icon {
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+
     .versions-container {
         flex-direction: column;
     }
-    
+
     .version-card {
         min-width: auto;
+        padding: 20px;
+        min-height: 80px;
     }
-    
+
+    /* 移动端触控目标优化 */
+    .version-icon {
+        width: 64px;
+        height: 64px;
+        font-size: 32px;
+    }
+
+    .download-btn {
+        padding: 14px 28px;
+        min-height: 48px;
+        font-size: 1rem;
+        border-radius: 24px;
+    }
+
+    .asset-card {
+        padding: 20px;
+        min-height: 120px;
+        text-align: center;
+    }
+
+    .search-term {
+        padding: 18px;
+        min-height: 56px;
+        font-size: 0.95rem;
+    }
+
+    .related-work-chip {
+        padding: 14px 20px;
+        min-height: 52px;
+        font-size: 0.95rem;
+    }
+
+    .tag-chip.clickable, .category-chip.clickable {
+        padding: 8px 16px;
+        min-height: 36px;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .section-header {
+        padding: 12px;
+        min-height: 48px;
+        font-size: 1.3rem;
+    }
+
+    .copyright-status {
+        padding: 20px 24px;
+        min-height: 64px;
+    }
+
+    .info-icon {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .info-icon .material-symbols-outlined {
+        font-size: 26px;
+    }
+
     .asset-grid {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 20px;
+    }
+}
+
+/* 动画优化 - 移动端减少复杂动画 */
+@media (max-width: 768px) {
+    .player-container {
+        animation: fadeInUp 0.2s cubic-bezier(0.2, 0.0, 0, 1.0); /* 加快进入动画 */
+    }
+
+    .section {
+        animation: none; /* 禁用区块动画 */
+    }
+
+    .asset-card:hover,
+    .search-term:hover,
+    .related-work-chip:hover {
+        transform: none; /* 移动端禁用悬停位移 */
+        transition: background-color 0.2s ease; /* 只保留背景色变化 */
+    }
+
+    .download-btn:hover {
+        transform: none; /* 禁用下载按钮悬停效果 */
+    }
+
+    .section-header:hover .section-arrow {
+        transform: rotate(180deg);
+        transition: transform 0.2s ease; /* 加快箭头旋转 */
+    }
+
+    .tag-chip.clickable:hover,
+    .category-chip.clickable:hover {
+        transform: none; /* 禁用标签悬停动画 */
+    }
+
+    .info-icon:hover .tooltip {
+        transition: all 0.2s ease; /* 加快提示框动画 */
+    }
+
+    /* 确保所有移动端尺寸下标题和info图标保持一行 */
+    .work-title {
+        display: flex !important;
+        align-items: flex-start !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .info-icon {
+        flex-shrink: 0 !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* 小屏幕进一步优化 */
+    .player-container {
+        animation: none; /* 完全禁用页面动画 */
+    }
+
+    * {
+        transition-duration: 0.15s !important; /* 全局加速动画 */
+    }
+
+    .section-arrow {
+        transition: none !important; /* 禁用箭头动画 */
+    }
+
+    .info-icon:hover .tooltip {
+        transition: opacity 0.1s ease; /* 最快提示框显示 */
+    }
+
+    body::before,
+    body::after {
+        display: none; /* 隐藏装饰性背景元素 */
+    }
+}
+
+/* 减少动效首选项检测 */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .section-arrow {
+        transform: none !important;
+    }
+
+    .info-icon:hover .tooltip {
+        transition: none;
+        opacity: 1;
+        visibility: visible;
     }
 }
 
