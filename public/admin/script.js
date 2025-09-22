@@ -846,6 +846,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 case 'external_source':
                 case 'external_object':
                 case 'footer':
+                    currentEditUUID = data.uuid;
+                    break;
                 case 'site_config':
                     currentEditUUID = data.key;
                     break;
