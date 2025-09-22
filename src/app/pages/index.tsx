@@ -69,12 +69,12 @@ export const IndexPage = (props: {
                 <header class="page-header">
                     <div class="page-header-content">
                         <h1 class="page-title">{pageTitle}</h1>
-                        <div class="page-nav">
+                        {/*<div class="page-nav">
                             <a href="/tags-categories" class="nav-link">
                                 <i class="fas fa-tags"></i>
                                 <span>标签与分类</span>
                             </a>
-                        </div>
+                        </div>*/}
                     </div>
                     {props.searchQuery && (
                         <div class="search-info">
@@ -96,7 +96,7 @@ export const IndexPage = (props: {
 
                 <section class="work-list-section">
                     <h2 class="section-title">
-                        <i class="fas fa-list-music"></i> 歌曲列表
+                        <i class="fas fa-list-music"></i> 歌曲列表  {!props.filterInfo && <a href="/tags-categories"><i class="fas fa-tags"></i></a>}
                         {props.filterInfo && (
                             <div class="filter-indicator-inline">
                                 <i class={`fas ${props.filterInfo.type === 'tag' ? 'fa-tag' : 'fa-folder'}`}></i>

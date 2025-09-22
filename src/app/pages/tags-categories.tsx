@@ -52,7 +52,7 @@ const CategoryTreeNode = ({ category, level = 0 }: { category: CategoryWithCount
 )
 
 export const TagsCategoriesPage = (props: TagsCategoriesPageProps) => {
-    const pageTitle = props.siteConfig?.tags_categories_title || "标签与分类";
+    const pageTitle = "标签与分类";
     const siteTitle = props.siteConfig?.site_title || "VOCArchive";
 
     const cssFiles = ['/css/common.css', '/css/tags-categories.css'];
@@ -126,9 +126,8 @@ export const TagsCategoriesPage = (props: TagsCategoriesPageProps) => {
     );
 
     return BaseLayout({
-        title: `${pageTitle} - ${siteTitle}`,
+        title: `${pageTitle}`,
         cssFiles,
-        siteConfig: props.siteConfig,
         footerSettings: props.footerSettings,
         children: pageContent
     });

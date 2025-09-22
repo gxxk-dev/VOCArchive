@@ -938,9 +938,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const fields = {
             creator: `
-                <input type="hidden" name="creator_uuid" value="${data.creator?.uuid || ''}">
-                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data.creator?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
-                <label for="name">Name:</label><input type="text" id="name" name="name" required value="${data.creator?.name || ''}">
+                <input type="hidden" name="creator_uuid" value="${data?.creator?.uuid || ''}">
+                <label for="uuid">UUID:</label><input type="text" id="uuid" name="uuid" required value="${data?.creator?.uuid || crypto.randomUUID()}" ${data ? 'readonly' : ''} class="uuid">
+                <label for="name">Name:</label><input type="text" id="name" name="name" required value="${data?.creator?.name || ''}">
                 ${createMD3Select('type', 'type', 'Type', [
                     { value: 'human', text: 'Human' },
                     { value: 'virtual', text: 'Virtual' }
@@ -1152,6 +1152,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     { value: 'home_title', text: '主页标题 (home_title)' },
                     { value: 'player_title', text: '播放器页标题 (player_title)' },
                     { value: 'admin_title', text: '管理后台标题 (admin_title)' },
+                    { value: 'tags_categories_title', text: '标签分类页标题 (tags_categories_title)' },
                     { value: 'totp_secret', text: 'TOTP 密钥 (totp_secret)' },
                     { value: 'jwt_secret', text: 'JWT 密钥 (jwt_secret)' }
                 ], data?.key, true)}

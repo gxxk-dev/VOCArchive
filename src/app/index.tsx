@@ -200,8 +200,4 @@ app.get('/tags-categories', async (c) => {
     />)
 })
 
-// ========== 静态文件服务 ==========
-app.use('/init/*', serveStatic({ root: './public' }))
-app.use('/admin/*', serveStatic({ root: './public' }))
-
 export default app

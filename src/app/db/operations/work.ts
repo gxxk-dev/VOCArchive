@@ -29,7 +29,7 @@ export interface WorkTitle {
 
 export interface Work {
     uuid: string;
-    copyright_basis: 'none' | 'accept' | 'license';
+    copyright_basis: 'none' | 'accept' | 'license' | 'onlymetadata' | 'arr';
 }
 
 export interface CreatorWithRole {
