@@ -836,7 +836,7 @@ body {
     }
 
     .page-container {
-        padding: 24px 24px 0 24px;
+        padding: 70px 24px 0 24px;
         border-radius: 20px 20px 0 0; /* 只保留顶部圆角 */
         margin-bottom: 0;
     }
@@ -848,6 +848,40 @@ body {
         background: rgba(25, 25, 25, 0.4);
         min-height: calc(100vh - 200px); /* 确保足够高度 */
     }
+
+    /* 页面内容区域的间距调整 - 给标题添加顶部间距 */
+    .page-header {
+        margin-top: 70px; /* 为搜索栏留出空间 */
+        margin-bottom: 32px;
+    }
+
+    .floating-search {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        left: 15px;
+        margin: 0;
+        min-width: auto;
+        width: auto;
+        padding: 14px 18px;
+        border-radius: 20px;
+        z-index: 100;
+        background: rgba(30, 30, 30, 0.95);
+        backdrop-filter: blur(25px);
+    }
+
+    .floating-search-input {
+        font-size: 1rem;
+        padding: 8px 0;
+        min-height: 24px;
+    }
+
+    .search-select-field {
+        margin: 0 8px 0 0 !important;
+        min-width: 100px;
+        flex-shrink: 0;
+    }
+/* 动画优化 - 移动端减少复杂动画 */
 
     /* 页面内容区域的间距调整 */
     .page-header {
@@ -1090,7 +1124,7 @@ body {
     }
 
     .page-container {
-        padding: 20px 20px 0 20px; /* 底部无padding */
+        padding: 100px 20px 0 20px; /* 底部无padding */
         border-radius: 16px;
     }
 
