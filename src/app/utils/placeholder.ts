@@ -78,19 +78,72 @@ export function replacePlaceholders(template: string, context: PlaceholderContex
     }
     
     // 条件占位符处理 (如果值不存在则移除整个条件块)
-    result = result.replace(/{([A-Z_]+)\?([^}]*)}/g, (match, placeholder, content) => {
-        const key = placeholderToContextKey(placeholder);
-        const value = context[key as keyof PlaceholderContext];
-        if (value !== undefined && value !== null && value !== '') {
-            // 在内容中替换占位符
-            return content.replace(new RegExp(`{${placeholder}}`, 'g'), escapeHtml(String(value)));
-        }
-        return '';
-    });
-    
+    // 使用更复杂的逻辑来处理嵌套的大括号
+    result = processConditionalPlaceholders(result, context);
+
     // 清理剩余的未替换占位符（避免显示 {PLACEHOLDER} 这样的文本）
     result = result.replace(/{[A-Z_]+}/g, '');
-    
+
+    return result;
+}
+
+/**
+ * 处理条件占位符，支持嵌套的大括号
+ */
+function processConditionalPlaceholders(text: string, context: PlaceholderContext): string {
+    let result = text;
+    let changed = true;
+
+    // 循环处理直到没有更多的条件占位符可以处理
+    while (changed) {
+        changed = false;
+        const regex = /{([A-Z_]+)\?/g;
+        let match;
+
+        while ((match = regex.exec(result)) !== null) {
+            const placeholder = match[1];
+            const startIndex = match.index;
+            const questionIndex = match.index + match[0].length - 1;
+
+            // 找到匹配的结束大括号
+            let braceCount = 1;
+            let endIndex = questionIndex + 1;
+
+            while (endIndex < result.length && braceCount > 0) {
+                if (result[endIndex] === '{') {
+                    braceCount++;
+                } else if (result[endIndex] === '}') {
+                    braceCount--;
+                }
+                endIndex++;
+            }
+
+            if (braceCount === 0) {
+                // 找到完整的条件块
+                const fullMatch = result.substring(startIndex, endIndex);
+                const content = result.substring(questionIndex + 1, endIndex - 1);
+
+                const key = placeholderToContextKey(placeholder);
+                const value = context[key as keyof PlaceholderContext];
+
+                if (value !== undefined && value !== null && value !== '') {
+                    // 在内容中替换占位符
+                    const replacedContent = content.replace(new RegExp(`{${placeholder}}`, 'g'), escapeHtml(String(value)));
+                    result = result.substring(0, startIndex) + replacedContent + result.substring(endIndex);
+                    changed = true;
+                    break;
+                } else {
+                    // 移除整个条件块
+                    result = result.substring(0, startIndex) + result.substring(endIndex);
+                    changed = true;
+                    break;
+                }
+            }
+
+            // 如果没有找到匹配的结束大括号，跳过这个匹配
+        }
+    }
+
     return result;
 }
 

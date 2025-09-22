@@ -1153,11 +1153,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     { value: 'totp_secret', text: 'TOTP 密钥 (totp_secret)' },
                     { value: 'jwt_secret', text: 'JWT 密钥 (jwt_secret)' }
                 ], data?.key, true)}
-                ${data ? '<div style="margin-top: 8px;"><small style="color: #666;">配置键不可修改</small></div>' : ''}
+                ${data ? '<div style="margin-top: 8px;"><small>配置键不可修改</small></div>' : ''}
                 ${data?.key?.includes('title') ? `
-                    <div class="placeholder-help" style="margin: 10px 0; padding: 10px; background-color: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 4px; font-size: 0.9em;">
+                    <div class="placeholder-help" style="margin: 10px 0; padding: 10px; border-radius: 4px; font-size: 0.9em;">
                         <strong>💡 可用占位符：</strong><br>
-                        ${data.key === 'home_title' ? 
+                        ${data.key === 'home_title' || data.key === 'site_title' ? 
                             '• {TAG_NAME} - 当前标签名称<br>• {CATEGORY_NAME} - 当前分类名称<br>• {SEARCH_QUERY} - 搜索关键词<br>• {PAGE_NUMBER} - 当前页码<br>• {TOTAL_COUNT} - 总数量<br><strong>条件占位符:</strong> {TAG_NAME? - 标签: {TAG_NAME}} (仅在有值时显示)' : 
                             data.key === 'player_title' ? 
                                 '• {WORK_TITLE} - 当前作品标题' : 
