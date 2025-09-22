@@ -4,8 +4,8 @@ import {
 } from '../db/operations/work';
 import { listCreators } from '../db/operations/creator';
 import { listMedia } from '../db/operations/media';
-import { listTags, getWorksByTag, getWorkCountByTag } from '../db/operations/tag';
-import { listCategories, getWorksByCategory, getWorkCountByCategory } from '../db/operations/category';
+import { listTags, getWorksByTag, getWorkCountByTag, listTagsWithCounts } from '../db/operations/tag';
+import { listCategories, getWorksByCategory, getWorkCountByCategory, listCategoriesWithCounts } from '../db/operations/category';
 import { listWorkTitles } from '../db/operations/work-title';
 import { listExternalSources } from '../db/operations/external_source';
 import { listExternalObjects } from '../db/operations/external_object';
@@ -60,10 +60,24 @@ listInfo.get('/tags', async (c: any) => {
     return c.json(results);
 });
 
+// 获取所有标签列表（包含作品数量）
+listInfo.get('/tags-with-counts', async (c: any) => {
+    const db = createDrizzleClient(c.env.DB);
+    const results = await listTagsWithCounts(db);
+    return c.json(results);
+});
+
 // 获取分类树形结构
 listInfo.get('/categories', async (c: any) => {
     const db = createDrizzleClient(c.env.DB);
     const results = await listCategories(db);
+    return c.json(results);
+});
+
+// 获取分类树形结构（包含作品数量）
+listInfo.get('/categories-with-counts', async (c: any) => {
+    const db = createDrizzleClient(c.env.DB);
+    const results = await listCategoriesWithCounts(db);
     return c.json(results);
 });
 

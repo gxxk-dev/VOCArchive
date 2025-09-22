@@ -91,6 +91,11 @@ export async function initializeDefaultConfig(db: DrizzleDB): Promise<void> {
             key: 'admin_title',
             value: 'VOCArchive 管理后台 - {TAB_NAME}',
             description: '管理后台标题，支持占位符：{TAB_NAME}, {TAB_ID}'
+        },
+        {
+            key: 'tags_categories_title',
+            value: 'VOCArchive - 标签与分类',
+            description: '标签分类页标题'
         }
     ];
 
@@ -150,11 +155,11 @@ export async function resetSecrets(db: DrizzleDB): Promise<{totpSecret: string, 
  * 获取公开的配置（不包含敏感信息）
  */
 export async function getPublicSiteConfig(db: DrizzleDB): Promise<Record<string, string>> {
-    const publicKeys = ['site_title', 'home_title', 'player_title', 'admin_title'];
+    const publicKeys = ['site_title', 'home_title', 'player_title', 'admin_title', 'tags_categories_title'];
     const configs = await db.select()
         .from(siteConfig)
         .where(eq(siteConfig.key, publicKeys[0]));
-    
+
     const result: Record<string, string> = {};
     for (const publicKey of publicKeys) {
         const config = await getSiteConfig(db, publicKey);
@@ -162,7 +167,7 @@ export async function getPublicSiteConfig(db: DrizzleDB): Promise<Record<string,
             result[publicKey] = config.value;
         }
     }
-    
+
     return result;
 }
 
@@ -171,7 +176,7 @@ export async function getPublicSiteConfig(db: DrizzleDB): Promise<Record<string,
  */
 export function isValidConfigKey(key: string): key is SiteConfigKey {
     const validKeys: SiteConfigKey[] = [
-        'site_title', 'home_title', 'player_title', 'admin_title',
+        'site_title', 'home_title', 'player_title', 'admin_title', 'tags_categories_title',
         'totp_secret', 'jwt_secret'
     ];
     return validKeys.includes(key as SiteConfigKey);

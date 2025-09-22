@@ -67,7 +67,15 @@ export const IndexPage = (props: {
 
             <div class="page-container" id="pageContainer">
                 <header class="page-header">
-                    <h1 class="page-title">{pageTitle}</h1>
+                    <div class="page-header-content">
+                        <h1 class="page-title">{pageTitle}</h1>
+                        <div class="page-nav">
+                            <a href="/tags-categories" class="nav-link">
+                                <i class="fas fa-tags"></i>
+                                <span>标签与分类</span>
+                            </a>
+                        </div>
+                    </div>
                     {props.searchQuery && (
                         <div class="search-info">
                             <div class="search-indicator">

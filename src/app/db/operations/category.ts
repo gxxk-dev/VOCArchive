@@ -122,6 +122,64 @@ export async function listCategories(db: DrizzleDB): Promise<Category[]> {
 }
 
 /**
+ * Get all categories with work counts
+ */
+export interface CategoryWithCount extends Category {
+    work_count: number;
+}
+
+export async function listCategoriesWithCounts(db: DrizzleDB): Promise<CategoryWithCount[]> {
+    const categories = await db
+        .select({
+            uuid: category.uuid,
+            name: category.name,
+            parent_uuid: category.parent_uuid,
+            work_count: count(workCategory.work_uuid)
+        })
+        .from(category)
+        .leftJoin(workCategory, eq(category.uuid, workCategory.category_uuid))
+        .groupBy(category.uuid, category.name, category.parent_uuid)
+        .orderBy(category.name);
+
+    const categoriesWithCounts = categories.map(cat => ({
+        uuid: cat.uuid,
+        name: cat.name,
+        parent_uuid: cat.parent_uuid,
+        work_count: cat.work_count,
+        children: [] as CategoryWithCount[]
+    }));
+
+    return buildCategoryTreeWithCounts(categoriesWithCounts);
+}
+
+/**
+ * Build category tree structure with work counts
+ */
+function buildCategoryTreeWithCounts(categories: CategoryWithCount[]): CategoryWithCount[] {
+    const categoryMap = new Map<string, CategoryWithCount>();
+    const rootCategories: CategoryWithCount[] = [];
+
+    // Initialize all categories with empty children array
+    categories.forEach(cat => {
+        categoryMap.set(cat.uuid, { ...cat, children: [] });
+    });
+
+    // Build the tree
+    categories.forEach(cat => {
+        if (cat.parent_uuid) {
+            const parent = categoryMap.get(cat.parent_uuid);
+            if (parent) {
+                parent.children!.push(categoryMap.get(cat.uuid)!);
+            }
+        } else {
+            rootCategories.push(categoryMap.get(cat.uuid)!);
+        }
+    });
+
+    return rootCategories;
+}
+
+/**
  * Get category by UUID
  */
 export async function getCategoryByUUID(db: DrizzleDB, categoryUuid: string): Promise<Category | null> {

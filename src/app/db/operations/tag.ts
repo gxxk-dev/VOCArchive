@@ -93,6 +93,28 @@ export async function listTags(db: DrizzleDB): Promise<Tag[]> {
 }
 
 /**
+ * Get all tags with work counts
+ */
+export interface TagWithCount extends Tag {
+    work_count: number;
+}
+
+export async function listTagsWithCounts(db: DrizzleDB): Promise<TagWithCount[]> {
+    const tags = await db
+        .select({
+            uuid: tag.uuid,
+            name: tag.name,
+            work_count: count(workTag.work_uuid)
+        })
+        .from(tag)
+        .leftJoin(workTag, eq(tag.uuid, workTag.tag_uuid))
+        .groupBy(tag.uuid, tag.name)
+        .orderBy(tag.name);
+
+    return tags;
+}
+
+/**
  * Get tag by UUID
  */
 export async function getTagByUUID(db: DrizzleDB, tagUuid: string): Promise<Tag | null> {

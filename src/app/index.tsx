@@ -16,13 +16,14 @@ import { jwt } from 'hono/jwt'
 import { IndexPage } from './pages/index'
 import { PlayerPage } from './pages/player'
 import { InitPage } from './pages/init'
+import { TagsCategoriesPage } from './pages/tags-categories'
 import { createDrizzleClient } from './db/client'
 import { getFooterSettings, initializeDatabaseWithMigrations, isDatabaseInitialized } from './db/operations/admin'
 import { getPublicSiteConfig } from './db/operations/config'
 import { getWorkByUUID, getWorkListWithPagination, getTotalWorkCount } from './db/operations/work'
 import { searchWorks, getAvailableLanguages } from './db/operations/search'
-import { getWorksByTag, getWorkCountByTag, getTagByUUID } from './db/operations/tag'
-import { getWorksByCategory, getWorkCountByCategory, getCategoryByUUID } from './db/operations/category'
+import { getWorksByTag, getWorkCountByTag, getTagByUUID, listTagsWithCounts } from './db/operations/tag'
+import { getWorksByCategory, getWorkCountByCategory, getCategoryByUUID, listCategoriesWithCounts } from './db/operations/category'
 
 const apiApp = new Hono<{ Bindings: CloudflareBindings }>()
 
@@ -176,6 +177,27 @@ app.get('/player', async (c) => {
     const footerSettings = await getFooterSettings(db)
     const siteConfig = await getPublicSiteConfig(db)
     return c.html(<PlayerPage workInfo={workInfo} footerSettings={footerSettings} siteConfig={siteConfig} />)
+})
+
+app.get('/tags-categories', async (c) => {
+    const { lang } = c.req.query()
+    const preferredLanguage = lang || 'auto';
+
+    const db = createDrizzleClient(c.env.DB);
+    const tags = await listTagsWithCounts(db);
+    const categories = await listCategoriesWithCounts(db);
+    const footerSettings = await getFooterSettings(db)
+    const siteConfig = await getPublicSiteConfig(db)
+    const availableLanguages = await getAvailableLanguages(db)
+
+    return c.html(<TagsCategoriesPage
+        tags={tags}
+        categories={categories}
+        footerSettings={footerSettings}
+        siteConfig={siteConfig}
+        availableLanguages={availableLanguages}
+        preferredLanguage={preferredLanguage}
+    />)
 })
 
 // ========== 静态文件服务 ==========
