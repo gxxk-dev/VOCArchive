@@ -35,12 +35,6 @@ export const IndexPage = (props: {
         totalCount: props.totalCount
     };
 
-    // 使用占位符替换功能处理标题
-    const pageTitle = replacePlaceholders(
-        props.siteConfig?.home_title || "VOCArchive - 作品选择",
-        placeholderContext
-    );
-
     const additionalStyles = `${CommonStyles}${IndexStyles}`;
     
     const additionalScripts = IndexScripts(props);
@@ -113,7 +107,7 @@ export const IndexPage = (props: {
     );
     
     return BaseLayout({
-        title: pageTitle,
+        title: props.siteConfig?.site_title || 'VOCArchive',
         footerSettings: props.footerSettings,
         additionalStyles: additionalStyles,
         additionalScripts: additionalScripts,
