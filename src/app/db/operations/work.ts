@@ -540,7 +540,7 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
         work: {
             uuid: workData.uuid,
             copyright_basis: workData.copyright_basis
-        },
+        } as Work,
         titles,
         license,
         media_sources: mediaSources,

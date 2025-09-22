@@ -15,7 +15,7 @@ import { convertCategoryData, convertAssetData, convertCreatorData } from '../ut
 export interface Category {
     uuid: string;
     name: string;
-    parent_uuid?: string;
+    parent_uuid?: string | null;
     children?: Category[];
 }
 
@@ -126,6 +126,7 @@ export async function listCategories(db: DrizzleDB): Promise<Category[]> {
  */
 export interface CategoryWithCount extends Category {
     work_count: number;
+    children?: CategoryWithCount[];
 }
 
 export async function listCategoriesWithCounts(db: DrizzleDB): Promise<CategoryWithCount[]> {
