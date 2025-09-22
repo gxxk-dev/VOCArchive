@@ -7,8 +7,6 @@ import { AssetSection } from './components/player/asset-section'
 import { WikiSection } from './components/player/wiki-section'
 import { RelatedWorksSection } from './components/player/related-works-section'
 import { FooterSetting } from '../db/operations/admin'
-import { PlayerStyles } from './styles/player-styles'
-import { CommonStyles } from './styles/common-styles'
 import { PlayerScripts } from './scripts/player-scripts'
 import { replacePlaceholders, getWorkDisplayTitle } from '../utils/placeholder'
 
@@ -25,7 +23,7 @@ export const PlayerPage = (props: { workInfo: any, footerSettings: FooterSetting
         { workTitle: workDisplayTitle }
     );
 
-    const additionalStyles = `${CommonStyles}${PlayerStyles}`;
+    const cssFiles = ['/css/common.css', '/css/player.css'];
     const additionalScripts = PlayerScripts(props);
 
     const pageContent = (
@@ -42,7 +40,7 @@ export const PlayerPage = (props: { workInfo: any, footerSettings: FooterSetting
     return BaseLayout({
         title: pageTitle,
         footerSettings: footerSettings,
-        additionalStyles: additionalStyles,
+        cssFiles: cssFiles,
         additionalScripts: additionalScripts,
         children: pageContent
     });

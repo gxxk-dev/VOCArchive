@@ -36,20 +36,27 @@ src/app/
 │   ├── index.tsx     # Song listing page
 │   ├── player.tsx    # Song player page
 │   ├── footer.tsx    # Footer component
+│   ├── layouts/      # Layout components
+│   │   └── base-layout.tsx # Base page layout with CSS file support
 │   └── components/   # Reusable UI components
 │       ├── work-list.tsx      # Work list display component
 │       ├── pagination.tsx     # Pagination controls
 │       ├── floating-search.tsx # Search interface
 │       └── language-selector.tsx # Language selection dropdown
-└── routes/           # API route handlers
-    ├── auth.ts       # Authentication endpoints
-    ├── get.ts        # Data retrieval endpoints
-    ├── list.ts       # Data listing endpoints
-    ├── search.ts     # Search functionality
-    ├── input.ts      # Data creation endpoints
-    ├── update.ts     # Data modification endpoints
-    ├── delete.ts     # Data deletion endpoints
-    └── footer.ts     # Footer management endpoints
+├── routes/           # API route handlers
+│   ├── auth.ts       # Authentication endpoints
+│   ├── get.ts        # Data retrieval endpoints
+│   ├── list.ts       # Data listing endpoints
+│   ├── search.ts     # Search functionality
+│   ├── input.ts      # Data creation endpoints
+│   ├── update.ts     # Data modification endpoints
+│   ├── delete.ts     # Data deletion endpoints
+│   └── footer.ts     # Footer management endpoints
+└── public/           # Static assets served by Cloudflare Workers
+    └── css/          # External CSS files
+        ├── common.css    # Base styles, variables, animations
+        ├── index.css     # Index page specific styles
+        └── player.css    # Player page specific styles
 ```
 
 ### Database Schema
@@ -171,6 +178,34 @@ This architecture allows:
 - Main routes: `/` (song listing), `/player` (song player)
 - Supports pagination and search functionality
 - Asset access unified through `/api/get/file/{uuid}` endpoint
+
+#### CSS Architecture
+The application uses a static CSS architecture served as external assets by Cloudflare Workers:
+
+**CSS File Structure:**
+```
+public/css/
+├── common.css     # Base styles, variables, animations, footer (279 lines)
+├── index.css      # Index page specific styles (1,207 lines)
+└── player.css     # Player page specific styles (1,095 lines)
+```
+
+**Key Features:**
+- **Static Asset Serving**: CSS files served directly by Cloudflare Workers from `public/` directory
+- **Modular Architecture**: Separated common styles from page-specific styles
+- **Performance Optimized**: Better caching and reduced JavaScript bundle size
+- **BaseLayout Integration**: `cssFiles` property supports external CSS file loading
+
+**Implementation Details:**
+- `BaseLayout` component accepts `cssFiles: string[]` parameter
+- Each page specifies required CSS files: `['/css/common.css', '/css/page.css']`
+- CSS files loaded via standard `<link rel="stylesheet">` tags in document head
+- Replaced previous CSS-in-JS inline approach for better performance
+
+**CSS Variables and Theming:**
+- CSS custom properties defined in `common.css` for consistent theming
+- Material Design 3 color tokens in `player.css` for player interface
+- Responsive breakpoints and mobile optimizations across all files
 
 #### User Interface Features
 - **Multi-language Title Display**: Intelligent title selection based on user preference with automatic fallback

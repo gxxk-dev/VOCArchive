@@ -5,8 +5,6 @@ import { FloatingSearch } from './components/floating-search'
 import { Pagination } from './components/pagination'
 import { LanguageSelector } from './components/language-selector'
 import { FooterSetting } from '../db/operations/admin'
-import { CommonStyles } from './styles/common-styles'
-import { IndexStyles } from './styles/index-styles'
 import { IndexScripts } from './scripts/index-scripts'
 import { replacePlaceholders, PlaceholderContext } from '../utils/placeholder'
 
@@ -35,8 +33,20 @@ export const IndexPage = (props: {
         totalCount: props.totalCount
     };
 
-    const additionalStyles = `${CommonStyles}${IndexStyles}`;
-    
+    // 使用占位符替换功能处理页面标题
+    const pageTitle = replacePlaceholders(
+        props.siteConfig?.home_title || "VOCArchive - 作品选择",
+        placeholderContext
+    );
+
+    // 使用占位符替换功能处理站点标题
+    const siteTitle = replacePlaceholders(
+        props.siteConfig?.site_title || "VOCArchive",
+        placeholderContext
+    );
+
+    const cssFiles = ['/css/common.css', '/css/index.css'];
+
     const additionalScripts = IndexScripts(props);
     
     const pageContent = (
@@ -57,7 +67,7 @@ export const IndexPage = (props: {
 
             <div class="page-container" id="pageContainer">
                 <header class="page-header">
-                    <h1 class="page-title">{props.siteConfig?.home_title || 'VOCArchive - 作品选择'}</h1>
+                    <h1 class="page-title">{pageTitle}</h1>
                     {props.searchQuery && (
                         <div class="search-info">
                             <div class="search-indicator">
@@ -107,9 +117,9 @@ export const IndexPage = (props: {
     );
     
     return BaseLayout({
-        title: props.siteConfig?.site_title || 'VOCArchive',
+        title: siteTitle,
         footerSettings: props.footerSettings,
-        additionalStyles: additionalStyles,
+        cssFiles: cssFiles,
         additionalScripts: additionalScripts,
         children: pageContent
     });

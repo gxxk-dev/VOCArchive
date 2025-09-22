@@ -373,10 +373,22 @@ body {
     color: #888;
 }
 
+/* Placeholder help styles */
+.placeholder-help {
+    background-color: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    color: #004085;
+}
+
 /* Category相关的所有提示文本 */
 [data-theme="dark"] .form-section small,
 [data-theme="dark"] .form-section .placeholder-help {
-    color: #ccc;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .placeholder-help {
+    background-color: #1a2d3d;
+    border-color: #2c5a7a;
 }
 
 

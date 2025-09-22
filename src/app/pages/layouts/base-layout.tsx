@@ -9,6 +9,7 @@ export interface BaseLayoutProps {
     additionalStyles?: string
     additionalScripts?: string
     bodyClass?: string
+    cssFiles?: string[]
 }
 
 export const BaseLayout = (props: BaseLayoutProps) => {
@@ -20,6 +21,9 @@ export const BaseLayout = (props: BaseLayoutProps) => {
                 <title>{props.title}</title>
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
                 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+                {props.cssFiles?.map(cssFile => (
+                    <link rel="stylesheet" href={cssFile} />
+                ))}
                 <style dangerouslySetInnerHTML={{ __html: props.additionalStyles || '' }}></style>
             </head>
             <body class={props.bodyClass || ''}>
