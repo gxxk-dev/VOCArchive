@@ -113,6 +113,10 @@ body {
     color: #e0e0e0;
 }
 
+[data-theme="dark"] #login-container h2 {
+    color: #f0f0f0;
+}
+
 [data-theme="dark"] #admin-panel {
     background-color: #1a1a1a;
 }

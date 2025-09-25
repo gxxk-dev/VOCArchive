@@ -727,17 +727,31 @@ body {
     }
 
     .page-container {
-        padding: 70px 24px 0 24px;
-        border-radius: 20px 20px 0 0; /* 只保留顶部圆角 */
+        padding: 70px 16px 0 16px;
+        background: transparent;
+        backdrop-filter: none;
+        border-radius: 0;
         margin-bottom: 0;
     }
 
     .work-list-section {
-        padding: 24px 15px; /* 左右与body padding保持一致 */
-        margin: 32px -24px 0 -24px;
+        padding: 16px 0;
+        margin: 0 -16px;
+        background: transparent;
         border-radius: 0;
-        background: rgba(25, 25, 25, 0.4);
-        min-height: calc(100vh - 200px); /* 确保足够高度 */
+        box-shadow: none;
+        backdrop-filter: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        min-height: calc(100vh - 200px);
+    }
+
+    .work-item {
+        padding: 14px 0;
+        background: transparent;
+        border-radius: 0;
+        box-shadow: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     /* 页面内容区域的间距调整 - 给标题添加顶部间距 */
@@ -805,12 +819,6 @@ body {
         min-width: 100px;
         flex-shrink: 0;
     }
-}
-
-    .work-item {
-        padding: 18px;
-        gap: 16px;
-    }
 
     /* 移动端触控目标优化 */
     .work-play-btn {
@@ -853,11 +861,6 @@ body {
         align-items: center;
     }
 
-
-    .work-item {
-        padding: 18px;
-        gap: 16px;
-    }
 
     /* 移动端触控目标优化 */
     .work-play-btn {
