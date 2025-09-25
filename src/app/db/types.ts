@@ -103,7 +103,8 @@ export type SiteConfigKey =
     | 'admin_title'           // 管理后台标题
     | 'tags_categories_title' // 标签分类页标题
     | 'totp_secret'           // TOTP 密钥
-    | 'jwt_secret';           // JWT 密钥
+    | 'jwt_secret'            // JWT 密钥
+    | 'db_version';           // 数据库版本号
 
 // Composite types for complex queries (matching existing interfaces)
 

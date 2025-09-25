@@ -11,15 +11,17 @@ import { auth } from './routes/auth'
 import { initRoutes } from './routes/init'
 import footer from './routes/footer'
 import config from './routes/config'
+import { migration } from './routes/migration'
 import { jwt } from 'hono/jwt'
 
 import { IndexPage } from './pages/index'
 import { PlayerPage } from './pages/player'
 import { InitPage } from './pages/init'
 import { TagsCategoriesPage } from './pages/tags-categories'
+import { MigrationPage } from './pages/migration'
 import { createDrizzleClient } from './db/client'
 import { getFooterSettings, initializeDatabaseWithMigrations, isDatabaseInitialized } from './db/operations/admin'
-import { getPublicSiteConfig } from './db/operations/config'
+import { getPublicSiteConfig, getSiteConfig } from './db/operations/config'
 import { getWorkByUUID, getWorkListWithPagination, getTotalWorkCount } from './db/operations/work'
 import { searchWorks, getAvailableLanguages } from './db/operations/search'
 import { getWorksByTag, getWorkCountByTag, getTagByUUID, listTagsWithCounts } from './db/operations/tag'
@@ -33,11 +35,24 @@ apiApp.get('/', (c) => {
 
 
 // ========== 中间件 ==========
-const middleware=async (c: any, next:any) => {
-    const jwtMiddleware = jwt({
-        secret: c.env.JWT_SECRET as string,
-    })
-    return jwtMiddleware(c, next)
+const middleware = async (c: any, next: any) => {
+    try {
+        const db = createDrizzleClient(c.env.DB);
+        const config = await getSiteConfig(db, 'jwt_secret');
+        const secretKey = config?.value || c.env.JWT_SECRET as string;
+
+        const jwtMiddleware = jwt({
+            secret: secretKey,
+        });
+        return jwtMiddleware(c, next);
+    } catch (error) {
+        console.error('JWT middleware error:', error);
+        // Fallback to environment variable
+        const jwtMiddleware = jwt({
+            secret: c.env.JWT_SECRET as string,
+        });
+        return jwtMiddleware(c, next);
+    }
 }
 
 // ========== 信息管理 ==========
@@ -50,6 +65,10 @@ apiApp.route('/update', updateInfo)
 // ---------- 录入信息 ----------
 apiApp.route('/input', inputInfo)
     .use("/input/*",middleware)
+
+// ========== 数据库迁移 ==========
+apiApp.route('/migration', migration)
+    .use("/migration/*", middleware)
 
 // ========== 配置/权限 ==========
 apiApp.route('/auth', auth)
@@ -197,6 +216,17 @@ app.get('/tags-categories', async (c) => {
         siteConfig={siteConfig}
         availableLanguages={availableLanguages}
         preferredLanguage={preferredLanguage}
+    />)
+})
+
+app.get('/migration', async (c) => {
+    const db = createDrizzleClient(c.env.DB);
+    const footerSettings = await getFooterSettings(db);
+    const siteConfig = await getPublicSiteConfig(db);
+
+    return c.html(<MigrationPage
+        footerSettings={footerSettings}
+        siteConfig={siteConfig}
     />)
 })
 

@@ -96,6 +96,11 @@ export async function initializeDefaultConfig(db: DrizzleDB): Promise<void> {
             key: 'tags_categories_title',
             value: 'VOCArchive - 标签与分类',
             description: '标签分类页标题'
+        },
+        {
+            key: 'db_version',
+            value: '0',
+            description: '数据库版本号'
         }
     ];
 
@@ -177,7 +182,7 @@ export async function getPublicSiteConfig(db: DrizzleDB): Promise<Record<string,
 export function isValidConfigKey(key: string): key is SiteConfigKey {
     const validKeys: SiteConfigKey[] = [
         'site_title', 'home_title', 'player_title', 'admin_title', 'tags_categories_title',
-        'totp_secret', 'jwt_secret'
+        'totp_secret', 'jwt_secret', 'db_version'
     ];
     return validKeys.includes(key as SiteConfigKey);
 }
@@ -188,4 +193,31 @@ export function isValidConfigKey(key: string): key is SiteConfigKey {
 export function isSensitiveConfigKey(key: string): boolean {
     const sensitiveKeys = ['totp_secret', 'jwt_secret'];
     return sensitiveKeys.includes(key);
+}
+
+/**
+ * 获取当前数据库版本号
+ */
+export async function getCurrentDbVersion(db: DrizzleDB): Promise<number> {
+    const config = await getSiteConfig(db, 'db_version');
+    if (!config) {
+        // 如果没有配置，返回0作为初始版本
+        return 0;
+    }
+    const version = parseInt(config.value, 10);
+    return isNaN(version) ? 0 : version;
+}
+
+/**
+ * 更新数据库版本号
+ */
+export async function updateDbVersion(db: DrizzleDB, newVersion: number): Promise<void> {
+    await upsertSiteConfig(db, 'db_version', newVersion.toString(), '数据库版本号');
+}
+
+/**
+ * 获取数据库版本配置信息
+ */
+export async function getDbVersionConfig(db: DrizzleDB): Promise<SiteConfig | null> {
+    return await getSiteConfig(db, 'db_version');
 }

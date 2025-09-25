@@ -176,3 +176,5 @@ wrangler.toml
 
 .gemini
 .claude
+
+testdata.sql
