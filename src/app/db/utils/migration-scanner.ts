@@ -115,6 +115,7 @@ export async function loadMigrationModule(fileName: string): Promise<Migration |
         return {
             version: module.version,
             description: module.description,
+            parameters: module.parameters || undefined,
             up: module.up,
             down: module.down
         };
@@ -153,6 +154,34 @@ export async function validateMigrationModule(
         errors.push('Missing or invalid down function');
     }
 
+    // 验证参数定义（如果存在）
+    if (migration.parameters) {
+        if (!Array.isArray(migration.parameters)) {
+            errors.push('Parameters must be an array');
+        } else {
+            migration.parameters.forEach((param, index) => {
+                if (!param.name || typeof param.name !== 'string') {
+                    errors.push(`Parameter ${index}: missing or invalid name`);
+                }
+                if (!param.type || !['string', 'number', 'boolean', 'url'].includes(param.type)) {
+                    errors.push(`Parameter ${index}: invalid type "${param.type}"`);
+                }
+                if (!param.description || typeof param.description !== 'string') {
+                    errors.push(`Parameter ${index}: missing or invalid description`);
+                }
+                if (param.validation) {
+                    const validation = param.validation;
+                    if (validation.pattern && typeof validation.pattern !== 'string') {
+                        errors.push(`Parameter ${index}: validation pattern must be a string`);
+                    }
+                    if (validation.enum && !Array.isArray(validation.enum)) {
+                        errors.push(`Parameter ${index}: validation enum must be an array`);
+                    }
+                }
+            });
+        }
+    }
+
     // 验证版本号与文件名一致性
     const parsed = parseMigrationFileName(fileName);
     if (parsed && parsed.version !== migration.version) {
@@ -170,6 +199,7 @@ export async function validateMigrationModule(
             filePath: fileName,
             version: migration.version,
             description: migration.description,
+            parameters: migration.parameters,
             status: 'available',
             canExecute: true
         } : undefined
@@ -259,6 +289,7 @@ export async function scanMigrationFiles(
                 filePath: fileName,
                 version: migration.version,
                 description: migration.description,
+                parameters: migration.parameters,
                 status,
                 canExecute: true
             });
@@ -352,5 +383,166 @@ export function validateMigrationSequence(migrations: MigrationInfo[]): {
     return {
         isValid: errors.length === 0,
         errors
+    };
+}
+
+/**
+ * 检查批量迁移的参数需求
+ */
+export async function checkBatchParameterRequirements(
+    db: DrizzleDB,
+    targetVersion?: number
+): Promise<import('../types/migration').BatchParameterRequirements> {
+    const pendingMigrations = await getPendingMigrations(db);
+
+    // 如果指定了目标版本，则过滤迁移
+    const migrationsToCheck = targetVersion
+        ? pendingMigrations.filter(m => m.version <= targetVersion)
+        : pendingMigrations;
+
+    const requirementsWithParameters: import('../types/migration').MigrationParameterRequirement[] = [];
+
+    for (const migration of migrationsToCheck) {
+        if (migration.parameters && migration.parameters.length > 0) {
+            requirementsWithParameters.push({
+                version: migration.version,
+                description: migration.description,
+                parameters: migration.parameters
+            });
+        }
+    }
+
+    return {
+        requirementsWithParameters,
+        missingParameters: requirementsWithParameters.map(r => r.version),
+        hasUnmetRequirements: requirementsWithParameters.length > 0
+    };
+}
+
+/**
+ * 验证用户提供的参数
+ */
+export function validateMigrationParameters(
+    parameterDefinitions: import('../types/migration').MigrationParameterDefinition[],
+    userParameters: import('../types/migration').MigrationParameters
+): import('../types/migration').ParameterValidationResult {
+    const errors: string[] = [];
+    const processedValues: import('../types/migration').MigrationParameters = {};
+
+    for (const paramDef of parameterDefinitions) {
+        const userValue = userParameters[paramDef.name];
+
+        // 检查必需参数
+        if (paramDef.required && (userValue === undefined || userValue === null || userValue === '')) {
+            errors.push(`Required parameter "${paramDef.name}" is missing`);
+            continue;
+        }
+
+        // 如果值为空且不是必需参数，使用默认值或跳过
+        if (userValue === undefined || userValue === null || userValue === '') {
+            if (paramDef.defaultValue !== undefined) {
+                processedValues[paramDef.name] = paramDef.defaultValue;
+            }
+            continue;
+        }
+
+        // 类型转换和验证
+        let processedValue: string | number | boolean;
+
+        try {
+            switch (paramDef.type) {
+                case 'string':
+                case 'url':
+                    processedValue = String(userValue);
+                    break;
+                case 'number':
+                    processedValue = Number(userValue);
+                    if (isNaN(processedValue)) {
+                        errors.push(`Parameter "${paramDef.name}" must be a valid number`);
+                        continue;
+                    }
+                    break;
+                case 'boolean':
+                    if (typeof userValue === 'boolean') {
+                        processedValue = userValue;
+                    } else {
+                        const strValue = String(userValue).toLowerCase();
+                        processedValue = strValue === 'true' || strValue === '1';
+                    }
+                    break;
+                default:
+                    errors.push(`Parameter "${paramDef.name}" has unknown type "${paramDef.type}"`);
+                    continue;
+            }
+
+            // 验证规则
+            if (paramDef.validation) {
+                const validation = paramDef.validation;
+
+                // 字符串长度或数值范围验证
+                if (validation.min !== undefined) {
+                    if (paramDef.type === 'string' || paramDef.type === 'url') {
+                        if (String(processedValue).length < validation.min) {
+                            errors.push(`Parameter "${paramDef.name}" must be at least ${validation.min} characters long`);
+                        }
+                    } else if (paramDef.type === 'number') {
+                        if (Number(processedValue) < validation.min) {
+                            errors.push(`Parameter "${paramDef.name}" must be at least ${validation.min}`);
+                        }
+                    }
+                }
+
+                if (validation.max !== undefined) {
+                    if (paramDef.type === 'string' || paramDef.type === 'url') {
+                        if (String(processedValue).length > validation.max) {
+                            errors.push(`Parameter "${paramDef.name}" must be at most ${validation.max} characters long`);
+                        }
+                    } else if (paramDef.type === 'number') {
+                        if (Number(processedValue) > validation.max) {
+                            errors.push(`Parameter "${paramDef.name}" must be at most ${validation.max}`);
+                        }
+                    }
+                }
+
+                // 正则表达式验证
+                if (validation.pattern && (paramDef.type === 'string' || paramDef.type === 'url')) {
+                    const regex = new RegExp(validation.pattern);
+                    if (!regex.test(String(processedValue))) {
+                        errors.push(`Parameter "${paramDef.name}" does not match required pattern`);
+                    }
+                }
+
+                // 枚举值验证
+                if (validation.enum) {
+                    // 对于 boolean 类型，转换为字符串进行枚举检查
+                    const valueToCheck = paramDef.type === 'boolean'
+                        ? String(processedValue)
+                        : processedValue as string | number;
+
+                    if (!validation.enum.includes(valueToCheck)) {
+                        errors.push(`Parameter "${paramDef.name}" must be one of: ${validation.enum.join(', ')}`);
+                    }
+                }
+
+                // URL 特定验证
+                if (paramDef.type === 'url') {
+                    try {
+                        new URL(String(processedValue));
+                    } catch {
+                        errors.push(`Parameter "${paramDef.name}" must be a valid URL`);
+                    }
+                }
+            }
+
+            processedValues[paramDef.name] = processedValue;
+        } catch (error) {
+            errors.push(`Failed to process parameter "${paramDef.name}": ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+
+    return {
+        isValid: errors.length === 0,
+        errors,
+        processedValues: errors.length === 0 ? processedValues : undefined
     };
 }

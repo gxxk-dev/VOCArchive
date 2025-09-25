@@ -12,7 +12,9 @@ import {
     scanMigrationFiles,
     getPendingMigrations,
     loadMigrationModule,
-    validateMigrationSequence
+    validateMigrationSequence,
+    checkBatchParameterRequirements,
+    validateMigrationParameters
 } from './migration-scanner';
 
 /**
@@ -114,13 +116,40 @@ export async function executeMigration(
             };
         }
 
-        // 执行迁移的 up 函数
-        console.log(`Executing migration ${migration.version}: ${migration.description}`);
+        // 获取迁移所需的参数
+        const migrationParameters = options.parameters?.[migration.version];
 
-        try {
-            await migrationModule.up(db);
-        } catch (upError) {
-            throw new Error(`Migration up function failed: ${upError instanceof Error ? upError.message : String(upError)}`);
+        // 验证参数（如果迁移需要参数）
+        if (migration.parameters && migration.parameters.length > 0) {
+            if (!migrationParameters) {
+                throw new Error(`Migration ${migration.version} requires parameters but none were provided`);
+            }
+
+            const validation = validateMigrationParameters(migration.parameters, migrationParameters);
+            if (!validation.isValid) {
+                throw new Error(`Invalid parameters for migration ${migration.version}: ${validation.errors.join('; ')}`);
+            }
+
+            // 使用验证后的参数
+            const processedParams = validation.processedValues!;
+
+            // 执行迁移的 up 函数
+            console.log(`Executing migration ${migration.version}: ${migration.description}`);
+
+            try {
+                await migrationModule.up(db, processedParams);
+            } catch (upError) {
+                throw new Error(`Migration up function failed: ${upError instanceof Error ? upError.message : String(upError)}`);
+            }
+        } else {
+            // 执行迁移的 up 函数（无参数）
+            console.log(`Executing migration ${migration.version}: ${migration.description}`);
+
+            try {
+                await migrationModule.up(db);
+            } catch (upError) {
+                throw new Error(`Migration up function failed: ${upError instanceof Error ? upError.message : String(upError)}`);
+            }
         }
 
         // 更新数据库版本
@@ -180,6 +209,31 @@ export async function executeMigrations(
         let migrationsToExecute = pendingMigrations;
         if (options.targetVersion !== undefined) {
             migrationsToExecute = pendingMigrations.filter(m => m.version <= options.targetVersion!);
+        }
+
+        // 检查参数需求
+        const parameterRequirements = await checkBatchParameterRequirements(db, options.targetVersion);
+
+        if (parameterRequirements.hasUnmetRequirements) {
+            const missingVersions = parameterRequirements.missingParameters;
+            const providedVersions = Object.keys(options.parameters || {}).map(Number);
+            const actuallyMissing = missingVersions.filter(version => !providedVersions.includes(version));
+
+            if (actuallyMissing.length > 0) {
+                const missingDetails = parameterRequirements.requirementsWithParameters
+                    .filter(req => actuallyMissing.includes(req.version))
+                    .map(req => `Version ${req.version}: requires parameters ${req.parameters.map(p => p.name).join(', ')}`)
+                    .join('; ');
+
+                return {
+                    success: false,
+                    fromVersion: currentVersion,
+                    toVersion: currentVersion,
+                    results: [],
+                    error: `Missing required parameters for migrations: ${missingDetails}`,
+                    totalDuration: Date.now() - startTime
+                };
+            }
         }
 
         // 按版本号排序
@@ -351,13 +405,40 @@ export async function rollbackMigration(
             };
         }
 
-        // 执行迁移的 down 函数
-        console.log(`Rolling back migration ${migration.version}: ${migration.description}`);
+        // 获取迁移所需的参数
+        const migrationParameters = options.parameters?.[migration.version];
 
-        try {
-            await migrationModule.down(db);
-        } catch (downError) {
-            throw new Error(`Migration down function failed: ${downError instanceof Error ? downError.message : String(downError)}`);
+        // 验证参数（如果迁移需要参数）
+        if (migration.parameters && migration.parameters.length > 0) {
+            if (!migrationParameters) {
+                throw new Error(`Migration ${migration.version} requires parameters but none were provided for rollback`);
+            }
+
+            const validation = validateMigrationParameters(migration.parameters, migrationParameters);
+            if (!validation.isValid) {
+                throw new Error(`Invalid parameters for migration ${migration.version} rollback: ${validation.errors.join('; ')}`);
+            }
+
+            // 使用验证后的参数
+            const processedParams = validation.processedValues!;
+
+            // 执行迁移的 down 函数
+            console.log(`Rolling back migration ${migration.version}: ${migration.description}`);
+
+            try {
+                await migrationModule.down(db, processedParams);
+            } catch (downError) {
+                throw new Error(`Migration down function failed: ${downError instanceof Error ? downError.message : String(downError)}`);
+            }
+        } else {
+            // 执行迁移的 down 函数（无参数）
+            console.log(`Rolling back migration ${migration.version}: ${migration.description}`);
+
+            try {
+                await migrationModule.down(db);
+            } catch (downError) {
+                throw new Error(`Migration down function failed: ${downError instanceof Error ? downError.message : String(downError)}`);
+            }
         }
 
         // 更新数据库版本到前一个版本
@@ -459,4 +540,15 @@ export async function validateMigrationSystem(db: DrizzleDB): Promise<{
             }
         };
     }
+}
+
+/**
+ * 检查迁移的参数需求
+ * 返回需要用户提供参数的迁移列表
+ */
+export async function getParameterRequirements(
+    db: DrizzleDB,
+    targetVersion?: number
+): Promise<import('../types/migration').BatchParameterRequirements> {
+    return await checkBatchParameterRequirements(db, targetVersion);
 }

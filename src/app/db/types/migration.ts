@@ -1,6 +1,50 @@
 import type { DrizzleDB } from '../client';
 
 /**
+ * 迁移参数定义类型
+ */
+export type MigrationParameterType = 'string' | 'number' | 'boolean' | 'url';
+
+/**
+ * 迁移参数定义
+ */
+export interface MigrationParameterDefinition {
+    /** 参数名称 */
+    name: string;
+
+    /** 参数类型 */
+    type: MigrationParameterType;
+
+    /** 参数描述 */
+    description: string;
+
+    /** 是否必需 */
+    required?: boolean;
+
+    /** 默认值 */
+    defaultValue?: string | number | boolean;
+
+    /** 验证规则 */
+    validation?: {
+        /** 最小值/最小长度 */
+        min?: number;
+        /** 最大值/最大长度 */
+        max?: number;
+        /** 正则表达式模式 */
+        pattern?: string;
+        /** 枚举值 */
+        enum?: (string | number)[];
+    };
+}
+
+/**
+ * 迁移参数值
+ */
+export interface MigrationParameters {
+    [key: string]: string | number | boolean;
+}
+
+/**
  * 迁移脚本接口
  * 所有迁移文件必须导出符合此接口的对象
  */
@@ -11,11 +55,14 @@ export interface Migration {
     /** 迁移描述 */
     description: string;
 
+    /** 参数定义（可选） */
+    parameters?: MigrationParameterDefinition[];
+
     /** 正向迁移函数 */
-    up: (db: DrizzleDB) => Promise<void>;
+    up: (db: DrizzleDB, params?: MigrationParameters) => Promise<void>;
 
     /** 回滚函数 */
-    down: (db: DrizzleDB) => Promise<void>;
+    down: (db: DrizzleDB, params?: MigrationParameters) => Promise<void>;
 }
 
 /**
@@ -48,6 +95,9 @@ export interface MigrationInfo {
 
     /** 是否可以执行 */
     canExecute: boolean;
+
+    /** 参数定义 */
+    parameters?: MigrationParameterDefinition[];
 
     /** 错误信息（如果有） */
     error?: string;
@@ -137,6 +187,9 @@ export interface MigrationExecuteOptions {
 
     /** 批量大小 */
     batchSize?: number;
+
+    /** 迁移参数 */
+    parameters?: Record<number, MigrationParameters>;
 }
 
 /**
@@ -154,4 +207,46 @@ export interface MigrationValidationResult {
 
     /** 验证的迁移信息 */
     migration?: MigrationInfo;
+}
+
+/**
+ * 参数验证结果
+ */
+export interface ParameterValidationResult {
+    /** 是否有效 */
+    isValid: boolean;
+
+    /** 错误信息 */
+    errors: string[];
+
+    /** 处理后的参数值 */
+    processedValues?: MigrationParameters;
+}
+
+/**
+ * 迁移参数需求
+ */
+export interface MigrationParameterRequirement {
+    /** 迁移版本 */
+    version: number;
+
+    /** 迁移描述 */
+    description: string;
+
+    /** 参数定义 */
+    parameters: MigrationParameterDefinition[];
+}
+
+/**
+ * 批量迁移的参数需求检查结果
+ */
+export interface BatchParameterRequirements {
+    /** 需要参数的迁移列表 */
+    requirementsWithParameters: MigrationParameterRequirement[];
+
+    /** 缺失参数的迁移版本 */
+    missingParameters: number[];
+
+    /** 是否有未满足的参数需求 */
+    hasUnmetRequirements: boolean;
 }

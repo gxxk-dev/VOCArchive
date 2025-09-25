@@ -4,10 +4,11 @@ import {
     checkPendingMigrations,
     executeMigrations,
     rollbackToVersion,
-    validateMigrationSystem
+    validateMigrationSystem,
+    getParameterRequirements
 } from '../db/utils/migration-engine';
 import { getCurrentDbVersion } from '../db/operations/config';
-import type { MigrationExecuteOptions } from '../db/types/migration';
+import type { MigrationExecuteOptions, MigrationParameters } from '../db/types/migration';
 
 /**
  * 迁移管理 API 路由
@@ -15,6 +16,7 @@ import type { MigrationExecuteOptions } from '../db/types/migration';
  * 提供完整的数据库迁移管理接口：
  * - GET /status - 获取迁移系统状态
  * - GET /current-version - 获取当前数据库版本
+ * - GET /parameter-requirements - 获取参数需求
  * - POST /execute - 执行迁移
  * - POST /rollback - 回滚到指定版本
  * - POST /validate - 验证迁移系统完整性
@@ -28,12 +30,14 @@ interface ExecuteMigrationRequest {
     dryRun?: boolean;
     force?: boolean;
     batchSize?: number;
+    parameters?: Record<number, MigrationParameters>;
 }
 
 interface RollbackRequest {
     targetVersion: number;
     dryRun?: boolean;
     force?: boolean;
+    parameters?: Record<number, MigrationParameters>;
 }
 
 export const migration = new Hono<{ Bindings: Cloudflare.Env }>();
@@ -85,6 +89,36 @@ migration.get('/current-version', async (c) => {
 });
 
 /**
+ * GET /api/migration/parameter-requirements
+ * 获取迁移参数需求
+ */
+migration.get('/parameter-requirements', async (c) => {
+    try {
+        const db = createDrizzleClient(c.env.DB);
+        const targetVersion = c.req.query('targetVersion');
+
+        const requirements = await getParameterRequirements(
+            db,
+            targetVersion ? parseInt(targetVersion, 10) : undefined
+        );
+
+        return c.json({
+            success: true,
+            data: requirements,
+            message: requirements.hasUnmetRequirements
+                ? `Found ${requirements.requirementsWithParameters.length} migrations requiring parameters`
+                : 'No parameter requirements found'
+        });
+    } catch (error) {
+        console.error('Failed to get parameter requirements:', error);
+        return c.json({
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        }, 500);
+    }
+});
+
+/**
  * POST /api/migration/execute
  * 执行数据库迁移
  */
@@ -98,7 +132,8 @@ migration.post('/execute', async (c) => {
             targetVersion: body.targetVersion,
             dryRun: body.dryRun || false,
             force: body.force || false,
-            batchSize: body.batchSize || 50
+            batchSize: body.batchSize || 50,
+            parameters: body.parameters
         };
 
         // 执行迁移
@@ -148,7 +183,8 @@ migration.post('/rollback', async (c) => {
         // 构建执行选项
         const options: MigrationExecuteOptions = {
             dryRun: body.dryRun || false,
-            force: body.force || false
+            force: body.force || false,
+            parameters: body.parameters
         };
 
         // 执行回滚
