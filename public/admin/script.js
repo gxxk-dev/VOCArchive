@@ -45,6 +45,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize theme
     initializeTheme();
 
+    // Load initial page title configuration
+    loadInitialPageTitle();
+
     // --- Theme Management ---
     function getTheme() {
         return localStorage.getItem('theme') || 'light';
@@ -80,6 +83,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         setTheme(savedTheme);
     }
 
+    // Load initial page title configuration
+    async function loadInitialPageTitle() {
+        try {
+            const config = await apiFetch('/config/public');
+            if (config.admin_title) {
+                adminTitleTemplate = config.admin_title;
+                // Set initial title for the current tab (default is 'work')
+                updatePageTitle(currentTab);
+            }
+        } catch (e) {
+            console.warn('Failed to load initial title config:', e);
+        }
+    }
+
     // --- API & Helper Functions ---
     function showLogin() {
         loginContainer.classList.remove('hidden');
@@ -107,7 +124,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (e) {
             console.warn('Failed to load title config:', e);
         }
-        
+
+        // 加载配置后更新页面标题
+        updatePageTitle(currentTab);
+
         loadContent(currentTab);
     }
 
@@ -133,16 +153,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     function updatePageTitle(tabId) {
         let title = adminTitleTemplate;
         const tabName = tabNames[tabId] || tabId;
-        
+
         title = title.replace(/{TAB_NAME}/g, tabName);
         title = title.replace(/{TAB_ID}/g, tabId);
-        
+
+        // 更新文档标题
         document.title = title;
-        
-        // 同时更新页面内的 h1 标题（可选）
-        const headerTitle = document.querySelector('#admin-panel h1');
+
+        // 更新HTML title元素
+        const titleElement = document.getElementById('pageTitle');
+        if (titleElement) {
+            titleElement.textContent = title;
+        }
+
+        // 更新页面内的h1标题
+        const headerTitle = document.getElementById('pageHeader');
         if (headerTitle) {
-            headerTitle.textContent = title.replace(/^VOCArchive\s*[-\s]*/, '');
+            headerTitle.textContent = title.replace(/^VOCArchive[^-]*-\s*/, '');
         }
     }
 
@@ -1153,6 +1180,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     { value: 'player_title', text: '播放器页标题 (player_title)' },
                     { value: 'admin_title', text: '管理后台标题 (admin_title)' },
                     { value: 'tags_categories_title', text: '标签分类页标题 (tags_categories_title)' },
+                    { value: 'migration_title', text: '迁移页面标题 (migration_title)' },
                     { value: 'totp_secret', text: 'TOTP 密钥 (totp_secret)' },
                     { value: 'jwt_secret', text: 'JWT 密钥 (jwt_secret)' },
                     { value: 'db_version', text: '数据库版本 (db_version)' },
