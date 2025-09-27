@@ -153,6 +153,7 @@ export type SiteConfigKey =
     | 'player_title'          // 播放器页标题
     | 'admin_title'           // 管理后台标题
     | 'tags_categories_title' // 标签分类页标题
+    | 'migration_title'       // 迁移页面标题
     | 'totp_secret'           // TOTP 密钥
     | 'jwt_secret'            // JWT 密钥
     | 'db_version';           // 数据库版本号

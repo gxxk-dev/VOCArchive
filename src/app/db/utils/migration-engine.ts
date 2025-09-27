@@ -39,7 +39,7 @@ export async function checkPendingMigrations(db: DrizzleDB): Promise<MigrationSy
 
         // 验证迁移序列
         const sequenceValidation = validateMigrationSequence(allMigrations);
-        if (!sequenceValidation.isValid) {
+        if (!sequenceValidation.valid) {
             return {
                 currentVersion,
                 latestVersion: currentVersion,
@@ -126,7 +126,7 @@ export async function executeMigration(
             }
 
             const validation = validateMigrationParameters(migration.parameters, migrationParameters);
-            if (!validation.isValid) {
+            if (!validation.valid) {
                 throw new Error(`Invalid parameters for migration ${migration.version}: ${validation.errors.join('; ')}`);
             }
 
@@ -201,6 +201,9 @@ export async function executeMigrations(
                 fromVersion: currentVersion,
                 toVersion: currentVersion,
                 results: [],
+                totalExecuted: 0,
+                totalFailed: 0,
+                rollbacksApplied: 0,
                 totalDuration: Date.now() - startTime
             };
         }
@@ -215,14 +218,14 @@ export async function executeMigrations(
         const parameterRequirements = await checkBatchParameterRequirements(db, options.targetVersion);
 
         if (parameterRequirements.hasUnmetRequirements) {
-            const missingVersions = parameterRequirements.missingParameters;
+            const missingVersions = parameterRequirements.missingParameters || [];
             const providedVersions = Object.keys(options.parameters || {}).map(Number);
-            const actuallyMissing = missingVersions.filter(version => !providedVersions.includes(version));
+            const actuallyMissing = missingVersions.filter((version: number) => !providedVersions.includes(version));
 
             if (actuallyMissing.length > 0) {
                 const missingDetails = parameterRequirements.requirementsWithParameters
                     .filter(req => actuallyMissing.includes(req.version))
-                    .map(req => `Version ${req.version}: requires parameters ${req.parameters.map(p => p.name).join(', ')}`)
+                    .map((req: any) => `Version ${req.version}: requires parameters ${req.parameters.map((p: any) => p.name).join(', ')}`)
                     .join('; ');
 
                 return {
@@ -230,6 +233,9 @@ export async function executeMigrations(
                     fromVersion: currentVersion,
                     toVersion: currentVersion,
                     results: [],
+                    totalExecuted: 0,
+                    totalFailed: 0,
+                    rollbacksApplied: 0,
                     error: `Missing required parameters for migrations: ${missingDetails}`,
                     totalDuration: Date.now() - startTime
                 };
@@ -274,6 +280,9 @@ export async function executeMigrations(
             fromVersion: currentVersion,
             toVersion: finalVersion,
             results,
+            totalExecuted: results.length,
+            totalFailed: results.filter(r => !r.success).length,
+            rollbacksApplied: results.filter(r => r.rollbackApplied).length,
             totalDuration,
             error: allSucceeded ? undefined : 'Some migrations failed'
         };
@@ -289,6 +298,9 @@ export async function executeMigrations(
             fromVersion: currentVersionAfterError,  // May have changed during execution
             toVersion: currentVersionAfterError,
             results,
+            totalExecuted: results.length,
+            totalFailed: results.filter(r => !r.success).length,
+            rollbacksApplied: results.filter(r => r.rollbackApplied).length,
             error: errorMessage,
             totalDuration: Date.now() - startTime
         };
@@ -346,6 +358,9 @@ export async function rollbackToVersion(
             fromVersion: currentVersion,
             toVersion: finalVersion,
             results,
+            totalExecuted: results.length,
+            totalFailed: results.filter(r => !r.success).length,
+            rollbacksApplied: results.filter(r => r.success).length,
             totalDuration,
             error: allSucceeded ? undefined : 'Some rollbacks failed'
         };
@@ -361,6 +376,9 @@ export async function rollbackToVersion(
             fromVersion: currentVersionAfterError,
             toVersion: currentVersionAfterError,
             results,
+            totalExecuted: results.length,
+            totalFailed: results.filter(r => !r.success).length,
+            rollbacksApplied: results.filter(r => r.success).length,
             error: errorMessage,
             totalDuration: Date.now() - startTime
         };
@@ -415,7 +433,7 @@ export async function rollbackMigration(
             }
 
             const validation = validateMigrationParameters(migration.parameters, migrationParameters);
-            if (!validation.isValid) {
+            if (!validation.valid) {
                 throw new Error(`Invalid parameters for migration ${migration.version} rollback: ${validation.errors.join('; ')}`);
             }
 
@@ -426,7 +444,11 @@ export async function rollbackMigration(
             console.log(`Rolling back migration ${migration.version}: ${migration.description}`);
 
             try {
-                await migrationModule.down(db, processedParams);
+                if (migrationModule.down) {
+                    await migrationModule.down(db, processedParams);
+                } else {
+                    throw new Error(`Migration ${migration.version} does not have a down function`);
+                }
             } catch (downError) {
                 throw new Error(`Migration down function failed: ${downError instanceof Error ? downError.message : String(downError)}`);
             }
@@ -435,7 +457,11 @@ export async function rollbackMigration(
             console.log(`Rolling back migration ${migration.version}: ${migration.description}`);
 
             try {
-                await migrationModule.down(db);
+                if (migrationModule.down) {
+                    await migrationModule.down(db);
+                } else {
+                    throw new Error(`Migration ${migration.version} does not have a down function`);
+                }
             } catch (downError) {
                 throw new Error(`Migration down function failed: ${downError instanceof Error ? downError.message : String(downError)}`);
             }
@@ -493,23 +519,23 @@ export async function validateMigrationSystem(db: DrizzleDB): Promise<{
 
         // 检查迁移序列
         const sequenceValidation = validateMigrationSequence(status.migrations);
-        if (!sequenceValidation.isValid) {
+        if (!sequenceValidation.valid) {
             errors.push(...sequenceValidation.errors);
         }
 
         // 检查不可执行的迁移
-        const invalidMigrations = status.migrations.filter(m => !m.canExecute);
+        const invalidMigrations = status.migrations.filter((m: any) => !m.canExecute);
         if (invalidMigrations.length > 0) {
             warnings.push(`Found ${invalidMigrations.length} invalid migrations`);
-            invalidMigrations.forEach(m => {
+            invalidMigrations.forEach((m: any) => {
                 warnings.push(`- ${m.fileName}: ${m.error || 'Unknown error'}`);
             });
         }
 
         // 检查版本一致性
-        const appliedMigrations = status.migrations.filter(m => m.status === 'applied');
+        const appliedMigrations = status.migrations.filter((m: any) => m.status === 'applied');
         if (appliedMigrations.length > 0) {
-            const maxAppliedVersion = Math.max(...appliedMigrations.map(m => m.version));
+            const maxAppliedVersion = Math.max(...appliedMigrations.map((m: any) => m.version));
             if (maxAppliedVersion !== status.currentVersion) {
                 errors.push(`Version inconsistency: current version is ${status.currentVersion}, but max applied migration is ${maxAppliedVersion}`);
             }

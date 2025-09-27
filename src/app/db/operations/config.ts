@@ -98,6 +98,11 @@ export async function initializeDefaultConfig(db: DrizzleDB): Promise<void> {
             description: '标签分类页标题'
         },
         {
+            key: 'migration_title',
+            value: 'VOCArchive 管理后台 - 数据库迁移',
+            description: '迁移页面标题'
+        },
+        {
             key: 'db_version',
             value: '0',
             description: '数据库版本号'
@@ -160,7 +165,7 @@ export async function resetSecrets(db: DrizzleDB): Promise<{totpSecret: string, 
  * 获取公开的配置（不包含敏感信息）
  */
 export async function getPublicSiteConfig(db: DrizzleDB): Promise<Record<string, string>> {
-    const publicKeys = ['site_title', 'home_title', 'player_title', 'admin_title', 'tags_categories_title'];
+    const publicKeys = ['site_title', 'home_title', 'player_title', 'admin_title', 'tags_categories_title', 'migration_title'];
     const configs = await db.select()
         .from(siteConfig)
         .where(eq(siteConfig.key, publicKeys[0]));
@@ -181,7 +186,7 @@ export async function getPublicSiteConfig(db: DrizzleDB): Promise<Record<string,
  */
 export function isValidConfigKey(key: string): key is SiteConfigKey {
     const validKeys: SiteConfigKey[] = [
-        'site_title', 'home_title', 'player_title', 'admin_title', 'tags_categories_title',
+        'site_title', 'home_title', 'player_title', 'admin_title', 'tags_categories_title', 'migration_title',
         'totp_secret', 'jwt_secret', 'db_version'
     ];
     return validKeys.includes(key as SiteConfigKey);

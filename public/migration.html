@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VOCArchive 管理后台 - 数据库迁移</title>
+    <title id="pageTitle">VOCArchive 管理后台 - 数据库迁移</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .migration-container {
@@ -555,7 +555,7 @@
             <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="切换到深色模式">
                 <i id="theme-icon" class="fas fa-moon"></i>
             </button>
-            <h1><i class="fas fa-database"></i> 数据库迁移管理</h1>
+            <h1 id="pageHeader"><i class="fas fa-database"></i> 数据库迁移管理</h1>
             <p>管理和执行数据库版本迁移</p>
         </div>
 
@@ -667,6 +667,7 @@
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             initializeTheme();
+            loadPageTitle();
             checkAuthAndLoadData();
         });
 
@@ -705,6 +706,33 @@
         function initializeTheme() {
             const savedTheme = getTheme();
             setTheme(savedTheme);
+        }
+
+        // --- Page Title Management ---
+        async function loadPageTitle() {
+            try {
+                const response = await fetch('/api/config/public');
+                if (response.ok) {
+                    const config = await response.json();
+                    if (config.migration_title) {
+                        // Update document title
+                        const titleElement = document.getElementById('pageTitle');
+                        if (titleElement) {
+                            titleElement.textContent = config.migration_title;
+                        }
+                        document.title = config.migration_title;
+
+                        // Update page header
+                        const headerElement = document.getElementById('pageHeader');
+                        if (headerElement) {
+                            headerElement.innerHTML = '<i class="fas fa-database"></i> ' + config.migration_title.replace('VOCArchive 管理后台 - ', '');
+                        }
+                    }
+                }
+            } catch (error) {
+                // Silently fail and use default title
+                console.warn('Failed to load page title configuration:', error);
+            }
         }
 
         // Authentication

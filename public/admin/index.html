@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VOCArchive - 管理后台</title>
+    <title id="pageTitle">VOCArchive - 管理后台</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,7 +20,7 @@
     <!-- Main Admin Panel -->
     <div id="admin-panel" class="hidden">
         <header>
-            <h1>管理后台</h1>
+            <h1 id="pageHeader">管理后台</h1>
             <div class="header-controls">
                 <button id="theme-toggle" class="theme-toggle" title="切换深色模式">
                     <i class="fas fa-moon" id="theme-icon"></i>
@@ -113,6 +113,6 @@
     </div>
 
     <script src="md3-select.js"></script>
-    <script src="script.js"></script>
+    <script type="module" src="admin.js"></script>
 </body>
 </html>

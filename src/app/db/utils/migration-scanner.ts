@@ -1,4 +1,13 @@
-import type { Migration, MigrationInfo, MigrationValidationResult } from '../types/migration';
+import type {
+    Migration,
+    MigrationInfo,
+    MigrationValidationResult,
+    BatchParameterRequirements,
+    MigrationParameterRequirement,
+    MigrationParameterDefinition,
+    MigrationParameters,
+    ParameterValidationResult
+} from '../types/migration';
 import { getCurrentDbVersion } from '../operations/config';
 import type { DrizzleDB } from '../client';
 import { getRegisteredMigrationFiles, getMigrationModule } from './migration-registry';
@@ -49,13 +58,13 @@ export function validateMigrationFileName(fileName: string): MigrationValidation
     // 检查文件名格式
     if (!MIGRATION_FILE_PATTERN.test(fileName)) {
         errors.push(`文件名格式无效: ${fileName}。应该使用格式: 001_description.ts`);
-        return { isValid: false, errors, warnings };
+        return { valid: false, errors, warnings };
     }
 
     const parsed = parseMigrationFileName(fileName);
     if (!parsed) {
         errors.push(`无法解析文件名: ${fileName}`);
-        return { isValid: false, errors, warnings };
+        return { valid: false, errors, warnings };
     }
 
     // 检查版本号
@@ -69,7 +78,7 @@ export function validateMigrationFileName(fileName: string): MigrationValidation
     }
 
     return {
-        isValid: errors.length === 0,
+        valid: errors.length === 0,
         errors,
         warnings
     };
@@ -161,7 +170,7 @@ export async function validateMigrationModule(
         if (!Array.isArray(migration.parameters)) {
             errors.push('Parameters must be an array');
         } else {
-            migration.parameters.forEach((param, index) => {
+            migration.parameters.forEach((param: any, index: number) => {
                 if (!param.name || typeof param.name !== 'string') {
                     errors.push(`Parameter ${index}: missing or invalid name`);
                 }
@@ -193,18 +202,9 @@ export async function validateMigrationModule(
     }
 
     return {
-        isValid: errors.length === 0,
+        valid: errors.length === 0,
         errors,
-        warnings,
-        migration: errors.length === 0 ? {
-            fileName,
-            filePath: fileName,
-            version: migration.version,
-            description: migration.description,
-            parameters: migration.parameters,
-            status: 'available',
-            canExecute: true
-        } : undefined
+        warnings
     };
 }
 
@@ -232,7 +232,7 @@ export async function scanMigrationFiles(
 
         // 验证文件名
         const nameValidation = validateMigrationFileName(fileName);
-        if (!nameValidation.isValid) {
+        if (!nameValidation.valid) {
             migrations.push({
                 fileName,
                 filePath: fileName,
@@ -263,7 +263,7 @@ export async function scanMigrationFiles(
 
             // 验证模块
             const moduleValidation = await validateMigrationModule(fileName, migration);
-            if (!moduleValidation.isValid) {
+            if (!moduleValidation.valid) {
                 migrations.push({
                     fileName,
                     filePath: fileName,
@@ -347,14 +347,14 @@ export async function getMigrationByVersion(
  * 检查迁移序列的连续性
  */
 export function validateMigrationSequence(migrations: MigrationInfo[]): {
-    isValid: boolean;
+    valid: boolean;
     errors: string[];
 } {
     const errors: string[] = [];
     const validMigrations = migrations.filter(m => m.canExecute);
 
     if (validMigrations.length === 0) {
-        return { isValid: true, errors: [] };
+        return { valid: true, errors: [] };
     }
 
     // 检查版本号连续性
@@ -373,7 +373,7 @@ export function validateMigrationSequence(migrations: MigrationInfo[]): {
     }
 
     return {
-        isValid: errors.length === 0,
+        valid: errors.length === 0,
         errors
     };
 }
@@ -384,7 +384,7 @@ export function validateMigrationSequence(migrations: MigrationInfo[]): {
 export async function checkBatchParameterRequirements(
     db: DrizzleDB,
     targetVersion?: number
-): Promise<import('../types/migration').BatchParameterRequirements> {
+): Promise<BatchParameterRequirements> {
     const pendingMigrations = await getPendingMigrations(db);
 
     // 如果指定了目标版本，则过滤迁移
@@ -392,7 +392,7 @@ export async function checkBatchParameterRequirements(
         ? pendingMigrations.filter(m => m.version <= targetVersion)
         : pendingMigrations;
 
-    const requirementsWithParameters: import('../types/migration').MigrationParameterRequirement[] = [];
+    const requirementsWithParameters: MigrationParameterRequirement[] = [];
 
     for (const migration of migrationsToCheck) {
         if (migration.parameters && migration.parameters.length > 0) {
@@ -415,11 +415,11 @@ export async function checkBatchParameterRequirements(
  * 验证用户提供的参数
  */
 export function validateMigrationParameters(
-    parameterDefinitions: import('../types/migration').MigrationParameterDefinition[],
-    userParameters: import('../types/migration').MigrationParameters
-): import('../types/migration').ParameterValidationResult {
+    parameterDefinitions: MigrationParameterDefinition[],
+    userParameters: MigrationParameters
+): ParameterValidationResult {
     const errors: string[] = [];
-    const processedValues: import('../types/migration').MigrationParameters = {};
+    const processedValues: MigrationParameters = {};
 
     for (const paramDef of parameterDefinitions) {
         const userValue = userParameters[paramDef.name];
@@ -509,7 +509,7 @@ export function validateMigrationParameters(
                     // 对于 boolean 类型，转换为字符串进行枚举检查
                     const valueToCheck = paramDef.type === 'boolean'
                         ? String(processedValue)
-                        : processedValue as string | number;
+                        : String(processedValue);
 
                     if (!validation.enum.includes(valueToCheck)) {
                         errors.push(`Parameter "${paramDef.name}" must be one of: ${validation.enum.join(', ')}`);
@@ -533,7 +533,7 @@ export function validateMigrationParameters(
     }
 
     return {
-        isValid: errors.length === 0,
+        valid: errors.length === 0,
         errors,
         processedValues: errors.length === 0 ? processedValues : undefined
     };

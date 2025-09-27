@@ -1,252 +1,358 @@
-import type { DrizzleDB } from '../client';
+import type { InferSelectModel, InferInsertModel } from 'drizzle-orm';
+import {
+    creator,
+    creatorWiki,
+    work,
+    workTitle,
+    workLicense,
+    mediaSource,
+    asset,
+    workCreator,
+    assetCreator,
+    workRelation,
+    workWiki,
+    tag,
+    category,
+    workTag,
+    workCategory,
+    footerSettings,
+    externalSource,
+    externalObject,
+    siteConfig,
+} from '../schema';
 
-/**
- * 迁移参数定义类型
- */
-export type MigrationParameterType = 'string' | 'number' | 'boolean' | 'url';
+// Basic table types from new schema (with ID primary keys)
+export type Creator = InferSelectModel<typeof creator>;
+export type NewCreator = InferInsertModel<typeof creator>;
 
-/**
- * 迁移参数定义
- */
-export interface MigrationParameterDefinition {
-    /** 参数名称 */
+export type CreatorWiki = InferSelectModel<typeof creatorWiki>;
+export type NewCreatorWiki = InferInsertModel<typeof creatorWiki>;
+
+export type Work = InferSelectModel<typeof work>;
+export type NewWork = InferInsertModel<typeof work>;
+
+export type WorkTitle = InferSelectModel<typeof workTitle>;
+export type NewWorkTitle = InferInsertModel<typeof workTitle>;
+
+export type WorkLicense = InferSelectModel<typeof workLicense>;
+export type NewWorkLicense = InferInsertModel<typeof workLicense>;
+
+export type MediaSource = InferSelectModel<typeof mediaSource>;
+export type NewMediaSource = InferInsertModel<typeof mediaSource>;
+
+// Application-layer MediaSource type that excludes redundant fields
+export type MediaSourceForApplication = Omit<MediaSource, 'url'>;
+
+// Custom type for media source input where url is optional (redundant with external objects)
+export type MediaSourceInput = Omit<NewMediaSource, 'url'> & {
+    url?: string | null;
+};
+
+// API-compatible input types (still accept UUID but convert to ID internally)
+export type MediaSourceApiInput = Omit<MediaSourceInput, 'work_id'> & {
+    work_uuid: string; // API still accepts UUID
+};
+
+export type MediaSourceForDatabase = Omit<NewMediaSource, 'url'> & {
+    work_id: number; // Database expects ID
+    url?: string | null;
+};
+
+export type Asset = InferSelectModel<typeof asset>;
+export type NewAsset = InferInsertModel<typeof asset>;
+
+// Application-layer Asset type that excludes redundant fields
+export type AssetForApplication = Omit<Asset, 'file_id'>;
+
+// Custom type for asset input where file_id is optional (redundant with external objects)
+export type AssetInput = Omit<NewAsset, 'file_id'> & {
+    file_id?: string | null;
+};
+
+// API-compatible input types
+export type AssetApiInput = Omit<AssetInput, 'work_id'> & {
+    work_uuid: string; // API still accepts UUID
+};
+
+export type WorkCreator = InferSelectModel<typeof workCreator>;
+export type NewWorkCreator = InferInsertModel<typeof workCreator>;
+
+// API-compatible work creator input
+export type WorkCreatorApiInput = {
+    work_uuid: string;
+    creator_uuid: string;
+    role: string;
+};
+
+export type AssetCreator = InferSelectModel<typeof assetCreator>;
+export type NewAssetCreator = InferInsertModel<typeof assetCreator>;
+
+// API-compatible asset creator input
+export type AssetCreatorApiInput = {
+    asset_uuid: string;
+    creator_uuid: string;
+    role: string;
+};
+
+export type WorkRelation = InferSelectModel<typeof workRelation>;
+export type NewWorkRelation = InferInsertModel<typeof workRelation>;
+
+// API-compatible work relation input
+export type WorkRelationApiInput = Omit<WorkRelation, 'id' | 'from_work_id' | 'to_work_id'> & {
+    from_work_uuid: string;
+    to_work_uuid: string;
+};
+
+export type WorkWiki = InferSelectModel<typeof workWiki>;
+export type NewWorkWiki = InferInsertModel<typeof workWiki>;
+
+export type Tag = InferSelectModel<typeof tag>;
+export type NewTag = InferInsertModel<typeof tag>;
+
+export type Category = InferSelectModel<typeof category>;
+export type NewCategory = InferInsertModel<typeof category>;
+
+export type WorkTag = InferSelectModel<typeof workTag>;
+export type NewWorkTag = InferInsertModel<typeof workTag>;
+
+export type WorkCategory = InferSelectModel<typeof workCategory>;
+export type NewWorkCategory = InferInsertModel<typeof workCategory>;
+
+export type FooterSettings = InferSelectModel<typeof footerSettings>;
+export type NewFooterSettings = InferInsertModel<typeof footerSettings>;
+
+export type ExternalSource = InferSelectModel<typeof externalSource>;
+export type NewExternalSource = InferInsertModel<typeof externalSource>;
+
+// API-compatible external source input (still accepts UUID)
+export type ExternalSourceApiInput = Omit<NewExternalSource, 'id'> & {
+    uuid: string;
+    type: 'raw_url' | 'ipfs';
     name: string;
+    endpoint: string;
+};
 
-    /** 参数类型 */
-    type: MigrationParameterType;
+export type ExternalObject = InferSelectModel<typeof externalObject>;
+export type NewExternalObject = InferInsertModel<typeof externalObject>;
 
-    /** 参数描述 */
-    description: string;
+// API-compatible external object input
+export type ExternalObjectApiInput = Omit<NewExternalObject, 'id' | 'external_source_id'> & {
+    uuid: string;
+    external_source_uuid: string; // API accepts UUID
+    mime_type: string;
+    file_id: string;
+};
 
-    /** 是否必需 */
-    required?: boolean;
+export type SiteConfig = InferSelectModel<typeof siteConfig>;
+export type NewSiteConfig = InferInsertModel<typeof siteConfig>;
 
-    /** 默认值 */
-    defaultValue?: string | number | boolean;
+// Site configuration key enum
+export type SiteConfigKey =
+    | 'site_title'            // 网站标题（HTML title）
+    | 'home_title'            // 主页标题
+    | 'player_title'          // 播放器页标题
+    | 'admin_title'           // 管理后台标题
+    | 'tags_categories_title' // 标签分类页标题
+    | 'migration_title'       // 迁移页面标题
+    | 'totp_secret'           // TOTP 密钥
+    | 'jwt_secret'            // JWT 密钥
+    | 'db_version';           // 数据库版本号
 
-    /** 验证规则 */
-    validation?: {
-        /** 最小值/最小长度 */
-        min?: number;
-        /** 最大值/最大长度 */
-        max?: number;
-        /** 正则表达式模式 */
-        pattern?: string;
-        /** 枚举值 */
-        enum?: (string | number)[];
+// Composite types for complex queries (matching existing interfaces)
+
+export interface WikiRef {
+    platform: string;
+    identifier: string;
+}
+
+export interface CreatorWithRole {
+    creator_uuid: string;
+    creator_name?: string;
+    creator_type: 'human' | 'virtual';
+    role: string;
+    wikis?: WikiRef[];
+}
+
+export interface AssetWithCreators extends AssetForApplication {
+    creator: CreatorWithRole[];
+    external_objects?: ExternalObject[];
+}
+
+export interface MediaSourceWithExternalObjects extends MediaSourceForApplication {
+    external_objects?: ExternalObject[];
+}
+
+export interface CategoryWithChildren extends Category {
+    children?: CategoryWithChildren[];
+}
+
+export interface WorkRelationWithTitles extends WorkRelation {
+    related_work_titles?: {
+        from_work_titles: Array<{ 
+            language: string;
+            title: string;
+        }>;
+        to_work_titles: Array<{ 
+            language: string;
+            title: string;
+        }>;
     };
 }
 
-/**
- * 迁移参数值
- */
-export interface MigrationParameters {
-    [key: string]: string | number | boolean;
+export interface WorkInfo {
+    work: Work;
+    titles: WorkTitle[];
+    license?: string;
+    media_sources: MediaSourceWithExternalObjects[];
+    asset: AssetWithCreators[];
+    creator: CreatorWithRole[];
+    relation: WorkRelationWithTitles[];
+    wikis: WikiRef[];
+    tags?: Tag[];
+    categories?: Category[];
 }
 
-/**
- * 迁移脚本接口
- * 所有迁移文件必须导出符合此接口的对象
- */
+export interface WorkListItem {
+    work_uuid: string;
+    titles: WorkTitle[];
+    preview_asset?: Asset;
+    non_preview_asset?: Asset;
+    creator: CreatorWithRole[];
+    tags: Tag[];
+    categories: Category[];
+}
+
+// Enum types for better type safety
+export type CopyrightBasis = 'none' | 'accept' | 'license' | 'onlymetadata' | 'arr';
+export type CreatorType = 'human' | 'virtual';
+export type AssetType = 'lyrics' | 'picture';
+export type RelationType = 'original' | 'remix' | 'cover' | 'remake' | 'picture' | 'lyrics';
+export type FooterItemType = 'link' | 'social' | 'copyright';
+export type ExternalSourceType = 'raw_url' | 'ipfs';
+
+// Utility types for API responses
+export interface PaginationParams {
+    page: number;
+    pageSize: number;
+}
+
+export interface SearchParams {
+    query?: string;
+    type?: 'title' | 'creator' | 'all';
+    language?: string;
+}
+
+export interface FilterParams {
+    tag?: string;
+    category?: string;
+    language?: string;
+}
+
+// Migration system types
 export interface Migration {
-    /** 版本号，必须与文件名序号一致 */
     version: number;
-
-    /** 迁移描述 */
     description: string;
-
-    /** 参数定义（可选） */
+    filename?: string;
+    upSql?: string;
+    downSql?: string;
     parameters?: MigrationParameterDefinition[];
-
-    /** 正向迁移函数 */
-    up: (db: DrizzleDB, params?: MigrationParameters) => Promise<void>;
-
-    /** 回滚函数 */
-    down: (db: DrizzleDB, params?: MigrationParameters) => Promise<void>;
+    up: (db: any, parameters?: MigrationParameters) => Promise<void>;
+    down?: (db: any, parameters?: MigrationParameters) => Promise<void>;
+    requiresParameters?: boolean;
 }
 
-/**
- * 迁移状态类型
- */
-export type MigrationStatus =
-    | 'current'    // 当前版本
-    | 'available'  // 可用的迁移
-    | 'pending'    // 待执行的迁移
-    | 'applied';   // 已应用的迁移
-
-/**
- * 迁移文件信息
- */
 export interface MigrationInfo {
-    /** 文件名 */
-    fileName: string;
-
-    /** 文件路径 */
-    filePath: string;
-
-    /** 版本号 */
     version: number;
-
-    /** 描述 */
     description: string;
-
-    /** 迁移状态 */
-    status: MigrationStatus;
-
-    /** 是否可以执行 */
-    canExecute: boolean;
-
-    /** 参数定义 */
-    parameters?: MigrationParameterDefinition[];
-
-    /** 错误信息（如果有） */
+    fileName: string;
+    status: 'applied' | 'current' | 'pending' | 'available';
+    appliedAt?: Date;
     error?: string;
+    canExecute?: boolean;
+    parameters?: MigrationParameterDefinition[];
+    filePath?: string;
 }
 
-/**
- * 迁移执行结果
- */
 export interface MigrationResult {
-    /** 是否成功 */
-    success: boolean;
-
-    /** 执行的版本号 */
     version: number;
-
-    /** 错误信息 */
+    success: boolean;
     error?: string;
-
-    /** 执行时间（毫秒） */
+    executionTime?: number;
+    rollbackApplied?: boolean;
     duration?: number;
-
-    /** 详细信息 */
     details?: string;
 }
 
-/**
- * 批量迁移执行结果
- */
 export interface MigrationBatchResult {
-    /** 是否全部成功 */
     success: boolean;
-
-    /** 执行前的版本 */
-    fromVersion: number;
-
-    /** 执行后的版本 */
-    toVersion: number;
-
-    /** 各个迁移的执行结果 */
     results: MigrationResult[];
-
-    /** 总错误信息 */
+    totalExecuted: number;
+    totalFailed: number;
+    rollbacksApplied: number;
     error?: string;
-
-    /** 总执行时间（毫秒） */
-    totalDuration: number;
+    fromVersion?: number;
+    toVersion?: number;
+    totalDuration?: number;
 }
 
-/**
- * 迁移系统状态
- */
 export interface MigrationSystemStatus {
-    /** 当前数据库版本 */
     currentVersion: number;
-
-    /** 最新可用版本 */
     latestVersion: number;
-
-    /** 待执行的迁移数量 */
     pendingCount: number;
-
-    /** 所有迁移信息 */
-    migrations: MigrationInfo[];
-
-    /** 是否需要迁移 */
     needsMigration: boolean;
-
-    /** 系统状态 */
-    status: 'up-to-date' | 'pending-migrations' | 'error';
-
-    /** 错误信息 */
+    migrations: MigrationInfo[];
+    status?: any;
     error?: string;
 }
 
-/**
- * 迁移执行选项
- */
 export interface MigrationExecuteOptions {
-    /** 目标版本（如果不指定，则迁移到最新版本） */
-    targetVersion?: number;
-
-    /** 是否干运行（不实际执行） */
     dryRun?: boolean;
-
-    /** 是否强制执行（忽略错误继续） */
     force?: boolean;
-
-    /** 批量大小 */
-    batchSize?: number;
-
-    /** 迁移参数 */
+    targetVersion?: number;
     parameters?: Record<number, MigrationParameters>;
+    batchSize?: number;
 }
 
-/**
- * 迁移文件验证结果
- */
-export interface MigrationValidationResult {
-    /** 是否有效 */
-    isValid: boolean;
-
-    /** 错误信息 */
-    errors: string[];
-
-    /** 警告信息 */
-    warnings: string[];
-
-    /** 验证的迁移信息 */
-    migration?: MigrationInfo;
-}
-
-/**
- * 参数验证结果
- */
-export interface ParameterValidationResult {
-    /** 是否有效 */
-    isValid: boolean;
-
-    /** 错误信息 */
-    errors: string[];
-
-    /** 处理后的参数值 */
-    processedValues?: MigrationParameters;
-}
-
-/**
- * 迁移参数需求
- */
-export interface MigrationParameterRequirement {
-    /** 迁移版本 */
-    version: number;
-
-    /** 迁移描述 */
+export interface MigrationParameterDefinition {
+    name: string;
+    type: 'string' | 'number' | 'boolean' | 'url';
     description: string;
+    required?: boolean;
+    defaultValue?: any;
+    validation?: {
+        min?: number;
+        max?: number;
+        pattern?: string;
+        enum?: string[];
+    };
+}
 
-    /** 参数定义 */
+export interface MigrationParameters {
+    [key: string]: any;
+}
+
+export interface MigrationParameterRequirement {
+    version: number;
+    description: string;
     parameters: MigrationParameterDefinition[];
 }
 
-/**
- * 批量迁移的参数需求检查结果
- */
 export interface BatchParameterRequirements {
-    /** 需要参数的迁移列表 */
-    requirementsWithParameters: MigrationParameterRequirement[];
-
-    /** 缺失参数的迁移版本 */
-    missingParameters: number[];
-
-    /** 是否有未满足的参数需求 */
     hasUnmetRequirements: boolean;
+    requirementsWithParameters: MigrationParameterRequirement[];
+    missingParameters?: number[];
+}
+
+export interface ParameterValidationResult {
+    valid: boolean;
+    errors: string[];
+    isValid?: boolean; // 向后兼容
+    processedValues?: MigrationParameters;
+}
+
+export interface MigrationValidationResult {
+    valid: boolean;
+    errors: string[];
+    warnings: string[];
+    isValid?: boolean; // 向后兼容
 }
