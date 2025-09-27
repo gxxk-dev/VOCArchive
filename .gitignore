@@ -178,3 +178,4 @@ wrangler.toml
 .claude
 
 testdata.sql
+migration-registry.ts

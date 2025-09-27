@@ -1154,7 +1154,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     { value: 'admin_title', text: '管理后台标题 (admin_title)' },
                     { value: 'tags_categories_title', text: '标签分类页标题 (tags_categories_title)' },
                     { value: 'totp_secret', text: 'TOTP 密钥 (totp_secret)' },
-                    { value: 'jwt_secret', text: 'JWT 密钥 (jwt_secret)' }
+                    { value: 'jwt_secret', text: 'JWT 密钥 (jwt_secret)' },
+                    { value: 'db_version', text: '数据库版本 (db_version)' },
                 ], data?.key, true)}
                 ${data ? '<div style="margin-top: 8px;"><small>配置键不可修改</small></div>' : ''}
                 ${data?.key?.includes('title') ? `
