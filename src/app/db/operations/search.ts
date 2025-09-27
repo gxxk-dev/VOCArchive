@@ -1,13 +1,14 @@
 import { eq, like, inArray, and } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
-import { 
-    work, 
-    workTitle, 
-    workCreator, 
-    creator, 
-    asset 
+import {
+    work,
+    workTitle,
+    workCreator,
+    creator,
+    asset
 } from '../schema';
 import { convertAssetData, convertCreatorData } from '../utils';
+import { workUuidToId } from '../utils/uuid-id-converter';
 
 // Types matching current interfaces
 export interface WorkTitle {
@@ -58,6 +59,10 @@ export interface WorkListItem {
  * Get work titles for a specific work UUID
  */
 async function getWorkTitles(db: DrizzleDB, workUUID: string, includeForSearch: boolean = true): Promise<WorkTitle[]> {
+    // Convert work UUID to ID for database query
+    const workId = await workUuidToId(db, workUUID);
+    if (!workId) return [];
+
     const query = db
         .select({
             is_official: workTitle.is_official,
@@ -66,10 +71,10 @@ async function getWorkTitles(db: DrizzleDB, workUUID: string, includeForSearch: 
             title: workTitle.title,
         })
         .from(workTitle)
-        .where(eq(workTitle.work_uuid, workUUID));
-    
+        .where(eq(workTitle.work_id, workId));
+
     const allTitles = await query;
-    
+
     // Always return all titles, let frontend handle filtering
     return allTitles;
 }
@@ -80,8 +85,9 @@ async function getWorkTitles(db: DrizzleDB, workUUID: string, includeForSearch: 
 export async function searchWorksByTitle(db: DrizzleDB, query: string): Promise<WorkListItem[]> {
     // Get work UUIDs that match the title search (including ForSearch titles for search)
     const workUuids = await db
-        .select({ work_uuid: workTitle.work_uuid })
+        .select({ work_uuid: work.uuid })
         .from(workTitle)
+        .innerJoin(work, eq(workTitle.work_id, work.id))
         .where(like(workTitle.title, `%${query}%`));
 
     if (workUuids.length === 0) {
@@ -93,15 +99,16 @@ export async function searchWorksByTitle(db: DrizzleDB, query: string): Promise<
     // Get all creators for these works
     const creators = await db
         .select({
-            work_uuid: workCreator.work_uuid,
+            work_uuid: work.uuid,
             creator_uuid: creator.uuid,
             creator_name: creator.name,
             creator_type: creator.type,
             role: workCreator.role,
         })
         .from(workCreator)
-        .innerJoin(creator, eq(workCreator.creator_uuid, creator.uuid))
-        .where(inArray(workCreator.work_uuid, workUuidList));
+        .innerJoin(creator, eq(workCreator.creator_id, creator.id))
+        .innerJoin(work, eq(workCreator.work_id, work.id))
+        .where(inArray(work.uuid, workUuidList));
 
     // Group creators by work UUID
     const creatorMap = new Map<string, CreatorWithRole[]>();
@@ -127,16 +134,17 @@ export async function searchWorksByTitle(db: DrizzleDB, query: string): Promise<
             .select({
                 uuid: asset.uuid,
                 // file_id: asset.file_id, // Removed - use external objects for file info
-                work_uuid: asset.work_uuid,
+                work_uuid: work.uuid,
                 asset_type: asset.asset_type,
                 file_name: asset.file_name,
                 is_previewpic: asset.is_previewpic,
                 language: asset.language,
             })
             .from(asset)
+            .innerJoin(work, eq(asset.work_id, work.id))
             .where(
                 and(
-                    eq(asset.work_uuid, work_uuid),
+                    eq(work.uuid, work_uuid),
                     eq(asset.asset_type, 'picture'),
                     eq(asset.is_previewpic, true)
                 )
@@ -147,16 +155,17 @@ export async function searchWorksByTitle(db: DrizzleDB, query: string): Promise<
             .select({
                 uuid: asset.uuid,
                 // file_id: asset.file_id, // Removed - use external objects for file info
-                work_uuid: asset.work_uuid,
+                work_uuid: work.uuid,
                 asset_type: asset.asset_type,
                 file_name: asset.file_name,
                 is_previewpic: asset.is_previewpic,
                 language: asset.language,
             })
             .from(asset)
+            .innerJoin(work, eq(asset.work_id, work.id))
             .where(
                 and(
-                    eq(asset.work_uuid, work_uuid),
+                    eq(work.uuid, work_uuid),
                     eq(asset.asset_type, 'picture')
                 )
             )
@@ -194,9 +203,11 @@ export async function searchWorksByCreator(db: DrizzleDB, query: string): Promis
 
     // Get work UUIDs for these creators
     const workUuids = await db
-        .select({ work_uuid: workCreator.work_uuid })
+        .select({ work_uuid: work.uuid })
         .from(workCreator)
-        .where(inArray(workCreator.creator_uuid, creatorUuidList));
+        .innerJoin(creator, eq(workCreator.creator_id, creator.id))
+        .innerJoin(work, eq(workCreator.work_id, work.id))
+        .where(inArray(creator.uuid, creatorUuidList));
 
     if (workUuids.length === 0) {
         return [];
@@ -207,15 +218,16 @@ export async function searchWorksByCreator(db: DrizzleDB, query: string): Promis
     // Get all creators for these works
     const creators = await db
         .select({
-            work_uuid: workCreator.work_uuid,
+            work_uuid: work.uuid,
             creator_uuid: creator.uuid,
             creator_name: creator.name,
             creator_type: creator.type,
             role: workCreator.role,
         })
         .from(workCreator)
-        .innerJoin(creator, eq(workCreator.creator_uuid, creator.uuid))
-        .where(inArray(workCreator.work_uuid, workUuidList));
+        .innerJoin(creator, eq(workCreator.creator_id, creator.id))
+        .innerJoin(work, eq(workCreator.work_id, work.id))
+        .where(inArray(work.uuid, workUuidList));
 
     // Group creators by work UUID
     const creatorMap = new Map<string, CreatorWithRole[]>();
@@ -241,16 +253,17 @@ export async function searchWorksByCreator(db: DrizzleDB, query: string): Promis
             .select({
                 uuid: asset.uuid,
                 // file_id: asset.file_id, // Removed - use external objects for file info
-                work_uuid: asset.work_uuid,
+                work_uuid: work.uuid,
                 asset_type: asset.asset_type,
                 file_name: asset.file_name,
                 is_previewpic: asset.is_previewpic,
                 language: asset.language,
             })
             .from(asset)
+            .innerJoin(work, eq(asset.work_id, work.id))
             .where(
                 and(
-                    eq(asset.work_uuid, work_uuid),
+                    eq(work.uuid, work_uuid),
                     eq(asset.asset_type, 'picture'),
                     eq(asset.is_previewpic, true)
                 )
@@ -261,16 +274,17 @@ export async function searchWorksByCreator(db: DrizzleDB, query: string): Promis
             .select({
                 uuid: asset.uuid,
                 // file_id: asset.file_id, // Removed - use external objects for file info
-                work_uuid: asset.work_uuid,
+                work_uuid: work.uuid,
                 asset_type: asset.asset_type,
                 file_name: asset.file_name,
                 is_previewpic: asset.is_previewpic,
                 language: asset.language,
             })
             .from(asset)
+            .innerJoin(work, eq(asset.work_id, work.id))
             .where(
                 and(
-                    eq(asset.work_uuid, work_uuid),
+                    eq(work.uuid, work_uuid),
                     eq(asset.asset_type, 'picture')
                 )
             )
@@ -294,8 +308,8 @@ export async function searchWorksByCreator(db: DrizzleDB, query: string): Promis
  * Search works (combines title and creator search)
  */
 export async function searchWorks(
-    db: DrizzleDB, 
-    query: string, 
+    db: DrizzleDB,
+    query: string,
     searchType: 'title' | 'creator' | 'all' = 'all'
 ): Promise<WorkListItem[]> {
     if (searchType === 'title') {

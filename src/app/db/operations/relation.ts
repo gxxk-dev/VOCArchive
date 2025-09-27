@@ -1,8 +1,10 @@
 import { eq, count } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
-import { workRelation } from '../schema';
+import { workRelation, work } from '../schema';
+import type { WorkRelationApiInput } from '../types';
+import { workUuidToId, workIdToUuid } from '../utils/uuid-id-converter';
 
-// Types
+// Types for API compatibility
 export interface WorkRelation {
     uuid: string;
     from_work_uuid: string;
@@ -25,15 +27,28 @@ export async function getRelationByUUID(db: DrizzleDB, relationUuid: string): Pr
     const result = await db
         .select({
             uuid: workRelation.uuid,
-            from_work_uuid: workRelation.from_work_uuid,
-            to_work_uuid: workRelation.to_work_uuid,
+            from_work_id: workRelation.from_work_id,
+            to_work_id: workRelation.to_work_id,
             relation_type: workRelation.relation_type,
         })
         .from(workRelation)
         .where(eq(workRelation.uuid, relationUuid))
         .limit(1);
 
-    return result[0] || null;
+    if (!result[0]) return null;
+
+    // Convert IDs back to UUIDs for API compatibility
+    const fromWorkUuid = await workIdToUuid(db, result[0].from_work_id);
+    const toWorkUuid = await workIdToUuid(db, result[0].to_work_id);
+
+    if (!fromWorkUuid || !toWorkUuid) return null;
+
+    return {
+        uuid: result[0].uuid,
+        from_work_uuid: fromWorkUuid,
+        to_work_uuid: toWorkUuid,
+        relation_type: result[0].relation_type,
+    };
 }
 
 /**
@@ -47,32 +62,61 @@ export async function listRelations(db: DrizzleDB, page: number, pageSize: numbe
     const relations = await db
         .select({
             uuid: workRelation.uuid,
-            from_work_uuid: workRelation.from_work_uuid,
-            to_work_uuid: workRelation.to_work_uuid,
+            from_work_id: workRelation.from_work_id,
+            to_work_id: workRelation.to_work_id,
             relation_type: workRelation.relation_type,
         })
         .from(workRelation)
         .limit(pageSize)
         .offset(offset);
 
-    return relations;
+    // Convert IDs back to UUIDs for API compatibility
+    const relationsWithUuids = await Promise.all(
+        relations.map(async (relation) => {
+            const fromWorkUuid = await workIdToUuid(db, relation.from_work_id);
+            const toWorkUuid = await workIdToUuid(db, relation.to_work_id);
+
+            if (!fromWorkUuid || !toWorkUuid) {
+                return null; // Skip invalid relations
+            }
+
+            return {
+                uuid: relation.uuid,
+                from_work_uuid: fromWorkUuid,
+                to_work_uuid: toWorkUuid,
+                relation_type: relation.relation_type,
+            };
+        })
+    );
+
+    // Filter out null results
+    return relationsWithUuids.filter((relation): relation is WorkRelation => relation !== null);
 }
 
 /**
  * Create a new work relation
  */
-export async function inputRelation(db: DrizzleDB, relationData: WorkRelation): Promise<boolean> {
-    if (!validateUUID(relationData.uuid) || 
-            !validateUUID(relationData.from_work_uuid) || 
+export async function inputRelation(db: DrizzleDB, relationData: WorkRelationApiInput): Promise<boolean> {
+    if (!validateUUID(relationData.uuid) ||
+            !validateUUID(relationData.from_work_uuid) ||
             !validateUUID(relationData.to_work_uuid)) {
         return false;
     }
 
     try {
+        // Convert work UUIDs to IDs
+        const fromWorkId = await workUuidToId(db, relationData.from_work_uuid);
+        const toWorkId = await workUuidToId(db, relationData.to_work_uuid);
+
+        if (!fromWorkId || !toWorkId) {
+            console.error('Invalid work UUIDs provided');
+            return false;
+        }
+
         await db.insert(workRelation).values({
             uuid: relationData.uuid,
-            from_work_uuid: relationData.from_work_uuid,
-            to_work_uuid: relationData.to_work_uuid,
+            from_work_id: fromWorkId,
+            to_work_id: toWorkId,
             relation_type: relationData.relation_type,
         });
         return true;
@@ -86,22 +130,31 @@ export async function inputRelation(db: DrizzleDB, relationData: WorkRelation): 
  * Update a work relation
  */
 export async function updateRelation(
-    db: DrizzleDB, 
-    relationUuid: string, 
-    relationData: Omit<WorkRelation, 'uuid'>
+    db: DrizzleDB,
+    relationUuid: string,
+    relationData: Omit<WorkRelationApiInput, 'uuid'>
 ): Promise<boolean> {
-    if (!validateUUID(relationUuid) || 
-            !validateUUID(relationData.from_work_uuid) || 
+    if (!validateUUID(relationUuid) ||
+            !validateUUID(relationData.from_work_uuid) ||
             !validateUUID(relationData.to_work_uuid)) {
         return false;
     }
 
     try {
+        // Convert work UUIDs to IDs
+        const fromWorkId = await workUuidToId(db, relationData.from_work_uuid);
+        const toWorkId = await workUuidToId(db, relationData.to_work_uuid);
+
+        if (!fromWorkId || !toWorkId) {
+            console.error('Invalid work UUIDs provided');
+            return false;
+        }
+
         await db
             .update(workRelation)
             .set({
-                from_work_uuid: relationData.from_work_uuid,
-                to_work_uuid: relationData.to_work_uuid,
+                from_work_id: fromWorkId,
+                to_work_id: toWorkId,
                 relation_type: relationData.relation_type,
             })
             .where(eq(workRelation.uuid, relationUuid));

@@ -20,6 +20,8 @@ import {
 } from '../db/operations/admin';
 import type { Work, WorkTitle, CreatorWithRole, WikiRef, Asset, MediaSource, WorkRelation, Tag, Category } from '../db/operations/work';
 import type { WorkTitleInput } from '../db/operations/work-title';
+import type { MediaSourceForDatabase, MediaSourceApiInput, ExternalSourceApiInput, ExternalObjectApiInput } from '../db/types';
+import { workUuidToId, externalSourceUuidToId } from '../db/utils/uuid-id-converter';
 import { validateStorageSource } from '../db/utils/storage-handlers';
 import { Hono } from "hono";
 
@@ -123,9 +125,9 @@ inputInfo.post('/media', async (c: any) => {
         const db = createDrizzleClient(c.env.DB);
         
         // 构建 MediaSource 对象
-        const mediaData: MediaSource = {
+        const mediaData: MediaSourceApiInput = {
             uuid: body.uuid,
-            work_uuid: body.work_uuid,
+            work_uuid: body.work_uuid, // Use work_uuid for API input
             is_music: body.is_music,
             file_name: body.file_name,
             url: body.url,
@@ -238,7 +240,7 @@ inputInfo.post('/dbinit', async (c: any) => {
 // 添加外部存储源
 inputInfo.post('/external_source', async (c: any) => {
     try {
-        const body: { uuid: string; type: 'raw_url' | 'ipfs'; name: string; endpoint: string } = await c.req.json();
+        const body: ExternalSourceApiInput = await c.req.json();
         
         // 验证存储源配置
         const validation = validateStorageSource(body);
@@ -257,9 +259,24 @@ inputInfo.post('/external_source', async (c: any) => {
 // 添加外部对象
 inputInfo.post('/external_object', async (c: any) => {
     try {
-        const body: { uuid: string; external_source_uuid: string; mime_type: string; file_id: string } = await c.req.json();
+        const body: ExternalObjectApiInput = await c.req.json();
         const db = createDrizzleClient(c.env.DB);
-        await inputExternalObject(db, body);
+
+        // 转换external_source_uuid为external_source_id
+        const external_source_id = await externalSourceUuidToId(db, body.external_source_uuid);
+        if (!external_source_id) {
+            return c.json({ error: 'External source not found' }, 400);
+        }
+
+        // 构建数据库对象
+        const objectData = {
+            uuid: body.uuid,
+            external_source_id: external_source_id,
+            mime_type: body.mime_type,
+            file_id: body.file_id
+        };
+
+        await inputExternalObject(db, objectData);
         return c.json({ message: "External object added successfully." }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);

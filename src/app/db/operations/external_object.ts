@@ -1,8 +1,9 @@
 import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { externalObject, externalSource } from '../schema';
-import type { ExternalObject, NewExternalObject, ExternalSource as ExternalSourceType } from '../types';
+import type { ExternalObject, NewExternalObject, ExternalSource as ExternalSourceType, ExternalObjectApiInput } from '../types';
 import { buildStorageURL } from '../utils/storage-handlers';
+import { externalSourceUuidToId } from '../utils/uuid-id-converter';
 
 // UUID validation
 const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -31,17 +32,20 @@ export async function getExternalObjectByUUID(
     const result = await db
         .select({
             // External object fields
+            id: externalObject.id,
             uuid: externalObject.uuid,
-            external_source_uuid: externalObject.external_source_uuid,
+            external_source_id: externalObject.external_source_id,
             mime_type: externalObject.mime_type,
             file_id: externalObject.file_id,
             // External source fields
+            source_id: externalSource.id,
+            source_uuid: externalSource.uuid,
             source_type: externalSource.type,
             source_name: externalSource.name,
             source_endpoint: externalSource.endpoint,
         })
         .from(externalObject)
-        .innerJoin(externalSource, eq(externalObject.external_source_uuid, externalSource.uuid))
+        .innerJoin(externalSource, eq(externalObject.external_source_id, externalSource.id))
         .where(eq(externalObject.uuid, objectUuid))
         .limit(1);
 
@@ -51,12 +55,14 @@ export async function getExternalObjectByUUID(
 
     const row = result[0];
     return {
+        id: row.id,
         uuid: row.uuid,
-        external_source_uuid: row.external_source_uuid,
+        external_source_id: row.external_source_id,
         mime_type: row.mime_type,
         file_id: row.file_id,
         source: {
-            uuid: row.external_source_uuid,
+            id: row.source_id,
+            uuid: row.source_uuid,
             type: row.source_type,
             name: row.source_name,
             endpoint: row.source_endpoint,
@@ -81,27 +87,32 @@ export async function listExternalObjects(
     const results = await db
         .select({
             // External object fields
+            id: externalObject.id,
             uuid: externalObject.uuid,
-            external_source_uuid: externalObject.external_source_uuid,
+            external_source_id: externalObject.external_source_id,
             mime_type: externalObject.mime_type,
             file_id: externalObject.file_id,
             // External source fields
+            source_id: externalSource.id,
+            source_uuid: externalSource.uuid,
             source_type: externalSource.type,
             source_name: externalSource.name,
             source_endpoint: externalSource.endpoint,
         })
         .from(externalObject)
-        .innerJoin(externalSource, eq(externalObject.external_source_uuid, externalSource.uuid))
+        .innerJoin(externalSource, eq(externalObject.external_source_id, externalSource.id))
         .limit(pageSize)
         .offset(offset);
 
     return results.map(row => ({
+        id: row.id,
         uuid: row.uuid,
-        external_source_uuid: row.external_source_uuid,
+        external_source_id: row.external_source_id,
         mime_type: row.mime_type,
         file_id: row.file_id,
         source: {
-            uuid: row.external_source_uuid,
+            id: row.source_id,
+            uuid: row.source_uuid,
             type: row.source_type,
             name: row.source_name,
             endpoint: row.source_endpoint,
@@ -120,15 +131,22 @@ export async function getExternalObjectsBySource(
         return [];
     }
 
+    // Convert source UUID to ID
+    const sourceId = await externalSourceUuidToId(db, sourceUuid);
+    if (!sourceId) {
+        return [];
+    }
+
     const objects = await db
         .select({
+            id: externalObject.id,
             uuid: externalObject.uuid,
-            external_source_uuid: externalObject.external_source_uuid,
+            external_source_id: externalObject.external_source_id,
             mime_type: externalObject.mime_type,
             file_id: externalObject.file_id,
         })
         .from(externalObject)
-        .where(eq(externalObject.external_source_uuid, sourceUuid));
+        .where(eq(externalObject.external_source_id, sourceId));
 
     return objects;
 }
@@ -142,7 +160,7 @@ export async function inputExternalObject(
 ): Promise<void> {
     await db.insert(externalObject).values({
         uuid: objectData.uuid,
-        external_source_uuid: objectData.external_source_uuid,
+        external_source_id: objectData.external_source_id,
         mime_type: objectData.mime_type,
         file_id: objectData.file_id,
     });
@@ -154,15 +172,21 @@ export async function inputExternalObject(
 export async function updateExternalObject(
     db: DrizzleDB,
     objectUuid: string,
-    objectData: Omit<ExternalObject, 'uuid'>
+    objectData: Omit<ExternalObjectApiInput, 'uuid'>
 ): Promise<boolean> {
     if (!validateUUID(objectUuid)) return false;
 
     try {
+        // Convert external source UUID to ID
+        const externalSourceId = await externalSourceUuidToId(db, objectData.external_source_uuid);
+        if (!externalSourceId) {
+            throw new Error(`External source not found: ${objectData.external_source_uuid}`);
+        }
+
         await db
             .update(externalObject)
             .set({
-                external_source_uuid: objectData.external_source_uuid,
+                external_source_id: externalSourceId,
                 mime_type: objectData.mime_type,
                 file_id: objectData.file_id,
             })

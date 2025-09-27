@@ -1,6 +1,7 @@
 import { eq, inArray } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { creator, creatorWiki, workCreator, work } from '../schema';
+import { creatorUuidToId } from '../utils/uuid-id-converter';
 
 // Types matching current interfaces
 export interface Creator {
@@ -53,7 +54,8 @@ export async function getCreatorByUUID(
             identifier: creatorWiki.identifier,
         })
         .from(creatorWiki)
-        .where(eq(creatorWiki.creator_uuid, creatorUuid));
+        .innerJoin(creator, eq(creatorWiki.creator_id, creator.id))
+        .where(eq(creator.uuid, creatorUuid));
 
     return {
         creator: creatorResult[0],
@@ -103,12 +105,18 @@ export async function inputCreator(
         name: creatorData.name,
         type: creatorData.type,
     });
-    
+
     // Insert wiki references
     if (wikis && wikis.length > 0) {
+        // Get creator ID for foreign key operations
+        const creatorId = await creatorUuidToId(db, creatorData.uuid);
+        if (!creatorId) {
+            throw new Error(`Creator not found after insert: ${creatorData.uuid}`);
+        }
+
         await db.insert(creatorWiki).values(
             wikis.map(wiki => ({
-                creator_uuid: creatorData.uuid,
+                creator_id: creatorId,
                 platform: wiki.platform,
                 identifier: wiki.identifier,
             }))
@@ -129,6 +137,12 @@ export async function updateCreator(
 
     try {
         // For D1 compatibility, execute operations sequentially without transactions
+        // Get creator ID for foreign key operations
+        const creatorId = await creatorUuidToId(db, creatorUuid);
+        if (!creatorId) {
+            throw new Error(`Creator not found: ${creatorUuid}`);
+        }
+
         // Update creator
         await db
             .update(creator)
@@ -141,13 +155,13 @@ export async function updateCreator(
         // Delete old wiki entries
         await db
             .delete(creatorWiki)
-            .where(eq(creatorWiki.creator_uuid, creatorUuid));
+            .where(eq(creatorWiki.creator_id, creatorId));
 
         // Insert new wiki entries
         if (wikis && wikis.length > 0) {
             await db.insert(creatorWiki).values(
                 wikis.map(wiki => ({
-                    creator_uuid: creatorUuid,
+                    creator_id: creatorId,
                     platform: wiki.platform,
                     identifier: wiki.identifier,
                 }))
@@ -196,9 +210,11 @@ export async function deleteWorksByCreator(db: DrizzleDB, creatorUuid: string): 
     try {
         // Get all work UUIDs for this creator
         const creatorWorks = await db
-            .select({ work_uuid: workCreator.work_uuid })
+            .select({ work_uuid: work.uuid })
             .from(workCreator)
-            .where(eq(workCreator.creator_uuid, creatorUuid));
+            .innerJoin(creator, eq(workCreator.creator_id, creator.id))
+            .innerJoin(work, eq(workCreator.work_id, work.id))
+            .where(eq(creator.uuid, creatorUuid));
 
         if (creatorWorks.length === 0) return 0;
 

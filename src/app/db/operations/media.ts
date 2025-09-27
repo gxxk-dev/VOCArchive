@@ -1,8 +1,14 @@
 import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
-import { mediaSource, asset, mediaSourceExternalObject, assetExternalObject, externalObject, externalSource } from '../schema';
-import type { MediaSource, MediaSourceForApplication, MediaSourceWithExternalObjects, ExternalObject, MediaSourceInput } from '../types';
+import { mediaSource, asset, mediaSourceExternalObject, assetExternalObject, externalObject, externalSource, work } from '../schema';
+import type { MediaSource, MediaSourceForApplication, MediaSourceWithExternalObjects, ExternalObject, MediaSourceApiInput } from '../types';
 import { getExternalObjectByUUID, buildExternalObjectURL } from './external_object';
+import {
+    workUuidToId,
+    mediaSourceUuidToId,
+    assetUuidToId,
+    externalObjectUuidToId
+} from '../utils/uuid-id-converter';
 
 // UUID validation
 const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -23,15 +29,17 @@ export async function getMediaByUUID(
 
     const mediaResult = await db
         .select({
+            id: mediaSource.id,
             uuid: mediaSource.uuid,
-            work_uuid: mediaSource.work_uuid,
+            work_id: mediaSource.work_id,
+            work_uuid: work.uuid,
             is_music: mediaSource.is_music,
             file_name: mediaSource.file_name,
-            // url: mediaSource.url, // Removed - use external objects for file info
             mime_type: mediaSource.mime_type,
             info: mediaSource.info,
         })
         .from(mediaSource)
+        .innerJoin(work, eq(mediaSource.work_id, work.id))
         .where(eq(mediaSource.uuid, mediaUuid))
         .limit(1);
 
@@ -43,7 +51,7 @@ export async function getMediaByUUID(
     const externalObjects = await db
         .select({
             uuid: externalObject.uuid,
-            external_source_uuid: externalObject.external_source_uuid,
+            external_source_uuid: externalSource.uuid,
             mime_type: externalObject.mime_type,
             file_id: externalObject.file_id,
             source_type: externalSource.type,
@@ -51,13 +59,15 @@ export async function getMediaByUUID(
             source_endpoint: externalSource.endpoint,
         })
         .from(mediaSourceExternalObject)
-        .innerJoin(externalObject, eq(mediaSourceExternalObject.external_object_uuid, externalObject.uuid))
-        .innerJoin(externalSource, eq(externalObject.external_source_uuid, externalSource.uuid))
-        .where(eq(mediaSourceExternalObject.media_source_uuid, mediaUuid));
+        .innerJoin(externalObject, eq(mediaSourceExternalObject.external_object_id, externalObject.id))
+        .innerJoin(externalSource, eq(externalObject.external_source_id, externalSource.id))
+        .innerJoin(mediaSource, eq(mediaSourceExternalObject.media_source_id, mediaSource.id))
+        .where(eq(mediaSource.uuid, mediaUuid));
 
     const externalObjectsWithSource: ExternalObject[] = externalObjects.map(row => ({
+        id: 0, // Will be filled with actual ID if needed
         uuid: row.uuid,
-        external_source_uuid: row.external_source_uuid,
+        external_source_id: 0, // Will be filled with actual ID if needed
         mime_type: row.mime_type,
         file_id: row.file_id,
         source: {
@@ -90,15 +100,17 @@ export async function listMedia(
     
     const mediaList = await db
         .select({
+            id: mediaSource.id,
             uuid: mediaSource.uuid,
-            work_uuid: mediaSource.work_uuid,
+            work_id: mediaSource.work_id,
+            work_uuid: work.uuid,
             is_music: mediaSource.is_music,
             file_name: mediaSource.file_name,
-            // url: mediaSource.url, // Removed - use external objects for file info
             mime_type: mediaSource.mime_type,
             info: mediaSource.info,
         })
         .from(mediaSource)
+        .innerJoin(work, eq(mediaSource.work_id, work.id))
         .limit(pageSize)
         .offset(offset);
 
@@ -110,12 +122,18 @@ export async function listMedia(
  */
 export async function inputMedia(
     db: DrizzleDB,
-    mediaData: MediaSourceInput,
+    mediaData: MediaSourceApiInput,
     externalObjectUuids?: string[]
 ): Promise<void> {
+    // Convert work UUID to ID
+    const workId = await workUuidToId(db, mediaData.work_uuid);
+    if (!workId) {
+        throw new Error(`Work not found: ${mediaData.work_uuid}`);
+    }
+
     await db.insert(mediaSource).values({
         uuid: mediaData.uuid,
-        work_uuid: mediaData.work_uuid,
+        work_id: workId,
         is_music: mediaData.is_music,
         file_name: mediaData.file_name,
         url: mediaData.url || null, // Made optional - use external objects for file info
@@ -125,12 +143,24 @@ export async function inputMedia(
 
     // Insert media_source-external_object associations
     if (externalObjectUuids && externalObjectUuids.length > 0) {
-        await db.insert(mediaSourceExternalObject).values(
-            externalObjectUuids.map(objectUuid => ({
-                media_source_uuid: mediaData.uuid,
-                external_object_uuid: objectUuid,
-            }))
-        );
+        // Get media source ID for foreign key operations
+        const mediaId = await mediaSourceUuidToId(db, mediaData.uuid);
+        if (!mediaId) {
+            throw new Error(`Media source not found after insert: ${mediaData.uuid}`);
+        }
+
+        const objectInserts = [];
+        for (const objectUuid of externalObjectUuids) {
+            const objectId = await externalObjectUuidToId(db, objectUuid);
+            if (!objectId) {
+                throw new Error(`External object not found: ${objectUuid}`);
+            }
+            objectInserts.push({
+                media_source_id: mediaId,
+                external_object_id: objectId,
+            });
+        }
+        await db.insert(mediaSourceExternalObject).values(objectInserts);
     }
 }
 
@@ -140,16 +170,22 @@ export async function inputMedia(
 export async function updateMedia(
     db: DrizzleDB,
     mediaUuid: string,
-    mediaData: MediaSourceInput,
+    mediaData: MediaSourceApiInput,
     externalObjectUuids?: string[]
 ): Promise<boolean> {
     if (!validateUUID(mediaUuid)) return false;
 
     try {
+        // Convert work UUID to ID
+        const workId = await workUuidToId(db, mediaData.work_uuid);
+        if (!workId) {
+            throw new Error(`Work not found: ${mediaData.work_uuid}`);
+        }
+
         await db
             .update(mediaSource)
             .set({
-                work_uuid: mediaData.work_uuid,
+                work_id: workId,
                 is_music: mediaData.is_music,
                 file_name: mediaData.file_name,
                 url: mediaData.url || null, // Made optional - use external objects for file info
@@ -160,19 +196,31 @@ export async function updateMedia(
 
         // Update media_source-external_object associations
         if (externalObjectUuids !== undefined) {
+            // Get media source ID for foreign key operations
+            const mediaId = await mediaSourceUuidToId(db, mediaUuid);
+            if (!mediaId) {
+                throw new Error(`Media source not found: ${mediaUuid}`);
+            }
+
             // Delete old external object associations
             await db
                 .delete(mediaSourceExternalObject)
-                .where(eq(mediaSourceExternalObject.media_source_uuid, mediaUuid));
+                .where(eq(mediaSourceExternalObject.media_source_id, mediaId));
 
             // Insert new external object associations
             if (externalObjectUuids.length > 0) {
-                await db.insert(mediaSourceExternalObject).values(
-                    externalObjectUuids.map(objectUuid => ({
-                        media_source_uuid: mediaUuid,
-                        external_object_uuid: objectUuid,
-                    }))
-                );
+                const objectInserts = [];
+                for (const objectUuid of externalObjectUuids) {
+                    const objectId = await externalObjectUuidToId(db, objectUuid);
+                    if (!objectId) {
+                        throw new Error(`External object not found: ${objectUuid}`);
+                    }
+                    objectInserts.push({
+                        media_source_id: mediaId,
+                        external_object_id: objectId,
+                    });
+                }
+                await db.insert(mediaSourceExternalObject).values(objectInserts);
             }
         }
 
@@ -235,9 +283,11 @@ export async function getFileURLByUUIDWithExternalStorage(
         if (mediaResult.length > 0) {
             // Check if this media source has been migrated to external objects
             const mediaMigrationCheck = await db
-                .select({ external_object_uuid: mediaSourceExternalObject.external_object_uuid })
+                .select({ external_object_uuid: externalObject.uuid })
                 .from(mediaSourceExternalObject)
-                .where(eq(mediaSourceExternalObject.media_source_uuid, fileUuid))
+                .innerJoin(mediaSource, eq(mediaSourceExternalObject.media_source_id, mediaSource.id))
+                .innerJoin(externalObject, eq(mediaSourceExternalObject.external_object_id, externalObject.id))
+                .where(eq(mediaSource.uuid, fileUuid))
                 .limit(1);
 
             if (mediaMigrationCheck.length > 0) {
@@ -267,9 +317,11 @@ export async function getFileURLByUUIDWithExternalStorage(
         if (assetResult.length > 0) {
             // Check if this asset has been migrated to external objects
             const assetMigrationCheck = await db
-                .select({ external_object_uuid: assetExternalObject.external_object_uuid })
+                .select({ external_object_uuid: externalObject.uuid })
                 .from(assetExternalObject)
-                .where(eq(assetExternalObject.asset_uuid, fileUuid))
+                .innerJoin(asset, eq(assetExternalObject.asset_id, asset.id))
+                .innerJoin(externalObject, eq(assetExternalObject.external_object_id, externalObject.id))
+                .where(eq(asset.uuid, fileUuid))
                 .limit(1);
 
             if (assetMigrationCheck.length > 0) {

@@ -902,7 +902,7 @@ body {
         display: inline-flex;
         align-items: center;
     }
-
+}
 
 /* 动画优化 - 移动端减少复杂动画 */
 @media (max-width: 768px) {

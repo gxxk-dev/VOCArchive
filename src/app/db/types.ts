@@ -21,7 +21,7 @@ import {
     siteConfig,
 } from './schema';
 
-// Basic table types
+// Basic table types from new schema (with ID primary keys)
 export type Creator = InferSelectModel<typeof creator>;
 export type NewCreator = InferInsertModel<typeof creator>;
 
@@ -48,6 +48,16 @@ export type MediaSourceInput = Omit<NewMediaSource, 'url'> & {
     url?: string | null;
 };
 
+// API-compatible input types (still accept UUID but convert to ID internally)
+export type MediaSourceApiInput = Omit<MediaSourceInput, 'work_id'> & {
+    work_uuid: string; // API still accepts UUID
+};
+
+export type MediaSourceForDatabase = Omit<NewMediaSource, 'url'> & {
+    work_id: number; // Database expects ID
+    url?: string | null;
+};
+
 export type Asset = InferSelectModel<typeof asset>;
 export type NewAsset = InferInsertModel<typeof asset>;
 
@@ -59,14 +69,39 @@ export type AssetInput = Omit<NewAsset, 'file_id'> & {
     file_id?: string | null;
 };
 
+// API-compatible input types
+export type AssetApiInput = Omit<AssetInput, 'work_id'> & {
+    work_uuid: string; // API still accepts UUID
+};
+
 export type WorkCreator = InferSelectModel<typeof workCreator>;
 export type NewWorkCreator = InferInsertModel<typeof workCreator>;
+
+// API-compatible work creator input
+export type WorkCreatorApiInput = {
+    work_uuid: string;
+    creator_uuid: string;
+    role: string;
+};
 
 export type AssetCreator = InferSelectModel<typeof assetCreator>;
 export type NewAssetCreator = InferInsertModel<typeof assetCreator>;
 
+// API-compatible asset creator input
+export type AssetCreatorApiInput = {
+    asset_uuid: string;
+    creator_uuid: string;
+    role: string;
+};
+
 export type WorkRelation = InferSelectModel<typeof workRelation>;
 export type NewWorkRelation = InferInsertModel<typeof workRelation>;
+
+// API-compatible work relation input
+export type WorkRelationApiInput = Omit<WorkRelation, 'id' | 'from_work_id' | 'to_work_id'> & {
+    from_work_uuid: string;
+    to_work_uuid: string;
+};
 
 export type WorkWiki = InferSelectModel<typeof workWiki>;
 export type NewWorkWiki = InferInsertModel<typeof workWiki>;
@@ -89,8 +124,24 @@ export type NewFooterSettings = InferInsertModel<typeof footerSettings>;
 export type ExternalSource = InferSelectModel<typeof externalSource>;
 export type NewExternalSource = InferInsertModel<typeof externalSource>;
 
+// API-compatible external source input (still accepts UUID)
+export type ExternalSourceApiInput = Omit<NewExternalSource, 'id'> & {
+    uuid: string;
+    type: 'raw_url' | 'ipfs';
+    name: string;
+    endpoint: string;
+};
+
 export type ExternalObject = InferSelectModel<typeof externalObject>;
 export type NewExternalObject = InferInsertModel<typeof externalObject>;
+
+// API-compatible external object input
+export type ExternalObjectApiInput = Omit<NewExternalObject, 'id' | 'external_source_id'> & {
+    uuid: string;
+    external_source_uuid: string; // API accepts UUID
+    mime_type: string;
+    file_id: string;
+};
 
 export type SiteConfig = InferSelectModel<typeof siteConfig>;
 export type NewSiteConfig = InferInsertModel<typeof siteConfig>;

@@ -1,4 +1,4 @@
-import type { ExternalSource } from '../types';
+import type { ExternalSource, ExternalSourceApiInput } from '../types';
 
 /**
  * 存储源类型处理器接口
@@ -200,7 +200,7 @@ export function buildStorageURL(source: ExternalSource, fileId: string): string 
  * @param source 外部存储源
  * @returns 验证结果和错误信息
  */
-export function validateStorageSource(source: ExternalSource): { valid: boolean; error?: string } {
+export function validateStorageSource(source: ExternalSourceApiInput): { valid: boolean; error?: string } {
     if (!StorageHandlerFactory.isTypeSupported(source.type)) {
         return {
             valid: false,

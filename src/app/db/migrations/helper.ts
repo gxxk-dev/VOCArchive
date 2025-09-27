@@ -158,14 +158,14 @@ export async function validateDatabaseIntegrity(db: DrizzleDB): Promise<{
             .from(schema.externalObject)
             .leftJoin(
                 schema.assetExternalObject,
-                sql`${schema.externalObject.uuid} = ${schema.assetExternalObject.external_object_uuid}`
+                sql`${schema.externalObject.uuid} = ${schema.assetExternalObject.external_object_id}`
             )
             .leftJoin(
                 schema.mediaSourceExternalObject,
-                sql`${schema.externalObject.uuid} = ${schema.mediaSourceExternalObject.external_object_uuid}`
+                sql`${schema.externalObject.uuid} = ${schema.mediaSourceExternalObject.external_object_id}`
             )
             .where(
-                sql`${schema.assetExternalObject.external_object_uuid} IS NULL AND ${schema.mediaSourceExternalObject.external_object_uuid} IS NULL`
+                sql`${schema.assetExternalObject.external_object_id} IS NULL AND ${schema.mediaSourceExternalObject.external_object_id} IS NULL`
             );
 
         if (orphanedObjects.length > 0) {
@@ -178,7 +178,7 @@ export async function validateDatabaseIntegrity(db: DrizzleDB): Promise<{
             .from(schema.externalObject)
             .leftJoin(
                 schema.externalSource,
-                sql`${schema.externalObject.external_source_uuid} = ${schema.externalSource.uuid}`
+                sql`${schema.externalObject.external_source_id} = ${schema.externalSource.uuid}`
             )
             .where(sql`${schema.externalSource.uuid} IS NULL`);
 

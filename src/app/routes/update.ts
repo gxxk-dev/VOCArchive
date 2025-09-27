@@ -12,6 +12,8 @@ import { updateExternalObject } from '../db/operations/external_object';
 import { validateStorageSource } from '../db/utils/storage-handlers';
 import type { Work, WorkTitle, CreatorWithRole, WikiRef, Asset } from '../db/operations/work';
 import type { WorkTitleUpdate } from '../db/operations/work-title';
+import type { MediaSourceForDatabase, MediaSourceApiInput, ExternalSourceApiInput, ExternalObjectApiInput } from '../db/types';
+import { workUuidToId, externalSourceUuidToId } from '../db/utils/uuid-id-converter';
 import { Hono } from 'hono'
 
 // Request body interfaces
@@ -89,9 +91,10 @@ const updateHandlers = {
     },
     media: async (DB: any, body: UpdateMediaRequestBody) => {
         const db = createDrizzleClient(DB);
-        const full_media_source = {
+
+        const full_media_source: MediaSourceApiInput = {
             uuid: body.media_uuid,
-            work_uuid: body.work_uuid,
+            work_uuid: body.work_uuid, // Use work_uuid for API input
             is_music: body.is_music,
             file_name: body.file_name,
             url: body.url,
@@ -112,35 +115,31 @@ const updateHandlers = {
         const db = createDrizzleClient(DB);
         return await updateWorkTitle(db, body.title_uuid, body.updates);
     },
-    'external_source': async (DB: any, body: { external_source_uuid: string; type: 'raw_url' | 'ipfs'; name: string; endpoint: string }) => {
+    'external_source': async (DB: any, body: ExternalSourceApiInput) => {
         // 验证存储源配置
-        const validation = validateStorageSource({
-            uuid: body.external_source_uuid,
-            type: body.type,
-            name: body.name,
-            endpoint: body.endpoint
-        });
-        
+        const validation = validateStorageSource(body);
+
         if (!validation.valid) {
             throw new Error(validation.error);
         }
-        
+
         const db = createDrizzleClient(DB);
         const sourceData = {
             type: body.type,
             name: body.name,
             endpoint: body.endpoint
         };
-        return await updateExternalSource(db, body.external_source_uuid, sourceData);
+        return await updateExternalSource(db, body.uuid, sourceData);
     },
-    'external_object': async (DB: any, body: { external_object_uuid: string; external_source_uuid: string; mime_type: string; file_id: string }) => {
+    'external_object': async (DB: any, body: ExternalObjectApiInput) => {
         const db = createDrizzleClient(DB);
+
         const objectData = {
             external_source_uuid: body.external_source_uuid,
             mime_type: body.mime_type,
             file_id: body.file_id
         };
-        return await updateExternalObject(db, body.external_object_uuid, objectData);
+        return await updateExternalObject(db, body.uuid, objectData);
     }
 };
 

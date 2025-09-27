@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { externalSource } from '../schema';
-import type { ExternalSource, NewExternalSource } from '../types';
+import type { ExternalSource, NewExternalSource, ExternalSourceApiInput } from '../types';
 
 // UUID validation
 const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -22,6 +22,7 @@ export async function getExternalSourceByUUID(
 
     const sourceResult = await db
         .select({
+            id: externalSource.id,
             uuid: externalSource.uuid,
             type: externalSource.type,
             name: externalSource.name,
@@ -50,6 +51,7 @@ export async function listExternalSources(
     
     const sources = await db
         .select({
+            id: externalSource.id,
             uuid: externalSource.uuid,
             type: externalSource.type,
             name: externalSource.name,
@@ -67,7 +69,7 @@ export async function listExternalSources(
  */
 export async function inputExternalSource(
     db: DrizzleDB,
-    sourceData: NewExternalSource
+    sourceData: ExternalSourceApiInput
 ): Promise<void> {
     await db.insert(externalSource).values({
         uuid: sourceData.uuid,
@@ -83,7 +85,7 @@ export async function inputExternalSource(
 export async function updateExternalSource(
     db: DrizzleDB,
     sourceUuid: string,
-    sourceData: Omit<ExternalSource, 'uuid'>
+    sourceData: Omit<ExternalSourceApiInput, 'uuid'>
 ): Promise<boolean> {
     if (!validateUUID(sourceUuid)) return false;
 

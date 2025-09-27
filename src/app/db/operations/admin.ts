@@ -1,13 +1,14 @@
 import { eq, isNull, and } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
-import { 
-    footerSettings, 
-    creator, work, workTitle, asset, mediaSource, workCreator, workRelation, 
+import {
+    footerSettings,
+    creator, work, workTitle, asset, mediaSource, workCreator, workRelation,
     tag, category, workTag, workCategory,
     externalSource, externalObject, assetExternalObject, mediaSourceExternalObject,
     siteConfig
 } from '../schema';
 import { initializeDefaultConfig, initializeSecrets, generateSecretKey } from './config';
+import { assetUuidToId, externalSourceUuidToId, externalObjectUuidToId, mediaSourceUuidToId } from '../utils/uuid-id-converter';
 
 // Types
 export interface FooterSetting {
@@ -144,10 +145,17 @@ export async function migrateToExternalStorage(
             // Process batch without transaction (D1 limitation)
             for (const assetRow of assetBatch) {
                 try {
+                    // Get asset ID from UUID
+                    const assetId = await assetUuidToId(db, assetRow.uuid);
+                    if (!assetId) {
+                        console.log(`Asset ${assetRow.uuid} not found in database, skipping`);
+                        continue;
+                    }
+
                     // Check if already migrated
                     const existingAssociation = await db.select()
                         .from(assetExternalObject)
-                        .where(eq(assetExternalObject.asset_uuid, assetRow.uuid))
+                        .where(eq(assetExternalObject.asset_id, assetId))
                         .limit(1);
 
                     if (existingAssociation.length > 0) {
@@ -161,19 +169,33 @@ export async function migrateToExternalStorage(
                         continue;
                     }
 
+                    // Get default external source ID from UUID
+                    const defaultExternalSourceId = await externalSourceUuidToId(db, defaultExternalSourceUuid);
+                    if (!defaultExternalSourceId) {
+                        console.log(`Default external source ${defaultExternalSourceUuid} not found, skipping asset ${assetRow.uuid}`);
+                        continue;
+                    }
+
                     // Create external object for each asset
                     const externalObjectUuid = crypto.randomUUID();
                     await db.insert(externalObject).values({
                         uuid: externalObjectUuid,
-                        external_source_uuid: defaultExternalSourceUuid,
+                        external_source_id: defaultExternalSourceId,
                         mime_type: 'application/octet-stream', // Default MIME type
                         file_id: assetRow.file_name, // Use file_name as file_id since file_id is now null
                     });
 
+                    // Get the newly created external object ID
+                    const externalObjectId = await externalObjectUuidToId(db, externalObjectUuid);
+                    if (!externalObjectId) {
+                        console.log(`Failed to get ID for external object ${externalObjectUuid}, skipping asset ${assetRow.uuid}`);
+                        continue;
+                    }
+
                     // Create association between asset and external object
                     await db.insert(assetExternalObject).values({
-                        asset_uuid: assetRow.uuid,
-                        external_object_uuid: externalObjectUuid,
+                        asset_id: assetId,
+                        external_object_id: externalObjectId,
                     });
 
                     status.migratedAssets++;
@@ -201,10 +223,17 @@ export async function migrateToExternalStorage(
             // Process batch without transaction (D1 limitation)
             for (const mediaRow of mediaBatch) {
                 try {
+                    // Get media source ID from UUID
+                    const mediaSourceId = await mediaSourceUuidToId(db, mediaRow.uuid);
+                    if (!mediaSourceId) {
+                        console.log(`Media source ${mediaRow.uuid} not found in database, skipping`);
+                        continue;
+                    }
+
                     // Check if already migrated
                     const existingAssociation = await db.select()
                         .from(mediaSourceExternalObject)
-                        .where(eq(mediaSourceExternalObject.media_source_uuid, mediaRow.uuid))
+                        .where(eq(mediaSourceExternalObject.media_source_id, mediaSourceId))
                         .limit(1);
 
                     if (existingAssociation.length > 0) {
@@ -256,19 +285,33 @@ export async function migrateToExternalStorage(
                         console.log(`Media source ${mediaRow.uuid}: using relative path "${fileId}"`);
                     }
 
+                    // Get external source ID from UUID
+                    const externalSourceId = await externalSourceUuidToId(db, sourceUuid);
+                    if (!externalSourceId) {
+                        console.log(`External source ${sourceUuid} not found, skipping media source ${mediaRow.uuid}`);
+                        continue;
+                    }
+
                     // Create external object for each media source
                     const externalObjectUuid = crypto.randomUUID();
                     await db.insert(externalObject).values({
                         uuid: externalObjectUuid,
-                        external_source_uuid: sourceUuid,
+                        external_source_id: externalSourceId,
                         mime_type: mediaRow.mime_type,
                         file_id: fileId,
                     });
 
+                    // Get the newly created external object ID
+                    const externalObjectId = await externalObjectUuidToId(db, externalObjectUuid);
+                    if (!externalObjectId) {
+                        console.log(`Failed to get ID for external object ${externalObjectUuid}, skipping media source ${mediaRow.uuid}`);
+                        continue;
+                    }
+
                     // Create association between media source and external object
                     await db.insert(mediaSourceExternalObject).values({
-                        media_source_uuid: mediaRow.uuid,
-                        external_object_uuid: externalObjectUuid,
+                        media_source_id: mediaSourceId,
+                        external_object_id: externalObjectId,
                     });
 
                     status.migratedMediaSources++;
@@ -341,19 +384,40 @@ export async function migrateToExternalStorageLegacy(db: DrizzleDB): Promise<boo
                 continue;
             }
 
+            // Get asset ID from UUID
+            const assetId = await assetUuidToId(db, assetRow.uuid);
+            if (!assetId) {
+                console.log(`Asset ${assetRow.uuid} not found in database, skipping`);
+                continue;
+            }
+
+            // Get default external source ID from UUID
+            const defaultExternalSourceId = await externalSourceUuidToId(db, defaultExternalSourceUuid);
+            if (!defaultExternalSourceId) {
+                console.log(`Default external source ${defaultExternalSourceUuid} not found, skipping asset ${assetRow.uuid}`);
+                continue;
+            }
+
             // Create external object for each asset
             const externalObjectUuid = crypto.randomUUID();
             await db.insert(externalObject).values({
                 uuid: externalObjectUuid,
-                external_source_uuid: defaultExternalSourceUuid,
+                external_source_id: defaultExternalSourceId,
                 mime_type: 'application/octet-stream', // Default MIME type
                 file_id: assetRow.file_name, // Use file_name since file_id is now null
             });
 
+            // Get the newly created external object ID
+            const externalObjectId = await externalObjectUuidToId(db, externalObjectUuid);
+            if (!externalObjectId) {
+                console.log(`Failed to get ID for external object ${externalObjectUuid}, skipping asset ${assetRow.uuid}`);
+                continue;
+            }
+
             // Create association between asset and external object
             await db.insert(assetExternalObject).values({
-                asset_uuid: assetRow.uuid,
-                external_object_uuid: externalObjectUuid,
+                asset_id: assetId,
+                external_object_id: externalObjectId,
             });
         }
 
@@ -368,19 +432,40 @@ export async function migrateToExternalStorageLegacy(db: DrizzleDB): Promise<boo
                 continue;
             }
 
+            // Get media source ID from UUID
+            const mediaSourceId = await mediaSourceUuidToId(db, mediaRow.uuid);
+            if (!mediaSourceId) {
+                console.log(`Media source ${mediaRow.uuid} not found in database, skipping`);
+                continue;
+            }
+
+            // Get default external source ID from UUID
+            const defaultExternalSourceId = await externalSourceUuidToId(db, defaultExternalSourceUuid);
+            if (!defaultExternalSourceId) {
+                console.log(`Default external source ${defaultExternalSourceUuid} not found, skipping media source ${mediaRow.uuid}`);
+                continue;
+            }
+
             // Create external object for each media source
             const externalObjectUuid = crypto.randomUUID();
             await db.insert(externalObject).values({
                 uuid: externalObjectUuid,
-                external_source_uuid: defaultExternalSourceUuid,
+                external_source_id: defaultExternalSourceId,
                 mime_type: mediaRow.mime_type,
                 file_id: mediaRow.url || mediaRow.file_name, // Use URL or fallback to file_name
             });
 
+            // Get the newly created external object ID
+            const externalObjectId = await externalObjectUuidToId(db, externalObjectUuid);
+            if (!externalObjectId) {
+                console.log(`Failed to get ID for external object ${externalObjectUuid}, skipping media source ${mediaRow.uuid}`);
+                continue;
+            }
+
             // Create association between media source and external object
             await db.insert(mediaSourceExternalObject).values({
-                media_source_uuid: mediaRow.uuid,
-                external_object_uuid: externalObjectUuid,
+                media_source_id: mediaSourceId,
+                external_object_id: externalObjectId,
             });
         }
 
@@ -478,12 +563,12 @@ export async function repairCorruptedExternalObjects(
             .select({
                 uuid: externalObject.uuid,
                 file_id: externalObject.file_id,
-                external_source_uuid: externalObject.external_source_uuid,
+                external_source_id: externalObject.external_source_id,
                 source_endpoint: externalSource.endpoint,
                 source_name: externalSource.name
             })
             .from(externalObject)
-            .innerJoin(externalSource, eq(externalObject.external_source_uuid, externalSource.uuid));
+            .innerJoin(externalSource, eq(externalObject.external_source_id, externalSource.uuid));
 
         console.log(`Found ${corruptedObjects.length} potentially corrupted external objects`);
 

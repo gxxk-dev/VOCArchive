@@ -1,36 +1,41 @@
-import { sqliteTable, text, integer, primaryKey } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, primaryKey, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 
 // Core tables (no foreign key dependencies)
 
 export const creator = sqliteTable('creator', {
-    uuid: text('uuid').primaryKey(),
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    uuid: text('uuid').notNull().unique(),
     name: text('name').notNull(),
     type: text('type', { enum: ['human', 'virtual'] }).notNull(),
 });
 
 export const work = sqliteTable('work', {
-    uuid: text('uuid').primaryKey(),
-    copyright_basis: text('copyright_basis', { 
-        enum: ['none', 'accept', 'license', 'onlymetadata', 'arr'] 
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    uuid: text('uuid').notNull().unique(),
+    copyright_basis: text('copyright_basis', {
+        enum: ['none', 'accept', 'license', 'onlymetadata', 'arr']
     }).notNull(),
 });
 
 export const tag = sqliteTable('tag', {
-    uuid: text('uuid').primaryKey(),
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    uuid: text('uuid').notNull().unique(),
     name: text('name').notNull().unique(),
 });
 
 export const category = sqliteTable('category', {
-    uuid: text('uuid').primaryKey(),
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    uuid: text('uuid').notNull().unique(),
     name: text('name').notNull().unique(),
-    parent_uuid: text('parent_uuid'),
+    parent_id: integer('parent_id').references((): any => category.id, { onDelete: 'cascade' }),
 });
 
 export const footerSettings = sqliteTable('footer_settings', {
-    uuid: text('uuid').primaryKey(),
-    item_type: text('item_type', { 
-        enum: ['link', 'social', 'copyright'] 
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    uuid: text('uuid').notNull().unique(),
+    item_type: text('item_type', {
+        enum: ['link', 'social', 'copyright']
     }).notNull(),
     text: text('text').notNull(),
     url: text('url'),
@@ -38,7 +43,8 @@ export const footerSettings = sqliteTable('footer_settings', {
 });
 
 export const externalSource = sqliteTable('external_source', {
-    uuid: text('uuid').primaryKey(),
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    uuid: text('uuid').notNull().unique(),
     type: text('type', { enum: ['raw_url', 'ipfs'] }).notNull(),
     name: text('name').notNull(),
     endpoint: text('endpoint').notNull(),
@@ -53,19 +59,20 @@ export const siteConfig = sqliteTable('site_config', {
 // Dependent tables (with foreign key relationships)
 
 export const creatorWiki = sqliteTable('creator_wiki', {
-    creator_uuid: text('creator_uuid').notNull().references(() => creator.uuid, { 
-        onDelete: 'cascade' 
+    creator_id: integer('creator_id').notNull().references(() => creator.id, {
+        onDelete: 'cascade'
     }),
     platform: text('platform').notNull(),
     identifier: text('identifier').notNull(),
 }, (table) => ({
-    pk: primaryKey({ columns: [table.creator_uuid, table.platform] }),
+    pk: primaryKey({ columns: [table.creator_id, table.platform] }),
 }));
 
 export const workTitle = sqliteTable('work_title', {
-    uuid: text('uuid').primaryKey(),
-    work_uuid: text('work_uuid').notNull().references(() => work.uuid, { 
-        onDelete: 'cascade' 
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    uuid: text('uuid').notNull().unique(),
+    work_id: integer('work_id').notNull().references(() => work.id, {
+        onDelete: 'cascade'
     }),
     is_official: integer('is_official', { mode: 'boolean' }).notNull(),
     is_for_search: integer('is_for_search', { mode: 'boolean' }).notNull().default(false),
@@ -74,16 +81,17 @@ export const workTitle = sqliteTable('work_title', {
 });
 
 export const workLicense = sqliteTable('work_license', {
-    work_uuid: text('work_uuid').primaryKey().references(() => work.uuid, { 
-        onDelete: 'cascade' 
+    work_id: integer('work_id').primaryKey().references(() => work.id, {
+        onDelete: 'cascade'
     }),
     license_type: text('license_type').notNull(),
 });
 
 export const mediaSource = sqliteTable('media_source', {
-    uuid: text('uuid').primaryKey(),
-    work_uuid: text('work_uuid').notNull().references(() => work.uuid, { 
-        onDelete: 'cascade' 
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    uuid: text('uuid').notNull().unique(),
+    work_id: integer('work_id').notNull().references(() => work.id, {
+        onDelete: 'cascade'
     }),
     is_music: integer('is_music', { mode: 'boolean' }).notNull(),
     file_name: text('file_name').notNull(),
@@ -93,13 +101,14 @@ export const mediaSource = sqliteTable('media_source', {
 });
 
 export const asset = sqliteTable('asset', {
-    uuid: text('uuid').primaryKey(),
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    uuid: text('uuid').notNull().unique(),
     file_id: text('file_id'), // Made nullable - now redundant with external_object
-    work_uuid: text('work_uuid').notNull().references(() => work.uuid, { 
-        onDelete: 'cascade' 
+    work_id: integer('work_id').notNull().references(() => work.id, {
+        onDelete: 'cascade'
     }),
-    asset_type: text('asset_type', { 
-        enum: ['lyrics', 'picture'] 
+    asset_type: text('asset_type', {
+        enum: ['lyrics', 'picture']
     }).notNull(),
     file_name: text('file_name').notNull(),
     is_previewpic: integer('is_previewpic', { mode: 'boolean' }),
@@ -107,76 +116,78 @@ export const asset = sqliteTable('asset', {
 });
 
 export const workCreator = sqliteTable('work_creator', {
-    work_uuid: text('work_uuid').notNull().references(() => work.uuid, { 
-        onDelete: 'cascade' 
+    work_id: integer('work_id').notNull().references(() => work.id, {
+        onDelete: 'cascade'
     }),
-    creator_uuid: text('creator_uuid').notNull().references(() => creator.uuid, { 
-        onDelete: 'cascade' 
+    creator_id: integer('creator_id').notNull().references(() => creator.id, {
+        onDelete: 'cascade'
     }),
     role: text('role').notNull(),
 }, (table) => ({
-    pk: primaryKey({ columns: [table.work_uuid, table.creator_uuid, table.role] }),
+    pk: primaryKey({ columns: [table.work_id, table.creator_id, table.role] }),
 }));
 
 export const assetCreator = sqliteTable('asset_creator', {
-    asset_uuid: text('asset_uuid').notNull().references(() => asset.uuid, { 
-        onDelete: 'cascade' 
+    asset_id: integer('asset_id').notNull().references(() => asset.id, {
+        onDelete: 'cascade'
     }),
-    creator_uuid: text('creator_uuid').notNull().references(() => creator.uuid),
+    creator_id: integer('creator_id').notNull().references(() => creator.id),
     role: text('role').notNull(),
 }, (table) => ({
-    pk: primaryKey({ columns: [table.asset_uuid, table.creator_uuid] }),
+    pk: primaryKey({ columns: [table.asset_id, table.creator_id] }),
 }));
 
 export const workRelation = sqliteTable('work_relation', {
-    uuid: text('uuid').primaryKey(),
-    from_work_uuid: text('from_work_uuid').notNull().references(() => work.uuid, { 
-        onDelete: 'cascade' 
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    uuid: text('uuid').notNull().unique(),
+    from_work_id: integer('from_work_id').notNull().references(() => work.id, {
+        onDelete: 'cascade'
     }),
-    to_work_uuid: text('to_work_uuid').notNull().references(() => work.uuid, { 
-        onDelete: 'cascade' 
+    to_work_id: integer('to_work_id').notNull().references(() => work.id, {
+        onDelete: 'cascade'
     }),
-    relation_type: text('relation_type', { 
-        enum: ['original', 'remix', 'cover', 'remake', 'picture', 'lyrics'] 
+    relation_type: text('relation_type', {
+        enum: ['original', 'remix', 'cover', 'remake', 'picture', 'lyrics']
     }).notNull(),
 });
 
 export const workWiki = sqliteTable('work_wiki', {
-    work_uuid: text('work_uuid').notNull().references(() => work.uuid, { 
-        onDelete: 'cascade' 
+    work_id: integer('work_id').notNull().references(() => work.id, {
+        onDelete: 'cascade'
     }),
     platform: text('platform').notNull(),
     identifier: text('identifier').notNull(),
 }, (table) => ({
-    pk: primaryKey({ columns: [table.work_uuid, table.platform] }),
+    pk: primaryKey({ columns: [table.work_id, table.platform] }),
 }));
 
 export const workTag = sqliteTable('work_tag', {
-    work_uuid: text('work_uuid').notNull().references(() => work.uuid, { 
-        onDelete: 'cascade' 
+    work_id: integer('work_id').notNull().references(() => work.id, {
+        onDelete: 'cascade'
     }),
-    tag_uuid: text('tag_uuid').notNull().references(() => tag.uuid, { 
-        onDelete: 'cascade' 
+    tag_id: integer('tag_id').notNull().references(() => tag.id, {
+        onDelete: 'cascade'
     }),
 }, (table) => ({
-    pk: primaryKey({ columns: [table.work_uuid, table.tag_uuid] }),
+    pk: primaryKey({ columns: [table.work_id, table.tag_id] }),
 }));
 
 export const workCategory = sqliteTable('work_category', {
-    work_uuid: text('work_uuid').notNull().references(() => work.uuid, { 
-        onDelete: 'cascade' 
+    work_id: integer('work_id').notNull().references(() => work.id, {
+        onDelete: 'cascade'
     }),
-    category_uuid: text('category_uuid').notNull().references(() => category.uuid, { 
-        onDelete: 'cascade' 
+    category_id: integer('category_id').notNull().references(() => category.id, {
+        onDelete: 'cascade'
     }),
 }, (table) => ({
-    pk: primaryKey({ columns: [table.work_uuid, table.category_uuid] }),
+    pk: primaryKey({ columns: [table.work_id, table.category_id] }),
 }));
 
 export const externalObject = sqliteTable('external_object', {
-    uuid: text('uuid').primaryKey(),
-    external_source_uuid: text('external_source_uuid').notNull().references(() => externalSource.uuid, { 
-        onDelete: 'cascade' 
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    uuid: text('uuid').notNull().unique(),
+    external_source_id: integer('external_source_id').notNull().references(() => externalSource.id, {
+        onDelete: 'cascade'
     }),
     mime_type: text('mime_type').notNull(),
     file_id: text('file_id').notNull(),
@@ -185,25 +196,25 @@ export const externalObject = sqliteTable('external_object', {
 // Junction tables for many-to-many relationships
 
 export const assetExternalObject = sqliteTable('asset_external_object', {
-    asset_uuid: text('asset_uuid').notNull().references(() => asset.uuid, { 
-        onDelete: 'cascade' 
+    asset_id: integer('asset_id').notNull().references(() => asset.id, {
+        onDelete: 'cascade'
     }),
-    external_object_uuid: text('external_object_uuid').notNull().references(() => externalObject.uuid, { 
-        onDelete: 'cascade' 
+    external_object_id: integer('external_object_id').notNull().references(() => externalObject.id, {
+        onDelete: 'cascade'
     }),
 }, (table) => ({
-    pk: primaryKey({ columns: [table.asset_uuid, table.external_object_uuid] }),
+    pk: primaryKey({ columns: [table.asset_id, table.external_object_id] }),
 }));
 
 export const mediaSourceExternalObject = sqliteTable('media_source_external_object', {
-    media_source_uuid: text('media_source_uuid').notNull().references(() => mediaSource.uuid, { 
-        onDelete: 'cascade' 
+    media_source_id: integer('media_source_id').notNull().references(() => mediaSource.id, {
+        onDelete: 'cascade'
     }),
-    external_object_uuid: text('external_object_uuid').notNull().references(() => externalObject.uuid, { 
-        onDelete: 'cascade' 
+    external_object_id: integer('external_object_id').notNull().references(() => externalObject.id, {
+        onDelete: 'cascade'
     }),
 }, (table) => ({
-    pk: primaryKey({ columns: [table.media_source_uuid, table.external_object_uuid] }),
+    pk: primaryKey({ columns: [table.media_source_id, table.external_object_id] }),
 }));
 
 // Relations
@@ -216,8 +227,8 @@ export const creatorRelations = relations(creator, ({ many }) => ({
 
 export const creatorWikiRelations = relations(creatorWiki, ({ one }) => ({
     creator: one(creator, {
-        fields: [creatorWiki.creator_uuid],
-        references: [creator.uuid],
+        fields: [creatorWiki.creator_id],
+        references: [creator.id],
     }),
 }));
 
@@ -236,30 +247,30 @@ export const workRelations = relations(work, ({ many }) => ({
 
 export const workTitleRelations = relations(workTitle, ({ one }) => ({
     work: one(work, {
-        fields: [workTitle.work_uuid],
-        references: [work.uuid],
+        fields: [workTitle.work_id],
+        references: [work.id],
     }),
 }));
 
 export const workLicenseRelations = relations(workLicense, ({ one }) => ({
     work: one(work, {
-        fields: [workLicense.work_uuid],
-        references: [work.uuid],
+        fields: [workLicense.work_id],
+        references: [work.id],
     }),
 }));
 
 export const mediaSourceRelations = relations(mediaSource, ({ one, many }) => ({
     work: one(work, {
-        fields: [mediaSource.work_uuid],
-        references: [work.uuid],
+        fields: [mediaSource.work_id],
+        references: [work.id],
     }),
     mediaSourceExternalObjects: many(mediaSourceExternalObject),
 }));
 
 export const assetRelations = relations(asset, ({ one, many }) => ({
     work: one(work, {
-        fields: [asset.work_uuid],
-        references: [work.uuid],
+        fields: [asset.work_id],
+        references: [work.id],
     }),
     assetCreators: many(assetCreator),
     assetExternalObjects: many(assetExternalObject),
@@ -267,43 +278,43 @@ export const assetRelations = relations(asset, ({ one, many }) => ({
 
 export const workCreatorRelations = relations(workCreator, ({ one }) => ({
     work: one(work, {
-        fields: [workCreator.work_uuid],
-        references: [work.uuid],
+        fields: [workCreator.work_id],
+        references: [work.id],
     }),
     creator: one(creator, {
-        fields: [workCreator.creator_uuid],
-        references: [creator.uuid],
+        fields: [workCreator.creator_id],
+        references: [creator.id],
     }),
 }));
 
 export const assetCreatorRelations = relations(assetCreator, ({ one }) => ({
     asset: one(asset, {
-        fields: [assetCreator.asset_uuid],
-        references: [asset.uuid],
+        fields: [assetCreator.asset_id],
+        references: [asset.id],
     }),
     creator: one(creator, {
-        fields: [assetCreator.creator_uuid],
-        references: [creator.uuid],
+        fields: [assetCreator.creator_id],
+        references: [creator.id],
     }),
 }));
 
 export const workRelationRelations = relations(workRelation, ({ one }) => ({
     fromWork: one(work, {
-        fields: [workRelation.from_work_uuid],
-        references: [work.uuid],
+        fields: [workRelation.from_work_id],
+        references: [work.id],
         relationName: 'fromWork',
     }),
     toWork: one(work, {
-        fields: [workRelation.to_work_uuid],
-        references: [work.uuid],
+        fields: [workRelation.to_work_id],
+        references: [work.id],
         relationName: 'toWork',
     }),
 }));
 
 export const workWikiRelations = relations(workWiki, ({ one }) => ({
     work: one(work, {
-        fields: [workWiki.work_uuid],
-        references: [work.uuid],
+        fields: [workWiki.work_id],
+        references: [work.id],
     }),
 }));
 
@@ -313,19 +324,19 @@ export const tagRelations = relations(tag, ({ many }) => ({
 
 export const workTagRelations = relations(workTag, ({ one }) => ({
     work: one(work, {
-        fields: [workTag.work_uuid],
-        references: [work.uuid],
+        fields: [workTag.work_id],
+        references: [work.id],
     }),
     tag: one(tag, {
-        fields: [workTag.tag_uuid],
-        references: [tag.uuid],
+        fields: [workTag.tag_id],
+        references: [tag.id],
     }),
 }));
 
 export const categoryRelations = relations(category, ({ one, many }) => ({
     parent: one(category, {
-        fields: [category.parent_uuid],
-        references: [category.uuid],
+        fields: [category.parent_id],
+        references: [category.id],
         relationName: 'parentCategory',
     }),
     children: many(category, { relationName: 'parentCategory' }),
@@ -334,12 +345,12 @@ export const categoryRelations = relations(category, ({ one, many }) => ({
 
 export const workCategoryRelations = relations(workCategory, ({ one }) => ({
     work: one(work, {
-        fields: [workCategory.work_uuid],
-        references: [work.uuid],
+        fields: [workCategory.work_id],
+        references: [work.id],
     }),
     category: one(category, {
-        fields: [workCategory.category_uuid],
-        references: [category.uuid],
+        fields: [workCategory.category_id],
+        references: [category.id],
     }),
 }));
 
@@ -349,8 +360,8 @@ export const externalSourceRelations = relations(externalSource, ({ many }) => (
 
 export const externalObjectRelations = relations(externalObject, ({ one, many }) => ({
     externalSource: one(externalSource, {
-        fields: [externalObject.external_source_uuid],
-        references: [externalSource.uuid],
+        fields: [externalObject.external_source_id],
+        references: [externalSource.id],
     }),
     assetExternalObjects: many(assetExternalObject),
     mediaSourceExternalObjects: many(mediaSourceExternalObject),
@@ -358,22 +369,22 @@ export const externalObjectRelations = relations(externalObject, ({ one, many })
 
 export const assetExternalObjectRelations = relations(assetExternalObject, ({ one }) => ({
     asset: one(asset, {
-        fields: [assetExternalObject.asset_uuid],
-        references: [asset.uuid],
+        fields: [assetExternalObject.asset_id],
+        references: [asset.id],
     }),
     externalObject: one(externalObject, {
-        fields: [assetExternalObject.external_object_uuid],
-        references: [externalObject.uuid],
+        fields: [assetExternalObject.external_object_id],
+        references: [externalObject.id],
     }),
 }));
 
 export const mediaSourceExternalObjectRelations = relations(mediaSourceExternalObject, ({ one }) => ({
     mediaSource: one(mediaSource, {
-        fields: [mediaSourceExternalObject.media_source_uuid],
-        references: [mediaSource.uuid],
+        fields: [mediaSourceExternalObject.media_source_id],
+        references: [mediaSource.id],
     }),
     externalObject: one(externalObject, {
-        fields: [mediaSourceExternalObject.external_object_uuid],
-        references: [externalObject.uuid],
+        fields: [mediaSourceExternalObject.external_object_id],
+        references: [externalObject.id],
     }),
 }));

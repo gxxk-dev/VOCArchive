@@ -1,6 +1,7 @@
 import { eq, and } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { workTitle, work } from '../schema';
+import { workUuidToId, workIdToUuid } from '../utils/uuid-id-converter';
 
 // Types
 export interface WorkTitle {
@@ -45,7 +46,7 @@ export async function getWorkTitleByUUID(db: DrizzleDB, titleUuid: string): Prom
         const result = await db
             .select({
                 uuid: workTitle.uuid,
-                work_uuid: workTitle.work_uuid,
+                work_id: workTitle.work_id,
                 is_official: workTitle.is_official,
                 is_for_search: workTitle.is_for_search,
                 language: workTitle.language,
@@ -55,7 +56,20 @@ export async function getWorkTitleByUUID(db: DrizzleDB, titleUuid: string): Prom
             .where(eq(workTitle.uuid, titleUuid))
             .limit(1);
 
-        return result[0] || null;
+        if (!result[0]) return null;
+
+        // Convert work ID back to UUID for API compatibility
+        const workUuid = await workIdToUuid(db, result[0].work_id);
+        if (!workUuid) return null;
+
+        return {
+            uuid: result[0].uuid,
+            work_uuid: workUuid,
+            is_official: result[0].is_official,
+            is_for_search: result[0].is_for_search,
+            language: result[0].language,
+            title: result[0].title,
+        };
     } catch (error) {
         console.error('Error getting work title:', error);
         return null;
@@ -71,26 +85,40 @@ export async function listWorkTitles(db: DrizzleDB, workUuid: string, includeFor
     }
 
     try {
+        // Convert work UUID to ID
+        const workId = await workUuidToId(db, workUuid);
+        if (!workId) return [];
+
         const query = db
             .select({
                 uuid: workTitle.uuid,
-                work_uuid: workTitle.work_uuid,
+                work_id: workTitle.work_id,
                 is_official: workTitle.is_official,
                 is_for_search: workTitle.is_for_search,
                 language: workTitle.language,
                 title: workTitle.title,
             })
             .from(workTitle)
-            .where(eq(workTitle.work_uuid, workUuid));
+            .where(eq(workTitle.work_id, workId));
 
         const allTitles = await query;
-        
+
+        // Convert to API format with work UUID
+        const titlesWithWorkUuid = allTitles.map(title => ({
+            uuid: title.uuid,
+            work_uuid: workUuid,
+            is_official: title.is_official,
+            is_for_search: title.is_for_search,
+            language: title.language,
+            title: title.title,
+        }));
+
         // Filter out ForSearch titles if not explicitly requested
         if (!includeForSearch) {
-            return allTitles.filter(title => !title.is_for_search);
+            return titlesWithWorkUuid.filter(title => !title.is_for_search);
         }
-        
-        return allTitles;
+
+        return titlesWithWorkUuid;
     } catch (error) {
         console.error('Error listing work titles:', error);
         return [];
@@ -105,23 +133,19 @@ export async function inputWorkTitle(db: DrizzleDB, titleData: WorkTitleInput): 
         return null;
     }
 
-    // Check if work exists
-    const existingWork = await db
-        .select({ uuid: work.uuid })
-        .from(work)
-        .where(eq(work.uuid, titleData.work_uuid))
-        .limit(1);
-
-    if (existingWork.length === 0) {
-        return null;
-    }
-
     try {
+        // Convert work UUID to ID
+        const workId = await workUuidToId(db, titleData.work_uuid);
+        if (!workId) {
+            console.error('Work not found:', titleData.work_uuid);
+            return null;
+        }
+
         const titleUuid = crypto.randomUUID();
-        
+
         await db.insert(workTitle).values({
             uuid: titleUuid,
-            work_uuid: titleData.work_uuid,
+            work_id: workId,
             is_official: titleData.is_official,
             is_for_search: titleData.is_for_search || false,
             language: titleData.language,
@@ -139,8 +163,8 @@ export async function inputWorkTitle(db: DrizzleDB, titleData: WorkTitleInput): 
  * Update an existing work title
  */
 export async function updateWorkTitle(
-    db: DrizzleDB, 
-    titleUuid: string, 
+    db: DrizzleDB,
+    titleUuid: string,
     updates: WorkTitleUpdate
 ): Promise<boolean> {
     if (!validateUUID(titleUuid)) {
@@ -161,7 +185,7 @@ export async function updateWorkTitle(
     try {
         // Build update object with only provided fields
         const updateData: any = {};
-        
+
         if (updates.isOfficial !== undefined) {
             updateData.is_official = updates.isOfficial;
         }
@@ -229,10 +253,14 @@ export async function getWorkTitleCount(db: DrizzleDB, workUuid: string): Promis
     }
 
     try {
+        // Convert work UUID to ID
+        const workId = await workUuidToId(db, workUuid);
+        if (!workId) return 0;
+
         const result = await db
             .select({ uuid: workTitle.uuid })
             .from(workTitle)
-            .where(eq(workTitle.work_uuid, workUuid));
+            .where(eq(workTitle.work_id, workId));
 
         return result.length;
     } catch (error) {
