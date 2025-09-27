@@ -8,7 +8,9 @@
 		"cf-typegen": "wrangler types --env-interface CloudflareBindings",
 		"db:generate": "drizzle-kit generate",
 		"db:push": "drizzle-kit push",
-		"db:studio": "drizzle-kit studio"
+		"db:studio": "drizzle-kit studio",
+		"build:migrations": "node scripts/generate-migration-registry.js",
+		"prebuild": "npm run build:migrations"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20250812.0",

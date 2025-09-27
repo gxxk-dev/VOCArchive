@@ -1,6 +1,7 @@
 import type { Migration, MigrationInfo, MigrationValidationResult } from '../types/migration';
 import { getCurrentDbVersion } from '../operations/config';
 import type { DrizzleDB } from '../client';
+import { getRegisteredMigrationFiles, getMigrationModule } from './migration-registry';
 
 /**
  * 迁移文件扫描器
@@ -77,15 +78,16 @@ export function validateMigrationFileName(fileName: string): MigrationValidation
 /**
  * 动态导入迁移模块
  *
- * 在 Cloudflare Workers 中，我们使用动态 import() 来加载迁移文件
+ * 在 Cloudflare Workers 中，我们使用预生成的注册表来加载迁移文件
  */
 export async function loadMigrationModule(fileName: string): Promise<Migration | null> {
     try {
-        // 构建模块路径
-        const modulePath = `../../../migrations/${fileName}`;
-
-        // 动态导入模块
-        const module = await import(modulePath);
+        // 使用注册表获取模块
+        const module = getMigrationModule(fileName);
+        if (!module) {
+            console.error(`Migration module not found in registry: ${fileName}`);
+            return null;
+        }
 
         // 验证模块导出
         if (typeof module.version !== 'number') {
@@ -314,20 +316,10 @@ export async function scanMigrationFiles(
 
 /**
  * 获取已知的迁移文件列表
- *
- * 在实际实现中，这个列表可能需要在构建时生成，
- * 或者通过其他方式动态维护
+ * 现在使用构建时生成的注册表
  */
 function getKnownMigrationFiles(): string[] {
-    // 这里可以返回一个预定义的文件列表
-    // 在构建过程中，可以通过脚本扫描 src/migrations 目录
-    // 并生成这个列表
-
-    return [
-        // 示例文件 - 实际实现中应该动态生成
-        // '001_example.ts',
-        // '002_another_migration.ts',
-    ];
+    return getRegisteredMigrationFiles();
 }
 
 /**

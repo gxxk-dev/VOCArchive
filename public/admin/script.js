@@ -1379,10 +1379,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 1. creator.creator_uuid (direct UUID field)
         // 2. creator.creator.uuid (nested creator object)
         // 3. creator.uuid (when creator data is the actual creator object)
-        const creatorUuid = creator.creator_uuid || creator.creator?.uuid || creator.uuid || '';
+        const creator_uuid = creator.creator_uuid || creator.creator?.uuid || creator.uuid || '';
         const creatorRole = creator.role || '';
-        const creatorOptions = allCreators.map(c => 
-            `<option value="${c.uuid}" ${creatorUuid === c.uuid ? 'selected' : ''}>${c.name}</option>`
+        const creatorOptions = allCreators.map(c =>
+            `<option value="${c.uuid}" ${creator_uuid === c.uuid ? 'selected' : ''}>${c.name}</option>`
         ).join('');
 
         return `
