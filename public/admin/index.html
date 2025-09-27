@@ -53,51 +53,6 @@
             </div>
         </div>
 
-        <div id="danger-zone">
-            <h2>危险区域</h2>
-            <div class="danger-item">
-                <p>这些操作可能导致数据丢失，请谨慎操作。</p>
-            </div>
-            <div class="danger-item">
-                <button id="db-init-button" class="danger-button">初始化数据库 (DB Init)</button>
-                <small>将创建所有预定义的表。如果表已存在，此操作可能会失败。</small>
-            </div>
-            <div class="danger-item">
-                <button id="db-clear-button" class="danger-button">清空数据库 (DB Clear)</button>
-                <small>将删除所有用户数据表。<b>此操作不可逆！</b></small>
-            </div>
-            <h2>系统配置</h2>
-            <div class="danger-item">
-                <button id="config-status-button" class="danger-button">检查配置状态 (Config Status)</button>
-                <small>检查站点配置表是否存在以及默认配置状态。</small>
-                <div id="config-status-result" class="config-status-result"></div>
-            </div>
-            <div class="danger-item">
-                <button id="config-init-button" class="danger-button">初始化配置 (Config Init)</button>
-                <small>创建配置表并初始化默认配置。如果配置已存在，此操作将更新缺失的配置项。</small>
-                <div id="config-init-result" class="config-init-result"></div>
-            </div>
-            <h2>外部存储迁移</h2>
-            <div class="danger-item">
-                <button id="migration-status-button" class="danger-button">检查迁移状态 (Migration Status)</button>
-                <small>查看当前外部存储迁移的状态信息。</small>
-                <div id="migration-status-result" class="migration-status-result"></div>
-            </div>
-            <div class="danger-item">
-                <label for="asset-url-input">ASSET_URL:</label>
-                <input type="text" id="asset-url-input" placeholder="https://assets.example.com" />
-                <label for="batch-size-input">批处理大小:</label>
-                <input type="number" id="batch-size-input" value="50" min="10" max="500" />
-                <br/>
-                <button id="execute-migration-button" class="danger-button">执行外部存储迁移 (Execute Migration)</button>
-                <small>将现有的assets和media sources迁移到外部存储系统。<b>请确保先备份数据库！</b></small>
-            </div>
-            <div class="danger-item">
-                <button id="validate-migration-button" class="danger-button">验证迁移完整性 (Validate Migration)</button>
-                <small>检查迁移的完整性和数据一致性。</small>
-                <div id="validation-result" class="validation-result"></div>
-            </div>
-        </div>
     </div>
 
     <!-- Create/Edit Modal -->

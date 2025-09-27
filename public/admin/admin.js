@@ -25,10 +25,7 @@ import {
 } from './modules/crud-handlers.js';
 import {
     initializeToolElements,
-    setupUuidGeneration,
-    setupDatabaseManagement,
-    setupConfigManagement,
-    setupMigrationManagement
+    setupUuidGeneration
 } from './modules/tools.js';
 import {
     filterTags,
@@ -76,9 +73,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Setup tool functionalities
     setupUuidGeneration();
-    setupDatabaseManagement();
-    setupConfigManagement();
-    setupMigrationManagement();
 
     // Make filter functions globally available
     window.filterTags = filterTags;
