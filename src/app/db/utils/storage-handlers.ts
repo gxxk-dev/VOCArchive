@@ -17,7 +17,7 @@ export interface StorageHandler {
      * @param source 外部存储源配置
      * @returns 验证结果
      */
-    validateConfig(source: ExternalSource): boolean;
+    validateConfig(source: ExternalSourceApiInput): boolean;
     
     /**
      * 获取存储类型名称
@@ -53,7 +53,7 @@ export class RawUrlHandler implements StorageHandler {
         return url;
     }
     
-    validateConfig(source: ExternalSource): boolean {
+    validateConfig(source: ExternalSourceApiInput): boolean {
         // 验证端点格式是否包含占位符或为直接替换模式
         if (!source.endpoint) {
             return false;
@@ -102,7 +102,7 @@ export class IpfsHandler implements StorageHandler {
         return url;
     }
     
-    validateConfig(source: ExternalSource): boolean {
+    validateConfig(source: ExternalSourceApiInput): boolean {
         // 验证端点格式
         if (!source.endpoint) {
             return false;
