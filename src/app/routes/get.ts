@@ -1,17 +1,18 @@
 import { Hono } from 'hono';
 import { createDrizzleClient } from '../db/client';
 import {
-    getWorkByUUID, 
-    getCreatorByUUID, 
-    getMediaByUUID, 
+    getWorkByUUID,
+    getCreatorByUUID,
+    getMediaByUUID,
     getAssetByUUID,
     getFileURLByUUIDWithExternalStorage,
-    getTagByUUID, 
+    getTagByUUID,
     getCategoryByUUID
 } from "../db";
 import { getWorkTitleByUUID } from '../db/operations/work-title';
 import { getExternalSourceByUUID } from '../db/operations/external_source';
 import { getExternalObjectByUUID } from '../db/operations/external_object';
+import { getWikiPlatform } from '../db/operations/wiki-platforms';
 
 export const getInfo = new Hono();
 
@@ -94,5 +95,12 @@ getInfo.get('/external_source/:uuid', async (c: any) => {
 getInfo.get('/external_object/:uuid', async (c: any) => {
     const db = createDrizzleClient(c.env.DB);
     const result = await getExternalObjectByUUID(db, c.req.param('uuid'));
+    return c.json(result);
+});
+
+// 获取Wiki平台详情
+getInfo.get('/wiki_platform/:uuid', async (c: any) => {
+    const db = createDrizzleClient(c.env.DB);
+    const result = await getWikiPlatform(db, c.req.param('uuid'));
     return c.json(result);
 });

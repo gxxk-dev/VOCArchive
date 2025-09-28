@@ -324,6 +324,15 @@ export async function handleFormSubmit(e, target, isUpdate) {
                     description: formData.get('description') || null,
                 };
                 break;
+            case 'wiki_platform':
+                body = {
+                    uuid: formData.get('uuid'),
+                    platform_key: formData.get('platform_key'),
+                    platform_name: formData.get('platform_name'),
+                    url_template: formData.get('url_template'),
+                    icon_class: formData.get('icon_class') || null
+                };
+                break;
             default:
                 throw new Error('Invalid form target.');
         }
@@ -345,6 +354,14 @@ export async function handleFormSubmit(e, target, isUpdate) {
             } else {
                 endpoint = `/config/${formData.get('key')}`;
                 method = 'PUT'; // site_config always uses PUT for upsert
+            }
+        } else if (target === 'wiki_platform') {
+            if (isUpdate) {
+                endpoint = `/update/wiki_platform`;
+                method = 'POST';
+            } else {
+                endpoint = `/input/wiki_platform`;
+                method = 'POST';
             }
         } else {
             endpoint = isUpdate ? `/update/${apiTarget}` : `/input/${apiTarget}`;

@@ -765,7 +765,7 @@ export async function exportAllTables(db: DrizzleDB): Promise<Record<string, any
             creator, work, workTitle, asset, mediaSource, workCreator, workRelation,
             tag, category, workTag, workCategory, footerSettings, siteConfig,
             externalSource, externalObject, assetExternalObject, mediaSourceExternalObject,
-            creatorWiki, workLicense, workWiki, assetCreator
+            creatorWiki, workLicense, workWiki, assetCreator, wikiPlatform
         } = await import('../schema');
 
         // Export all main tables using Drizzle queries
@@ -783,7 +783,8 @@ export async function exportAllTables(db: DrizzleDB): Promise<Record<string, any
             db.select().from(workCategory).then(data => { exportData.work_category = data; }),
             db.select().from(footerSettings).then(data => { exportData.footer_settings = data; }),
             db.select().from(siteConfig).then(data => { exportData.site_config = data; }),
-            
+            db.select().from(wikiPlatform).then(data => { exportData.wiki_platform = data; }),
+
             // Export external storage tables
             db.select().from(externalSource).then(data => { exportData.external_source = data; }),
             db.select().from(externalObject).then(data => { exportData.external_object = data; }),

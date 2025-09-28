@@ -3,6 +3,7 @@ import type { DrizzleDB } from '../client';
 import { siteConfig } from '../schema';
 import type { SiteConfig, NewSiteConfig, SiteConfigKey } from '../types';
 import { authenticator } from 'otplib';
+import { initializeDefaultWikiPlatforms } from './wiki-platforms';
 
 /**
  * 获取所有站点配置
@@ -115,6 +116,9 @@ export async function initializeDefaultConfig(db: DrizzleDB): Promise<void> {
             await upsertSiteConfig(db, config.key, config.value, config.description);
         }
     }
+
+    // 初始化默认Wiki平台配置
+    await initializeDefaultWikiPlatforms(db);
 }
 
 /**

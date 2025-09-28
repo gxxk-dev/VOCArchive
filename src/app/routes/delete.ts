@@ -8,6 +8,7 @@ import { deleteCategory, removeWorkCategories, removeAllWorkCategories } from '.
 import { deleteWorkTitle } from '../db/operations/work-title';
 import { deleteExternalSource } from '../db/operations/external_source';
 import { deleteExternalObject } from '../db/operations/external_object';
+import { deleteWikiPlatform } from '../db/operations/wiki-platforms';
 import { clearUserDataTables } from '../db/operations/admin';
 import { Hono } from "hono";
 
@@ -312,6 +313,29 @@ deleteInfo.post('/external_object', async (c: any) => {
         
         return c.json({ message: 'External object deleted successfully.' }, 200);
     } catch (error) {
+        return c.json({ error: 'Internal server error' }, 500);
+    }
+});
+
+// 删除Wiki平台
+deleteInfo.post('/wiki_platform', async (c: any) => {
+    try {
+        const body: { wiki_platform_uuid: string } = await c.req.json();
+
+        if (!body.wiki_platform_uuid) {
+            return c.json({ error: 'Missing wiki_platform_uuid' }, 400);
+        }
+
+        const db = createDrizzleClient(c.env.DB);
+        const result = await deleteWikiPlatform(db, body.wiki_platform_uuid);
+
+        if (!result) {
+            return c.json({ error: 'Wiki platform not found or delete failed.' }, 404);
+        }
+
+        return c.json({ message: 'Wiki platform deleted successfully.' }, 200);
+    } catch (error) {
+        console.error('Wiki platform deletion error:', error);
         return c.json({ error: 'Internal server error' }, 500);
     }
 });

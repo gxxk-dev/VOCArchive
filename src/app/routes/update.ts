@@ -9,10 +9,11 @@ import { updateCategory } from '../db/operations/category';
 import { updateWorkTitle } from '../db/operations/work-title';
 import { updateExternalSource } from '../db/operations/external_source';
 import { updateExternalObject } from '../db/operations/external_object';
+import { updateWikiPlatform } from '../db/operations/wiki-platforms';
 import { validateStorageSource } from '../db/utils/storage-handlers';
 import type { Work, WorkTitle, CreatorWithRole, WikiRef, Asset } from '../db/operations/work';
 import type { WorkTitleUpdate } from '../db/operations/work-title';
-import type { MediaSourceForDatabase, MediaSourceApiInput, ExternalSourceApiInput, ExternalObjectApiInput } from '../db/types';
+import type { MediaSourceForDatabase, MediaSourceApiInput, ExternalSourceApiInput, ExternalObjectApiInput, WikiPlatformApiInput } from '../db/types';
 import { workUuidToId, externalSourceUuidToId } from '../db/utils/uuid-id-converter';
 import { Hono } from 'hono'
 
@@ -140,6 +141,10 @@ const updateHandlers = {
             file_id: body.file_id
         };
         return await updateExternalObject(db, body.uuid, objectData);
+    },
+    wiki_platform: async (DB: any, body: WikiPlatformApiInput) => {
+        const db = createDrizzleClient(DB);
+        return await updateWikiPlatform(db, body.uuid, body);
     }
 };
 

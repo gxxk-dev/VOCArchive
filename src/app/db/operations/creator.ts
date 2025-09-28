@@ -2,6 +2,7 @@ import { eq, inArray } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { creator, creatorWiki, workCreator, work } from '../schema';
 import { creatorUuidToId } from '../utils/uuid-id-converter';
+import { enrichWikiReferences } from './wiki-platforms';
 
 // Types matching current interfaces
 export interface Creator {
@@ -48,7 +49,7 @@ export async function getCreatorByUUID(
     }
 
     // Get wikis
-    const wikis = await db
+    const wikiRefs = await db
         .select({
             platform: creatorWiki.platform,
             identifier: creatorWiki.identifier,
@@ -56,6 +57,9 @@ export async function getCreatorByUUID(
         .from(creatorWiki)
         .innerJoin(creator, eq(creatorWiki.creator_id, creator.id))
         .where(eq(creator.uuid, creatorUuid));
+
+    // Enrich wiki references with complete URL information
+    const wikis = await enrichWikiReferences(db, wikiRefs);
 
     return {
         creator: creatorResult[0],

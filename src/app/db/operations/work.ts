@@ -25,6 +25,7 @@ import {
     workIdToUuid,
     creatorIdToUuid
 } from '../utils/uuid-id-converter';
+import { enrichWikiReferences } from './wiki-platforms';
 
 // Types that match the current database.ts interfaces
 export interface WorkTitle {
@@ -546,7 +547,7 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
     }
 
     // 8. Get work wiki references
-    const wikis = await db
+    const wikiRefs = await db
         .select({
             platform: workWiki.platform,
             identifier: workWiki.identifier,
@@ -554,6 +555,9 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
         .from(workWiki)
         .innerJoin(work, eq(workWiki.work_id, work.id))
         .where(eq(work.uuid, workUUID));
+
+    // Enrich wiki references with complete URL information
+    const wikis = await enrichWikiReferences(db, wikiRefs);
 
     // 9. Get work tags
     const workTags = await db

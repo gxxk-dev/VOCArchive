@@ -9,10 +9,11 @@ import { inputCategory, addWorkCategories } from '../db/operations/category';
 import { inputWorkTitle } from '../db/operations/work-title';
 import { inputExternalSource } from '../db/operations/external_source';
 import { inputExternalObject } from '../db/operations/external_object';
-import { 
-    initializeDatabaseWithMigrations, 
-    migrateToExternalStorage, 
-    validateMigration, 
+import { insertWikiPlatform } from '../db/operations/wiki-platforms';
+import {
+    initializeDatabaseWithMigrations,
+    migrateToExternalStorage,
+    validateMigration,
     getMigrationStatus,
     repairCorruptedExternalObjects,
     type MigrationResult,
@@ -20,7 +21,7 @@ import {
 } from '../db/operations/admin';
 import type { Work, WorkTitle, CreatorWithRole, WikiRef, Asset, MediaSource, WorkRelation, Tag, Category } from '../db/operations/work';
 import type { WorkTitleInput } from '../db/operations/work-title';
-import type { MediaSourceForDatabase, MediaSourceApiInput, ExternalSourceApiInput, ExternalObjectApiInput } from '../db/types';
+import type { MediaSourceForDatabase, MediaSourceApiInput, ExternalSourceApiInput, ExternalObjectApiInput, WikiPlatformApiInput } from '../db/types';
 import { workUuidToId, externalSourceUuidToId } from '../db/utils/uuid-id-converter';
 import { validateStorageSource } from '../db/utils/storage-handlers';
 import { Hono } from "hono";
@@ -400,8 +401,47 @@ inputInfo.post('/config-init', async (c: any) => {
         }, 200);
     } catch (error) {
         console.error('Config initialization error:', error);
-        return c.json({ 
+        return c.json({
             error: 'Failed to initialize site configuration',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        }, 500);
+    }
+});
+
+// 创建Wiki平台
+inputInfo.post('/wiki_platform', async (c: any) => {
+    try {
+        const body: WikiPlatformApiInput = await c.req.json();
+
+        // 验证必需字段
+        if (!body.platform_key || !body.platform_name || !body.url_template) {
+            return c.json({
+                error: 'Missing required fields: platform_key, platform_name, url_template'
+            }, 400);
+        }
+
+        // 生成UUID如果未提供
+        if (!body.uuid) {
+            body.uuid = crypto.randomUUID();
+        }
+
+        const db = createDrizzleClient(c.env.DB);
+        await insertWikiPlatform(db, body);
+
+        return c.json({
+            message: 'Wiki platform created successfully',
+            uuid: body.uuid
+        }, 201);
+    } catch (error) {
+        console.error('Wiki platform creation error:', error);
+        if (error instanceof Error && error.message.includes('UNIQUE constraint failed')) {
+            return c.json({
+                error: 'Platform key already exists',
+                message: 'A platform with this key already exists'
+            }, 409);
+        }
+        return c.json({
+            error: 'Failed to create wiki platform',
             details: error instanceof Error ? error.message : 'Unknown error'
         }, 500);
     }

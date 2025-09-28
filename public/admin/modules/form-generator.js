@@ -254,6 +254,28 @@ export function generateFormFields(target, data = null, options = {}) {
             ${data?.key === 'totp_secret' || data?.key === 'jwt_secret' ?
                 '<small class="security-warning">⚠️ 敏感配置，请妥善保管</small>' :
                 '<small>配置修改后立即生效</small>'}
+        `,
+        wiki_platform: `
+            <input type="hidden" name="uuid" value="${data?.uuid || crypto.randomUUID()}">
+            <label for="platform_key">平台键 *:</label>
+            <input type="text" id="platform_key" name="platform_key" required value="${data?.platform_key || ''}" placeholder="例如: wikipedia_zh, vocadb">
+            <label for="platform_name">平台名称 *:</label>
+            <input type="text" id="platform_name" name="platform_name" required value="${data?.platform_name || ''}" placeholder="例如: 维基百科(中文), VocaDB">
+            <label for="url_template">URL模板 *:</label>
+            <input type="text" id="url_template" name="url_template" required value="${data?.url_template || ''}" placeholder="例如: https://zh.wikipedia.org/wiki/{ENCODED_ID}">
+            <div class="placeholder-help" style="margin: 10px 0; padding: 10px; border-radius: 4px; background: #f5f5f5; font-size: 0.9em;">
+                <strong>💡 可用占位符：</strong><br>
+                • {ID} - 直接替换为identifier<br>
+                • {ENCODED_ID} - URL编码后的identifier<br>
+                • {LANG} - 语言代码<br>
+                • {TYPE} - 条目类型<br>
+                <strong>示例：</strong><br>
+                • Wikipedia: https://zh.wikipedia.org/wiki/{ENCODED_ID}<br>
+                • VocaDB: https://vocadb.net/S/{ID}<br>
+                • Bilibili: https://www.bilibili.com/video/{ID}
+            </div>
+            <label for="icon_class">图标样式 (可选):</label>
+            <input type="text" id="icon_class" name="icon_class" value="${data?.icon_class || ''}" placeholder="例如: fa-wikipedia-w, fa-music">
         `
     };
     return (fields[target] || '<p>Form not implemented for this type.</p>') + '<button type="submit">Submit</button>';

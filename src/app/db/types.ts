@@ -19,6 +19,7 @@ import {
     externalSource,
     externalObject,
     siteConfig,
+    wikiPlatform,
 } from './schema';
 
 // Basic table types from new schema (with ID primary keys)
@@ -145,6 +146,18 @@ export type ExternalObjectApiInput = Omit<NewExternalObject, 'id' | 'external_so
 
 export type SiteConfig = InferSelectModel<typeof siteConfig>;
 export type NewSiteConfig = InferInsertModel<typeof siteConfig>;
+
+export type WikiPlatform = InferSelectModel<typeof wikiPlatform>;
+export type NewWikiPlatform = InferInsertModel<typeof wikiPlatform>;
+
+// API-compatible wiki platform input
+export type WikiPlatformApiInput = Omit<NewWikiPlatform, 'id'> & {
+    uuid: string;
+    platform_key: string;
+    platform_name: string;
+    url_template: string;
+    icon_class?: string;
+};
 
 // Site configuration key enum
 export type SiteConfigKey =

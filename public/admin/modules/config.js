@@ -25,7 +25,9 @@ export const tabNames = {
     'external_source': '存储源',
     'external_object': '外部对象',
     'footer': '页脚',
-    'site_config': '系统配置'
+    'wiki_platform': 'Wiki平台',
+    'site_config': '系统配置',
+    'migration': '迁移管理'
 };
 
 // --- State Mutators ---

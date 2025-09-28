@@ -393,6 +393,7 @@ body {
 [data-theme="dark"] .placeholder-help {
     background-color: #1a2d3d;
     border-color: #2c5a7a;
+    color: #b3d9ff;
 }
 
 
@@ -749,6 +750,7 @@ body {
     color: #ff6b6b !important;
     background-color: #2d1b1b;
     border-color: #5a2c2c;
+    border-left-color: #ff6b6b;
 }
 
 [data-theme="dark"] .external-object-details .source-name {
@@ -2338,5 +2340,123 @@ select#key option[value*="title"] {
 .config-description-cell {
     font-style: italic;
     color: #666;
+}
+
+/* Migration interface styles */
+.migration-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.migration-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+.migration-section.danger-section {
+    border-color: #dc3545;
+    background-color: #f8d7da;
+}
+
+.migration-section h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.migration-section.danger-section h3 {
+    color: #721c24;
+}
+
+.migration-section p {
+    margin-bottom: 15px;
+    color: #666;
+}
+
+.migration-section.danger-section p {
+    color: #721c24;
+}
+
+.migration-button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    margin-right: 10px;
+}
+
+.migration-button:hover {
+    background-color: #0056b3;
+}
+
+.migration-button.danger-button {
+    background-color: #dc3545;
+}
+
+.migration-button.danger-button:hover {
+    background-color: #c82333;
+}
+
+.migration-params {
+    margin: 15px 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    align-items: center;
+}
+
+.migration-params label {
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.migration-params input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Dark mode for migration interface */
+[data-theme="dark"] .migration-section {
+    background-color: #2d2d2d;
+    border-color: #444;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .migration-section.danger-section {
+    background-color: #2d1a1a;
+    border-color: #5a2c2c;
+}
+
+[data-theme="dark"] .migration-section h3 {
+    color: #f0f0f0;
+}
+
+[data-theme="dark"] .migration-section.danger-section h3 {
+    color: #ff6b6b;
+}
+
+[data-theme="dark"] .migration-section p {
+    color: #ccc;
+}
+
+[data-theme="dark"] .migration-section.danger-section p {
+    color: #ffcccb;
+}
+
+[data-theme="dark"] .migration-params input {
+    background-color: #333;
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .migration-params input:focus {
+    border-color: #007bff;
 }
 

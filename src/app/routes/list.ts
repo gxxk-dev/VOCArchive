@@ -1,6 +1,6 @@
 import { createDrizzleClient } from '../db/client';
-import { 
-    listAssets, listRelations, getWorkListWithPagination 
+import {
+    listAssets, listRelations, getWorkListWithPagination
 } from '../db/operations/work';
 import { listCreators } from '../db/operations/creator';
 import { listMedia } from '../db/operations/media';
@@ -9,6 +9,7 @@ import { listCategories, getWorksByCategory, getWorkCountByCategory, listCategor
 import { listWorkTitles } from '../db/operations/work-title';
 import { listExternalSources } from '../db/operations/external_source';
 import { listExternalObjects } from '../db/operations/external_object';
+import { getAllWikiPlatforms, getActiveWikiPlatforms } from '../db/operations/wiki-platforms';
 import { Hono } from 'hono'
 
 export const listInfo = new Hono();
@@ -141,5 +142,19 @@ listInfo.get('/external_objects/:page_num/:page_size?', async (c: any) => {
     const page_size = Number(c.req.param("page_size")) || 10;
     const db = createDrizzleClient(c.env.DB);
     const results = await listExternalObjects(db, page_num, page_size);
+    return c.json(results);
+});
+
+// 获取Wiki平台列表（所有平台）
+listInfo.get('/wiki_platforms', async (c: any) => {
+    const db = createDrizzleClient(c.env.DB);
+    const results = await getAllWikiPlatforms(db);
+    return c.json(results);
+});
+
+// 获取激活的Wiki平台列表
+listInfo.get('/wiki_platforms/active', async (c: any) => {
+    const db = createDrizzleClient(c.env.DB);
+    const results = await getActiveWikiPlatforms(db);
     return c.json(results);
 });

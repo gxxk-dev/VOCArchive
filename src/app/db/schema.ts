@@ -56,6 +56,15 @@ export const siteConfig = sqliteTable('site_config', {
     description: text('description'),
 });
 
+export const wikiPlatform = sqliteTable('wiki_platform', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    uuid: text('uuid').notNull().unique(),
+    platform_key: text('platform_key').notNull().unique(),
+    platform_name: text('platform_name').notNull(),
+    url_template: text('url_template').notNull(),
+    icon_class: text('icon_class'),
+});
+
 // Dependent tables (with foreign key relationships)
 
 export const creatorWiki = sqliteTable('creator_wiki', {
@@ -387,4 +396,8 @@ export const mediaSourceExternalObjectRelations = relations(mediaSourceExternalO
         fields: [mediaSourceExternalObject.external_object_id],
         references: [externalObject.id],
     }),
+}));
+
+export const wikiPlatformRelations = relations(wikiPlatform, ({ }) => ({
+    // Currently no direct relations, but this establishes the relation structure
 }));
