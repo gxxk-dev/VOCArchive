@@ -320,14 +320,14 @@ deleteInfo.post('/external_object', async (c: any) => {
 // 删除Wiki平台
 deleteInfo.post('/wiki_platform', async (c: any) => {
     try {
-        const body: { wiki_platform_uuid: string } = await c.req.json();
+        const body: { platform_key: string } = await c.req.json();
 
-        if (!body.wiki_platform_uuid) {
-            return c.json({ error: 'Missing wiki_platform_uuid' }, 400);
+        if (!body.platform_key) {
+            return c.json({ error: 'Missing platform_key' }, 400);
         }
 
         const db = createDrizzleClient(c.env.DB);
-        const result = await deleteWikiPlatform(db, body.wiki_platform_uuid);
+        const result = await deleteWikiPlatform(db, body.platform_key);
 
         if (!result) {
             return c.json({ error: 'Wiki platform not found or delete failed.' }, 404);

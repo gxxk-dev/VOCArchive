@@ -142,9 +142,9 @@ const updateHandlers = {
         };
         return await updateExternalObject(db, body.uuid, objectData);
     },
-    wiki_platform: async (DB: any, body: WikiPlatformApiInput) => {
+    wiki_platform: async (DB: any, body: WikiPlatformApiInput & { platform_key: string }) => {
         const db = createDrizzleClient(DB);
-        return await updateWikiPlatform(db, body.uuid, body);
+        return await updateWikiPlatform(db, body.platform_key, body);
     }
 };
 

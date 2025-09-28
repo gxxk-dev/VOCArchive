@@ -420,17 +420,12 @@ inputInfo.post('/wiki_platform', async (c: any) => {
             }, 400);
         }
 
-        // 生成UUID如果未提供
-        if (!body.uuid) {
-            body.uuid = crypto.randomUUID();
-        }
-
         const db = createDrizzleClient(c.env.DB);
         await insertWikiPlatform(db, body);
 
         return c.json({
             message: 'Wiki platform created successfully',
-            uuid: body.uuid
+            platform_key: body.platform_key
         }, 201);
     } catch (error) {
         console.error('Wiki platform creation error:', error);

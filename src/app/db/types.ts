@@ -152,7 +152,6 @@ export type NewWikiPlatform = InferInsertModel<typeof wikiPlatform>;
 
 // API-compatible wiki platform input
 export type WikiPlatformApiInput = Omit<NewWikiPlatform, 'id'> & {
-    uuid: string;
     platform_key: string;
     platform_name: string;
     url_template: string;

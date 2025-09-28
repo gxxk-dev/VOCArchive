@@ -71,7 +71,7 @@ export function renderTable(target, data) {
                 </thead>
                 <tbody>
                     ${data.map(row => {
-                        const uuid = row.uuid || row.work_uuid || row.creator_uuid || row.media_uuid || row.asset_uuid || row.relation_uuid || row.key;
+                        const uuid = row.uuid || row.work_uuid || row.creator_uuid || row.media_uuid || row.asset_uuid || row.relation_uuid || row.key || (target === 'wiki_platform' ? row.platform_key : null);
                         return `<tr data-uuid="${uuid}">
                             ${headers.map(h => `<td>${renderCellContent(row[h])}</td>`).join('')}
                             <td class="actions">

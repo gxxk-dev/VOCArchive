@@ -30,7 +30,6 @@ export const up = async (db: DrizzleDB, params?: MigrationParameters): Promise<v
     await db.run(`
         CREATE TABLE IF NOT EXISTS "wiki_platform" (
             "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-            "uuid" text NOT NULL UNIQUE,
             "platform_key" text NOT NULL UNIQUE,
             "platform_name" text NOT NULL,
             "url_template" text NOT NULL,
@@ -44,28 +43,24 @@ export const up = async (db: DrizzleDB, params?: MigrationParameters): Promise<v
     const defaultPlatforms = [
         // 百科类
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'wikipedia_zh',
             platform_name: '维基百科(中文)',
             url_template: 'https://zh.wikipedia.org/wiki/{ENCODED_ID}',
             icon_class: 'fa-wikipedia-w'
         },
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'wikipedia_ja',
             platform_name: 'Wikipedia(日本語)',
             url_template: 'https://ja.wikipedia.org/wiki/{ENCODED_ID}',
             icon_class: 'fa-wikipedia-w'
         },
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'moegirlpedia',
             platform_name: '萌娘百科',
             url_template: 'https://zh.moegirl.org.cn/{ENCODED_ID}',
             icon_class: 'fa-book'
         },
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'thwiki',
             platform_name: 'THBWiki',
             url_template: 'https://thwiki.cc/{ENCODED_ID}',
@@ -74,14 +69,12 @@ export const up = async (db: DrizzleDB, params?: MigrationParameters): Promise<v
 
         // 音乐数据库
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'vocadb',
             platform_name: 'VocaDB',
             url_template: 'https://vocadb.net/S/{ID}',
             icon_class: 'fa-music'
         },
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'utaitedb',
             platform_name: 'UtaiteDB',
             url_template: 'https://utaitedb.net/Ar/{ID}',
@@ -90,21 +83,18 @@ export const up = async (db: DrizzleDB, params?: MigrationParameters): Promise<v
 
         // 视频平台
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'niconico',
             platform_name: 'ニコニコ動画',
             url_template: 'https://www.nicovideo.jp/watch/{ID}',
             icon_class: 'fa-play-circle'
         },
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'bilibili',
             platform_name: '哔哩哔哩',
             url_template: 'https://www.bilibili.com/video/{ID}',
             icon_class: 'fa-play-circle'
         },
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'youtube',
             platform_name: 'YouTube',
             url_template: 'https://www.youtube.com/watch?v={ID}',
@@ -113,18 +103,24 @@ export const up = async (db: DrizzleDB, params?: MigrationParameters): Promise<v
 
         // 社交媒体
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'twitter',
             platform_name: 'Twitter/X',
             url_template: 'https://twitter.com/{ID}',
             icon_class: 'fa-twitter'
         },
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'pixiv',
             platform_name: 'Pixiv',
             url_template: 'https://www.pixiv.net/users/{ID}',
             icon_class: 'fa-paint-brush'
+        },
+
+        // 百度百科
+        {
+            platform_key: 'baidu_baike',
+            platform_name: '百度百科',
+            url_template: 'https://baike.baidu.com/item/{ENCODED_ID}',
+            icon_class: 'fa-book'
         }
     ];
 
@@ -151,6 +147,48 @@ export const up = async (db: DrizzleDB, params?: MigrationParameters): Promise<v
 
     console.log(`Migration ${version}: ${description} - UP completed`);
     console.log('Wiki平台管理功能已成功添加');
+
+    // 步骤3：迁移现有数据的platform字段值
+    console.log('步骤3: 迁移现有数据的platform字段值');
+
+    // 定义platform值的映射关系
+    const platformMappings = {
+        'moegirl': 'moegirlpedia',
+        'baidu': 'baidu_baike',
+        'thbwiki': 'thwiki'
+    };
+
+    // 更新work_wiki表中的platform字段
+    for (const [oldPlatform, newPlatform] of Object.entries(platformMappings)) {
+        try {
+            const updateWorkWikiResult = await db.run(`
+                UPDATE work_wiki
+                SET platform = '${newPlatform}'
+                WHERE platform = '${oldPlatform}'
+            `);
+
+            console.log(`更新work_wiki platform '${oldPlatform}' -> '${newPlatform}': ${updateWorkWikiResult.meta.changes} 条记录`);
+        } catch (error) {
+            console.error(`更新work_wiki platform字段失败: ${oldPlatform}`, error);
+        }
+    }
+
+    // 更新creator_wiki表中的platform字段
+    for (const [oldPlatform, newPlatform] of Object.entries(platformMappings)) {
+        try {
+            const updateCreatorWikiResult = await db.run(`
+                UPDATE creator_wiki
+                SET platform = '${newPlatform}'
+                WHERE platform = '${oldPlatform}'
+            `);
+
+            console.log(`更新creator_wiki platform '${oldPlatform}' -> '${newPlatform}': ${updateCreatorWikiResult.meta.changes} 条记录`);
+        } catch (error) {
+            console.error(`更新creator_wiki platform字段失败: ${oldPlatform}`, error);
+        }
+    }
+
+    console.log('现有wiki数据的platform字段迁移完成');
 };
 
 /**
@@ -159,8 +197,50 @@ export const up = async (db: DrizzleDB, params?: MigrationParameters): Promise<v
 export const down = async (db: DrizzleDB, params?: MigrationParameters): Promise<void> => {
     console.log('开始回滚Wiki平台管理功能...');
 
-    // 删除wiki_platform表
-    console.log('删除wiki_platform表');
+    // 步骤1：还原platform字段值到原始状态
+    console.log('步骤1: 还原platform字段值到原始状态');
+
+    // 定义回滚时的映射关系（与up相反）
+    const rollbackPlatformMappings = {
+        'moegirlpedia': 'moegirl',
+        'baidu_baike': 'baidu',
+        'thwiki': 'thbwiki'
+    };
+
+    // 还原work_wiki表中的platform字段
+    for (const [newPlatform, oldPlatform] of Object.entries(rollbackPlatformMappings)) {
+        try {
+            const rollbackWorkWikiResult = await db.run(`
+                UPDATE work_wiki
+                SET platform = '${oldPlatform}'
+                WHERE platform = '${newPlatform}'
+            `);
+
+            console.log(`还原work_wiki platform '${newPlatform}' -> '${oldPlatform}': ${rollbackWorkWikiResult.meta.changes} 条记录`);
+        } catch (error) {
+            console.error(`还原work_wiki platform字段失败: ${newPlatform}`, error);
+        }
+    }
+
+    // 还原creator_wiki表中的platform字段
+    for (const [newPlatform, oldPlatform] of Object.entries(rollbackPlatformMappings)) {
+        try {
+            const rollbackCreatorWikiResult = await db.run(`
+                UPDATE creator_wiki
+                SET platform = '${oldPlatform}'
+                WHERE platform = '${newPlatform}'
+            `);
+
+            console.log(`还原creator_wiki platform '${newPlatform}' -> '${oldPlatform}': ${rollbackCreatorWikiResult.meta.changes} 条记录`);
+        } catch (error) {
+            console.error(`还原creator_wiki platform字段失败: ${newPlatform}`, error);
+        }
+    }
+
+    console.log('platform字段值已还原到迁移前状态');
+
+    // 步骤2：删除wiki_platform表
+    console.log('步骤2: 删除wiki_platform表');
     await db.run(`DROP TABLE IF EXISTS "wiki_platform"`);
 
     console.log(`Migration ${version}: ${description} - DOWN completed`);

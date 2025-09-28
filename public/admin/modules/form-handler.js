@@ -326,7 +326,6 @@ export async function handleFormSubmit(e, target, isUpdate) {
                 break;
             case 'wiki_platform':
                 body = {
-                    uuid: formData.get('uuid'),
                     platform_key: formData.get('platform_key'),
                     platform_name: formData.get('platform_name'),
                     url_template: formData.get('url_template'),

@@ -58,7 +58,6 @@ export const siteConfig = sqliteTable('site_config', {
 
 export const wikiPlatform = sqliteTable('wiki_platform', {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    uuid: text('uuid').notNull().unique(),
     platform_key: text('platform_key').notNull().unique(),
     platform_name: text('platform_name').notNull(),
     url_template: text('url_template').notNull(),

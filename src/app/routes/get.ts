@@ -12,7 +12,7 @@ import {
 import { getWorkTitleByUUID } from '../db/operations/work-title';
 import { getExternalSourceByUUID } from '../db/operations/external_source';
 import { getExternalObjectByUUID } from '../db/operations/external_object';
-import { getWikiPlatform } from '../db/operations/wiki-platforms';
+import { getWikiPlatformByKey } from '../db/operations/wiki-platforms';
 
 export const getInfo = new Hono();
 
@@ -99,8 +99,8 @@ getInfo.get('/external_object/:uuid', async (c: any) => {
 });
 
 // 获取Wiki平台详情
-getInfo.get('/wiki_platform/:uuid', async (c: any) => {
+getInfo.get('/wiki_platform/:platform_key', async (c: any) => {
     const db = createDrizzleClient(c.env.DB);
-    const result = await getWikiPlatform(db, c.req.param('uuid'));
+    const result = await getWikiPlatformByKey(db, c.req.param('platform_key'));
     return c.json(result);
 });

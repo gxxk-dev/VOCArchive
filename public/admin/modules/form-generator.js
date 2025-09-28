@@ -256,7 +256,6 @@ export function generateFormFields(target, data = null, options = {}) {
                 '<small>配置修改后立即生效</small>'}
         `,
         wiki_platform: `
-            <input type="hidden" name="uuid" value="${data?.uuid || crypto.randomUUID()}">
             <label for="platform_key">平台键 *:</label>
             <input type="text" id="platform_key" name="platform_key" required value="${data?.platform_key || ''}" placeholder="例如: wikipedia_zh, vocadb">
             <label for="platform_name">平台名称 *:</label>

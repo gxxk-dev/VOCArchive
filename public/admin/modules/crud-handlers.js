@@ -132,6 +132,19 @@ export async function handleDelete(e) {
         return;
     }
 
+    if (target === 'wiki_platform') {
+        try {
+            await apiFetch(`/delete/wiki_platform`, {
+                method: 'POST',
+                body: JSON.stringify({ platform_key: uuid }),
+            });
+            row.remove();
+        } catch (error) {
+            alert(`Failed to delete wiki platform: ${error.message}`);
+        }
+        return;
+    }
+
     const uuidKeyMap = {
         work: 'work_uuid',
         creator: 'creator_uuid',

@@ -25,7 +25,7 @@ import {
     workIdToUuid,
     creatorIdToUuid
 } from '../utils/uuid-id-converter';
-import { enrichWikiReferences } from './wiki-platforms';
+import { enrichWikiReferences, WikiReferenceWithUrl } from './wiki-platforms';
 
 // Types that match the current database.ts interfaces
 export interface WorkTitle {
@@ -41,6 +41,15 @@ export interface Work {
 }
 
 export interface CreatorWithRole {
+    creator_uuid: string;
+    creator_name?: string;
+    creator_type: 'human' | 'virtual';
+    role: string;
+    wikis?: WikiReferenceWithUrl[];
+}
+
+// 临时接口用于构建作者数据
+interface CreatorWithRoleBuilder {
     creator_uuid: string;
     creator_name?: string;
     creator_type: 'human' | 'virtual';
@@ -440,11 +449,11 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
         .where(eq(work.uuid, workUUID));
 
     // Group creators with their wikis
-    const creatorMap = new Map<string, CreatorWithRole>();
+    const creatorBuilderMap = new Map<string, CreatorWithRoleBuilder>();
     creators.forEach(row => {
         const key = `${row.creator_uuid}-${row.role}`;
-        if (!creatorMap.has(key)) {
-            creatorMap.set(key, {
+        if (!creatorBuilderMap.has(key)) {
+            creatorBuilderMap.set(key, {
                 creator_uuid: row.creator_uuid,
                 creator_name: row.creator_name,
                 creator_type: row.creator_type,
@@ -454,14 +463,30 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
         }
 
         if (row.wiki_platform && row.wiki_identifier) {
-            creatorMap.get(key)!.wikis!.push({
+            creatorBuilderMap.get(key)!.wikis!.push({
                 platform: row.wiki_platform,
                 identifier: row.wiki_identifier
             });
         }
     });
 
-    const creatorList = Array.from(creatorMap.values());
+    // Convert to final CreatorWithRole list and enrich wiki references
+    const creatorList: CreatorWithRole[] = [];
+    for (const builderCreator of creatorBuilderMap.values()) {
+        const creator: CreatorWithRole = {
+            creator_uuid: builderCreator.creator_uuid,
+            creator_name: builderCreator.creator_name,
+            creator_type: builderCreator.creator_type,
+            role: builderCreator.role,
+            wikis: []
+        };
+
+        if (builderCreator.wikis && builderCreator.wikis.length > 0) {
+            creator.wikis = await enrichWikiReferences(db, builderCreator.wikis);
+        }
+
+        creatorList.push(creator);
+    }
 
     // 7. Get work relations with related work titles
     // Convert work UUID to ID for database queries

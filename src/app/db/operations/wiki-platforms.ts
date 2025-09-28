@@ -33,12 +33,12 @@ export async function getWikiPlatformByKey(db: DrizzleDB, platformKey: string): 
 }
 
 /**
- * 根据UUID获取Wiki平台配置
+ * 根据ID获取Wiki平台配置
  */
-export async function getWikiPlatform(db: DrizzleDB, uuid: string): Promise<WikiPlatform | null> {
+export async function getWikiPlatform(db: DrizzleDB, id: number): Promise<WikiPlatform | null> {
     const result = await db.select()
         .from(wikiPlatform)
-        .where(eq(wikiPlatform.uuid, uuid))
+        .where(eq(wikiPlatform.id, id))
         .limit(1);
 
     return result[0] || null;
@@ -93,7 +93,6 @@ export async function insertWikiPlatform(
     platformData: WikiPlatformApiInput
 ): Promise<void> {
     await db.insert(wikiPlatform).values({
-        uuid: platformData.uuid,
         platform_key: platformData.platform_key,
         platform_name: platformData.platform_name,
         url_template: platformData.url_template,
@@ -106,7 +105,7 @@ export async function insertWikiPlatform(
  */
 export async function updateWikiPlatform(
     db: DrizzleDB,
-    uuid: string,
+    platformKey: string,
     platformData: Partial<WikiPlatformApiInput>
 ): Promise<boolean> {
     try {
@@ -119,7 +118,7 @@ export async function updateWikiPlatform(
 
         const result = await db.update(wikiPlatform)
             .set(updateData)
-            .where(eq(wikiPlatform.uuid, uuid));
+            .where(eq(wikiPlatform.platform_key, platformKey));
 
         return true;
     } catch (error) {
@@ -131,9 +130,9 @@ export async function updateWikiPlatform(
 /**
  * 删除Wiki平台
  */
-export async function deleteWikiPlatform(db: DrizzleDB, uuid: string): Promise<boolean> {
+export async function deleteWikiPlatform(db: DrizzleDB, platformKey: string): Promise<boolean> {
     try {
-        await db.delete(wikiPlatform).where(eq(wikiPlatform.uuid, uuid));
+        await db.delete(wikiPlatform).where(eq(wikiPlatform.platform_key, platformKey));
         return true;
     } catch (error) {
         console.error('Error deleting wiki platform:', error);
@@ -148,28 +147,24 @@ export async function initializeDefaultWikiPlatforms(db: DrizzleDB): Promise<voi
     const defaultPlatforms: WikiPlatformApiInput[] = [
         // 百科类
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'wikipedia_zh',
             platform_name: '维基百科(中文)',
             url_template: 'https://zh.wikipedia.org/wiki/{ENCODED_ID}',
             icon_class: 'fa-wikipedia-w'
         },
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'wikipedia_ja',
             platform_name: 'Wikipedia(日本語)',
             url_template: 'https://ja.wikipedia.org/wiki/{ENCODED_ID}',
             icon_class: 'fa-wikipedia-w'
         },
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'moegirlpedia',
             platform_name: '萌娘百科',
             url_template: 'https://zh.moegirl.org.cn/{ENCODED_ID}',
             icon_class: 'fa-book'
         },
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'thwiki',
             platform_name: 'THBWiki',
             url_template: 'https://thwiki.cc/{ENCODED_ID}',
@@ -178,14 +173,12 @@ export async function initializeDefaultWikiPlatforms(db: DrizzleDB): Promise<voi
 
         // 音乐数据库
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'vocadb',
             platform_name: 'VocaDB',
             url_template: 'https://vocadb.net/S/{ID}',
             icon_class: 'fa-music'
         },
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'utaitedb',
             platform_name: 'UtaiteDB',
             url_template: 'https://utaitedb.net/Ar/{ID}',
@@ -194,21 +187,18 @@ export async function initializeDefaultWikiPlatforms(db: DrizzleDB): Promise<voi
 
         // 视频平台
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'niconico',
-            platform_name: 'ニコニコ動画',
+            platform_name: 'ニコニコ动画',
             url_template: 'https://www.nicovideo.jp/watch/{ID}',
             icon_class: 'fa-play-circle'
         },
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'bilibili',
             platform_name: '哔哩哔哩',
             url_template: 'https://www.bilibili.com/video/{ID}',
             icon_class: 'fa-play-circle'
         },
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'youtube',
             platform_name: 'YouTube',
             url_template: 'https://www.youtube.com/watch?v={ID}',
@@ -217,14 +207,12 @@ export async function initializeDefaultWikiPlatforms(db: DrizzleDB): Promise<voi
 
         // 社交媒体
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'twitter',
             platform_name: 'Twitter/X',
             url_template: 'https://twitter.com/{ID}',
             icon_class: 'fa-twitter'
         },
         {
-            uuid: crypto.randomUUID(),
             platform_key: 'pixiv',
             platform_name: 'Pixiv',
             url_template: 'https://www.pixiv.net/users/{ID}',

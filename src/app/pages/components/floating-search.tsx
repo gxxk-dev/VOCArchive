@@ -12,7 +12,7 @@ export const FloatingSearch = () => {
                 <label class="md3-label">搜索类型</label>
                 <div class="md3-state-layer"></div>
             </div>
-            <input type="text" class="floating-search-input" placeholder="搜索歌曲、艺术家..." id="searchInput" />
+            <input type="text" class="floating-search-input" placeholder="查找作品..." id="searchInput" />
             <button class="floating-search-btn" id="searchButton">
                 <i class="fas fa-search"></i>
             </button>
