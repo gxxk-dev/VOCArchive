@@ -1,5 +1,5 @@
 import { jsx } from 'hono/jsx'
-import type { WorkTitle, Tag, Category, WorkInfo, CreatorWithRole } from '../../../db/types'
+import type { WorkTitleApi, TagApi, CategoryApi, WorkInfo, CreatorWithRole } from '../../../db/types'
 
 export interface WorkHeaderProps {
     workInfo: WorkInfo
@@ -28,15 +28,15 @@ export const WorkHeader = (props: WorkHeaderProps) => {
 
     if (workInfo.titles && workInfo.titles.length > 0) {
         // Filter out ForSearch titles for display
-        const displayTitles = workInfo.titles.filter((t: WorkTitle) => !t.is_for_search);
+        const displayTitles = workInfo.titles.filter((t: WorkTitleApi) => !t.is_for_search);
         
         if (displayTitles.length > 0) {
-            const userLangTitle = displayTitles.find((t: WorkTitle) => t.language === userLang);
+            const userLangTitle = displayTitles.find((t: WorkTitleApi) => t.language === userLang);
             if (userLangTitle) {
                 displayTitle = userLangTitle.title;
                 is_officialTitle = userLangTitle.is_official;
             } else {
-                const officialTitle = displayTitles.find((t: WorkTitle) => t.is_official);
+                const officialTitle = displayTitles.find((t: WorkTitleApi) => t.is_official);
                 if (officialTitle) {
                     displayTitle = officialTitle.title;
                     is_officialTitle = true;
@@ -49,8 +49,8 @@ export const WorkHeader = (props: WorkHeaderProps) => {
     }
 
     const officialTitles = workInfo.titles
-        .filter((t: WorkTitle) => t.is_official && !t.is_for_search)
-        .map((t: WorkTitle) => `${languageNames[t.language]} - ${t.title}`)
+        .filter((t: WorkTitleApi) => t.is_official && !t.is_for_search)
+        .map((t: WorkTitleApi) => `${languageNames[t.language]} - ${t.title}`)
         .join('<br>');
 
     const creatorNames = workInfo.creator ? workInfo.creator.map((c: CreatorWithRole) => c.creator_name || 'Unknown').join(', ') : '';
@@ -68,7 +68,7 @@ export const WorkHeader = (props: WorkHeaderProps) => {
                 <i class="fas fa-tags"></i>
                 <span class="meta-label">标签:</span>
                 <div class="tags-container">
-                    {visibleTags.map((tag: Tag) => 
+                    {visibleTags.map((tag: TagApi) =>
                         <span class="tag-chip clickable" data-tag={tag.uuid}>{tag.name}</span>
                     )}
                     {hiddenTags.length > 0 && (
@@ -90,7 +90,7 @@ export const WorkHeader = (props: WorkHeaderProps) => {
                 <i class="fas fa-folder"></i>
                 <span class="meta-label">分类:</span>
                 <div class="categories-container">
-                    {workInfo.categories.map((category: Category, index: number) => (
+                    {workInfo.categories.map((category: CategoryApi, index: number) => (
                         <>
                             {index > 0 && <span class="category-separator"> &gt; </span>}
                             <span class="category-chip clickable" data-category={category.uuid}>{category.name}</span>

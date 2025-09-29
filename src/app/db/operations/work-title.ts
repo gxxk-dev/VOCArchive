@@ -3,30 +3,7 @@ import type { DrizzleDB } from '../client';
 import { workTitle, work } from '../schema';
 import { workUuidToId, workIdToUuid } from '../utils/uuid-id-converter';
 
-// Types
-export interface WorkTitle {
-    uuid: string;
-    work_uuid: string;
-    is_official: boolean;
-    is_for_search: boolean;
-    language: string;
-    title: string;
-}
-
-export interface WorkTitleInput {
-    work_uuid: string;
-    is_official: boolean;
-    is_for_search?: boolean;
-    language: string;
-    title: string;
-}
-
-export interface WorkTitleUpdate {
-    isOfficial?: boolean;
-    is_for_search?: boolean;
-    language?: string;
-    title?: string;
-}
+import { WorkTitle, WorkTitleApi, WorkTitleInput, WorkTitleUpdate } from '../types';
 
 // UUID validation
 const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -37,7 +14,7 @@ export function validateUUID(uuid: string): boolean {
 /**
  * Get a single work title by UUID
  */
-export async function getWorkTitleByUUID(db: DrizzleDB, titleUuid: string): Promise<WorkTitle | null> {
+export async function getWorkTitleByUUID(db: DrizzleDB, titleUuid: string): Promise<WorkTitleApi | null> {
     if (!validateUUID(titleUuid)) {
         return null;
     }
@@ -79,7 +56,7 @@ export async function getWorkTitleByUUID(db: DrizzleDB, titleUuid: string): Prom
 /**
  * List all work titles for a specific work UUID
  */
-export async function listWorkTitles(db: DrizzleDB, workUuid: string, includeForSearch: boolean = true): Promise<WorkTitle[]> {
+export async function listWorkTitles(db: DrizzleDB, workUuid: string, includeForSearch: boolean = true): Promise<WorkTitleApi[]> {
     if (!validateUUID(workUuid)) {
         return [];
     }

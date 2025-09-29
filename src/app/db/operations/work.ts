@@ -17,7 +17,7 @@ import {
     tag,
     category
 } from '../schema';
-import { convertCategoryData } from '../utils';
+import { convertAssetData, convertCategoryData } from '../utils';
 import {
     workUuidToId,
     creatorUuidToId,
@@ -25,28 +25,26 @@ import {
     workIdToUuid,
     creatorIdToUuid
 } from '../utils/uuid-id-converter';
+import {
+    Work,
+    WorkTitle,
+    WorkTitleApi,
+    CreatorWithRole,
+    WikiRef,
+    Tag,
+    Category,
+    CategoryApi,
+    Asset,
+    AssetApi,
+    AssetWithCreators,
+    MediaSource,
+    MediaSourceApi,
+    WorkRelation,
+    WorkRelationApi,
+    WorkInfo,
+    WorkListItem
+} from '../types';
 import { enrichWikiReferences, WikiReferenceWithUrl } from './wiki-platforms';
-
-// Types that match the current database.ts interfaces
-export interface WorkTitle {
-    is_official: boolean;
-    is_for_search?: boolean;
-    language: string;
-    title: string;
-}
-
-export interface Work {
-    uuid: string;
-    copyright_basis: 'none' | 'accept' | 'license' | 'onlymetadata' | 'arr';
-}
-
-export interface CreatorWithRole {
-    creator_uuid: string;
-    creator_name?: string;
-    creator_type: 'human' | 'virtual';
-    role: string;
-    wikis?: WikiReferenceWithUrl[];
-}
 
 // 临时接口用于构建作者数据
 interface CreatorWithRoleBuilder {
@@ -57,86 +55,6 @@ interface CreatorWithRoleBuilder {
     wikis?: WikiRef[];
 }
 
-export interface WikiRef {
-    platform: string;
-    identifier: string;
-}
-
-export interface Tag {
-    uuid: string;
-    name: string;
-}
-
-export interface Category {
-    uuid: string;
-    name: string;
-    parent_uuid?: string;
-    children?: Category[];
-}
-
-export interface Asset {
-    uuid: string;
-    work_uuid: string;
-    asset_type: 'lyrics' | 'picture';
-    file_name: string;
-    is_previewpic?: boolean;
-    language?: string;
-}
-
-export interface AssetWithCreators extends Asset {
-    creator: CreatorWithRole[];
-}
-
-export interface MediaSource {
-    uuid: string;
-    work_uuid: string;
-    is_music: boolean;
-    file_name: string;
-    url?: string | null;
-    mime_type: string;
-    info: string;
-}
-
-export interface WorkRelation {
-    uuid: string;
-    from_work_id: number;
-    to_work_id: number;
-    relation_type: 'original' | 'remix' | 'cover' | 'remake' | 'picture' | 'lyrics';
-    related_work_titles?: {
-        from_work_titles: Array<{
-            language: string;
-            title: string;
-        }>;
-        to_work_titles: Array<{
-            language: string;
-            title: string;
-        }>;
-    };
-}
-
-export interface WorkInfo {
-    work: Work;
-    titles: WorkTitle[];
-    license?: string;
-    media_sources: MediaSource[];
-    asset: AssetWithCreators[];
-    creator: CreatorWithRole[];
-    relation: WorkRelation[];
-    wikis: WikiRef[];
-    tags?: Tag[];
-    categories?: Category[];
-}
-
-export interface WorkListItem {
-    work_uuid: string;
-    titles: WorkTitle[];
-    preview_asset?: Asset;
-    non_preview_asset?: Asset;
-    creator: CreatorWithRole[];
-    tags: Tag[];
-    categories: Category[];
-}
-
 // UUID validation
 const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function validateUUID(uuid: string): boolean {
@@ -144,17 +62,18 @@ export function validateUUID(uuid: string): boolean {
 }
 
 /**
- * Get work titles for a specific work UUID
+ * Get work titles for API layer (complete with all fields)
  */
-async function getWorkTitles(db: DrizzleDB, workUUID: string, includeForSearch: boolean = true): Promise<WorkTitle[]> {
+async function getWorkTitlesApi(db: DrizzleDB, workUUID: string, includeForSearch: boolean = true): Promise<WorkTitleApi[]> {
     // Convert work UUID to ID
     const workId = await workUuidToId(db, workUUID);
     if (!workId) {
         return [];
     }
 
-    const query = db
+    const titles = await db
         .select({
+            uuid: workTitle.uuid,
             is_official: workTitle.is_official,
             is_for_search: workTitle.is_for_search,
             language: workTitle.language,
@@ -163,10 +82,15 @@ async function getWorkTitles(db: DrizzleDB, workUUID: string, includeForSearch: 
         .from(workTitle)
         .where(eq(workTitle.work_id, workId));
 
-    const allTitles = await query;
-
-    // Always return all titles, let frontend handle filtering
-    return allTitles;
+    // Convert to API format with work_uuid
+    return titles.map(title => ({
+        uuid: title.uuid,
+        work_uuid: workUUID, // Use the provided work UUID
+        is_official: title.is_official,
+        is_for_search: title.is_for_search,
+        language: title.language,
+        title: title.title,
+    }));
 }
 
 /**
@@ -229,7 +153,7 @@ export async function getWorkListWithPagination(
         const { uuid: work_uuid } = workItem;
         
         // Get titles
-        const titles = await getWorkTitles(db, work_uuid);
+        const titles = await getWorkTitlesApi(db, work_uuid);
         
         // Get preview assets
         const previewAssets = await db
@@ -288,29 +212,40 @@ export async function getWorkListWithPagination(
             .select({
                 uuid: category.uuid,
                 name: category.name,
-                parent_uuid: category.uuid, // This needs proper parent handling
+                parent_id: category.parent_id,
             })
             .from(category)
             .innerJoin(workCategory, eq(category.id, workCategory.category_id))
             .innerJoin(work, eq(workCategory.work_id, work.id))
             .where(eq(work.uuid, work_uuid));
+
+        // Convert to CategoryApi format
+        const categoriesApi = await Promise.all(
+            workCategories.map(async (cat) => {
+                let parent_uuid: string | null = null;
+                if (cat.parent_id !== null) {
+                    const parentResult = await db.select({ uuid: category.uuid })
+                        .from(category)
+                        .where(eq(category.id, cat.parent_id))
+                        .limit(1);
+                    parent_uuid = parentResult[0]?.uuid || null;
+                }
+                return {
+                    uuid: cat.uuid,
+                    name: cat.name,
+                    parent_uuid: parent_uuid,
+                };
+            })
+        );
         
         return {
             work_uuid,
             titles,
-            preview_asset: previewAssets[0] ? {
-                ...previewAssets[0],
-                is_previewpic: previewAssets[0].is_previewpic ?? undefined,
-                language: previewAssets[0].language ?? undefined,
-            } : undefined,
-            non_preview_asset: nonPreviewAssets[0] ? {
-                ...nonPreviewAssets[0],
-                is_previewpic: nonPreviewAssets[0].is_previewpic ?? undefined,
-                language: nonPreviewAssets[0].language ?? undefined,
-            } : undefined,
+            preview_asset: previewAssets[0] ? convertAssetData(previewAssets[0]) : undefined,
+            non_preview_asset: nonPreviewAssets[0] ? convertAssetData(nonPreviewAssets[0]) : undefined,
             creator: creatorMap.get(work_uuid) || [],
             tags: workTags,
-            categories: workCategories.map(convertCategoryData),
+            categories: categoriesApi,
         };
     });
     
@@ -353,7 +288,7 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
     const workData = works[0];
 
     // 2. Get work titles
-    const titles = await getWorkTitles(db, workUUID, true);
+    const titles = await getWorkTitlesApi(db, workUUID, true);
     // 3. Get license information if needed
     let license: string | undefined;
     if (workData.copyright_basis === 'license') {
@@ -509,7 +444,7 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
         ));
 
     // Get titles for related works
-    const relationList: WorkRelation[] = [];
+    const relationList: WorkRelationApi[] = [];
     for (const relation of relations) {
         // Convert work IDs to UUIDs for getWorkTitles calls
         const fromWorkUuid = await workIdToUuid(db, relation.from_work_id);
@@ -517,13 +452,13 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
 
         if (!fromWorkUuid || !toWorkUuid) continue; // Skip if conversion fails
 
-        const fromTitles = await getWorkTitles(db, fromWorkUuid);
-        const toTitles = await getWorkTitles(db, toWorkUuid);
+        const fromTitles = await getWorkTitlesApi(db, fromWorkUuid);
+        const toTitles = await getWorkTitlesApi(db, toWorkUuid);
 
         relationList.push({
             uuid: relation.uuid,
-            from_work_id: relation.from_work_id,
-            to_work_id: relation.to_work_id,
+            from_work_uuid: fromWorkUuid,
+            to_work_uuid: toWorkUuid,
             relation_type: relation.relation_type,
             related_work_titles: {
                 from_work_titles: fromTitles,
@@ -553,15 +488,15 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
 
         if (!fromWorkUuid || !toWorkUuid) continue; // Skip if conversion fails
 
-        const fromTitles = await getWorkTitles(db, fromWorkUuid);
-        const toTitles = await getWorkTitles(db, toWorkUuid);
+        const fromTitles = await getWorkTitlesApi(db, fromWorkUuid);
+        const toTitles = await getWorkTitlesApi(db, toWorkUuid);
 
         // Avoid duplicates
         if (!relationList.find(r => r.uuid === relation.uuid)) {
             relationList.push({
                 uuid: relation.uuid,
-                from_work_id: relation.from_work_id,
-                to_work_id: relation.to_work_id,
+                from_work_uuid: fromWorkUuid,
+                to_work_uuid: toWorkUuid,
                 relation_type: relation.relation_type,
                 related_work_titles: {
                     from_work_titles: fromTitles,
@@ -600,12 +535,31 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
         .select({
             uuid: category.uuid,
             name: category.name,
-            parent_uuid: category.uuid, // This needs proper parent handling
+            parent_id: category.parent_id,
         })
         .from(category)
         .innerJoin(workCategory, eq(category.id, workCategory.category_id))
         .innerJoin(work, eq(workCategory.work_id, work.id))
         .where(eq(work.uuid, workUUID));
+
+    // Convert to CategoryApi format
+    const categoriesApi = await Promise.all(
+        workCategories.map(async (cat) => {
+            let parent_uuid: string | null = null;
+            if (cat.parent_id !== null) {
+                const parentResult = await db.select({ uuid: category.uuid })
+                    .from(category)
+                    .where(eq(category.id, cat.parent_id))
+                    .limit(1);
+                parent_uuid = parentResult[0]?.uuid || null;
+            }
+            return {
+                uuid: cat.uuid,
+                name: cat.name,
+                parent_uuid: parent_uuid,
+            };
+        })
+    );
 
     // 11. Assemble complete information
     return {
@@ -621,7 +575,7 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
         relation: relationList,
         wikis,
         tags: workTags,
-        categories: workCategories.map(convertCategoryData)
+        categories: categoriesApi
     };
 }
 
@@ -819,7 +773,7 @@ export async function deleteWork(db: DrizzleDB, workUuid: string): Promise<boole
 /**
  * List assets with pagination
  */
-export async function listAssets(db: DrizzleDB, page: number, pageSize: number): Promise<Asset[]> {
+export async function listAssets(db: DrizzleDB, page: number, pageSize: number): Promise<AssetApi[]> {
     if (page < 1 || pageSize < 1) return [];
 
     const offset = (page - 1) * pageSize;
@@ -838,11 +792,7 @@ export async function listAssets(db: DrizzleDB, page: number, pageSize: number):
         .limit(pageSize)
         .offset(offset);
 
-    return assets.map(a => ({
-        ...a,
-        is_previewpic: a.is_previewpic || undefined,
-        language: a.language || undefined,
-    }));
+    return assets.map(convertAssetData);
 }
 
 /**
@@ -850,7 +800,7 @@ export async function listAssets(db: DrizzleDB, page: number, pageSize: number):
  */
 export async function inputAsset(
     db: DrizzleDB,
-    assetData: Asset,
+    assetData: AssetApi,
     creators: CreatorWithRole[]
 ): Promise<boolean> {
     if (!validateUUID(assetData.uuid) || !validateUUID(assetData.work_uuid)) {
@@ -910,7 +860,7 @@ export async function inputAsset(
 export async function updateAsset(
     db: DrizzleDB,
     assetUuid: string,
-    assetData: Asset,
+    assetData: AssetApi,
     creators?: CreatorWithRole[]
 ): Promise<boolean> {
     if (!validateUUID(assetUuid)) return false;
@@ -985,7 +935,7 @@ export async function deleteAsset(db: DrizzleDB, assetUuid: string): Promise<boo
 /**
  * List work relations with pagination
  */
-export async function listRelations(db: DrizzleDB, page: number, pageSize: number): Promise<WorkRelation[]> {
+export async function listRelations(db: DrizzleDB, page: number, pageSize: number): Promise<WorkRelationApi[]> {
     if (page < 1 || pageSize < 1) return [];
 
     const offset = (page - 1) * pageSize;
@@ -1001,5 +951,21 @@ export async function listRelations(db: DrizzleDB, page: number, pageSize: numbe
         .limit(pageSize)
         .offset(offset);
 
-    return relations;
+    // Convert work IDs to UUIDs for API compatibility
+    const relationList: WorkRelationApi[] = [];
+    for (const relation of relations) {
+        const fromWorkUuid = await workIdToUuid(db, relation.from_work_id);
+        const toWorkUuid = await workIdToUuid(db, relation.to_work_id);
+
+        if (fromWorkUuid && toWorkUuid) {
+            relationList.push({
+                uuid: relation.uuid,
+                from_work_uuid: fromWorkUuid,
+                to_work_uuid: toWorkUuid,
+                relation_type: relation.relation_type,
+            });
+        }
+    }
+
+    return relationList;
 }

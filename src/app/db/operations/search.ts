@@ -7,64 +7,21 @@ import {
     creator,
     asset
 } from '../schema';
-import { convertAssetData, convertCreatorData } from '../utils';
+import { convertAssetData } from '../utils';
 import { workUuidToId } from '../utils/uuid-id-converter';
-
-// Types matching current interfaces
-export interface WorkTitle {
-    is_official: boolean;
-    is_for_search?: boolean;
-    language: string;
-    title: string;
-}
-
-export interface CreatorWithRole {
-    creator_uuid: string;
-    creator_name?: string;
-    creator_type: 'human' | 'virtual';
-    role: string;
-}
-
-export interface Asset {
-    uuid: string;
-    work_uuid: string;
-    asset_type: 'lyrics' | 'picture';
-    file_name: string;
-    is_previewpic?: boolean;
-    language?: string;
-}
-
-export interface Tag {
-    uuid: string;
-    name: string;
-}
-
-export interface Category {
-    uuid: string;
-    name: string;
-    parent_uuid?: string;
-}
-
-export interface WorkListItem {
-    work_uuid: string;
-    titles: WorkTitle[];
-    preview_asset?: Asset;
-    non_preview_asset?: Asset;
-    creator: CreatorWithRole[];
-    tags: Tag[];
-    categories: Category[];
-}
+import { WorkTitleApi, CreatorWithRole, AssetApi, Tag, CategoryApi, WorkListItem } from '../types';
 
 /**
- * Get work titles for a specific work UUID
+ * Get work titles for API layer (complete with all fields)
  */
-async function getWorkTitles(db: DrizzleDB, workUUID: string, includeForSearch: boolean = true): Promise<WorkTitle[]> {
+async function getWorkTitlesApi(db: DrizzleDB, workUUID: string, includeForSearch: boolean = true): Promise<WorkTitleApi[]> {
     // Convert work UUID to ID for database query
     const workId = await workUuidToId(db, workUUID);
     if (!workId) return [];
 
-    const query = db
+    const titles = await db
         .select({
+            uuid: workTitle.uuid,
             is_official: workTitle.is_official,
             is_for_search: workTitle.is_for_search,
             language: workTitle.language,
@@ -73,10 +30,15 @@ async function getWorkTitles(db: DrizzleDB, workUUID: string, includeForSearch: 
         .from(workTitle)
         .where(eq(workTitle.work_id, workId));
 
-    const allTitles = await query;
-
-    // Always return all titles, let frontend handle filtering
-    return allTitles;
+    // Convert to API format with work_uuid
+    return titles.map(title => ({
+        uuid: title.uuid,
+        work_uuid: workUUID, // Use the provided work UUID
+        is_official: title.is_official,
+        is_for_search: title.is_for_search,
+        language: title.language,
+        title: title.title,
+    }));
 }
 
 /**
@@ -127,7 +89,7 @@ export async function searchWorksByTitle(db: DrizzleDB, query: string): Promise<
     // Get work details for each work
     const workListPromises = workUuidList.map(async (work_uuid) => {
         // Get titles (return all titles, frontend will filter for display)
-        const titles = await getWorkTitles(db, work_uuid, true);
+        const titles = await getWorkTitlesApi(db, work_uuid, true);
 
         // Get assets
         const previewAssets = await db
@@ -246,7 +208,7 @@ export async function searchWorksByCreator(db: DrizzleDB, query: string): Promis
     // Get work details for each work
     const workListPromises = workUuidList.map(async (work_uuid) => {
         // Get titles (return all titles, frontend will filter for display)
-        const titles = await getWorkTitles(db, work_uuid, true);
+        const titles = await getWorkTitlesApi(db, work_uuid, true);
 
         // Get assets
         const previewAssets = await db

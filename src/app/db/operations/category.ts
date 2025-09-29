@@ -12,50 +12,7 @@ import {
 import { convertCategoryData, convertAssetData, convertCreatorData } from '../utils';
 import { workUuidToId, categoryUuidToId, creatorUuidToId } from '../utils/uuid-id-converter';
 
-// Types matching current interfaces
-export interface Category {
-    uuid: string;
-    name: string;
-    parent_uuid?: string | null;
-    children?: Category[];
-}
-
-export interface WorkTitle {
-    is_official: boolean;
-    language: string;
-    title: string;
-}
-
-export interface CreatorWithRole {
-    creator_uuid: string;
-    creator_name?: string;
-    creator_type: 'human' | 'virtual';
-    role: string;
-}
-
-export interface Asset {
-    uuid: string;
-    work_uuid: string;
-    asset_type: 'lyrics' | 'picture';
-    file_name: string;
-    is_previewpic?: boolean;
-    language?: string;
-}
-
-export interface Tag {
-    uuid: string;
-    name: string;
-}
-
-export interface WorkListItem {
-    work_uuid: string;
-    titles: WorkTitle[];
-    preview_asset?: Asset;
-    non_preview_asset?: Asset;
-    creator: CreatorWithRole[];
-    tags: Tag[];
-    categories: Category[];
-}
+import { Category, WorkTitle, CreatorWithRole, Asset, Tag, WorkListItem, CategoryWithCount, CategoryApi, WorkTitleApi } from '../types';
 
 // UUID validation
 const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -64,9 +21,9 @@ export function validateUUID(uuid: string): boolean {
 }
 
 /**
- * Get work titles for a specific work UUID
+ * Get work titles for API layer (complete with all fields)
  */
-async function getWorkTitles(db: DrizzleDB, workUUID: string): Promise<WorkTitle[]> {
+async function getWorkTitlesApi(db: DrizzleDB, workUUID: string): Promise<WorkTitleApi[]> {
     // Convert work UUID to ID
     const workId = await workUuidToId(db, workUUID);
     if (!workId) {
@@ -75,22 +32,54 @@ async function getWorkTitles(db: DrizzleDB, workUUID: string): Promise<WorkTitle
 
     const titles = await db
         .select({
+            uuid: workTitle.uuid,
+            work_uuid: workTitle.uuid, // We'll fix this below
             is_official: workTitle.is_official,
+            is_for_search: workTitle.is_for_search,
             language: workTitle.language,
             title: workTitle.title,
         })
         .from(workTitle)
         .where(eq(workTitle.work_id, workId));
 
-    return titles;
+    // Convert to API format with work_uuid
+    return titles.map(title => ({
+        uuid: title.uuid,
+        work_uuid: workUUID, // Use the provided work UUID
+        is_official: title.is_official,
+        is_for_search: title.is_for_search,
+        language: title.language,
+        title: title.title,
+    }));
 }
 
 /**
- * Build category tree structure
+ * Convert Category (DB layer) to CategoryApi (API layer)
  */
-function buildCategoryTree(categories: Category[]): Category[] {
-    const categoryMap = new Map<string, Category>();
-    const rootCategories: Category[] = [];
+async function convertCategoryToApi(db: DrizzleDB, cat: Category): Promise<CategoryApi> {
+    let parent_uuid: string | null = null;
+    if (cat.parent_id !== null) {
+        // Get parent UUID from parent ID
+        const parentResult = await db.select({ uuid: category.uuid })
+            .from(category)
+            .where(eq(category.id, cat.parent_id))
+            .limit(1);
+        parent_uuid = parentResult[0]?.uuid || null;
+    }
+
+    return {
+        uuid: cat.uuid,
+        name: cat.name,
+        parent_uuid: parent_uuid,
+    };
+}
+
+/**
+ * Build category tree structure using API layer types
+ */
+function buildCategoryTree(categories: CategoryApi[]): CategoryApi[] {
+    const categoryMap = new Map<string, CategoryApi>();
+    const rootCategories: CategoryApi[] = [];
 
     // Initialize all categories with empty children array
     categories.forEach(cat => {
@@ -115,12 +104,12 @@ function buildCategoryTree(categories: Category[]): Category[] {
 /**
  * Get all categories in tree structure
  */
-export async function listCategories(db: DrizzleDB): Promise<Category[]> {
+export async function listCategories(db: DrizzleDB): Promise<CategoryApi[]> {
     const categories = await db
         .select({
             uuid: category.uuid,
             name: category.name,
-            parent_uuid: category.parent_id, // Will need to convert this to parent UUID
+            parent_id: category.parent_id,
         })
         .from(category)
         .orderBy(category.name);
@@ -129,11 +118,11 @@ export async function listCategories(db: DrizzleDB): Promise<Category[]> {
     const categoriesWithParentUuid = await Promise.all(
         categories.map(async (cat) => {
             let parent_uuid: string | null = null;
-            if (cat.parent_uuid !== null) {
+            if (cat.parent_id !== null) {
                 // Get parent UUID from parent ID
                 const parentResult = await db.select({ uuid: category.uuid })
                     .from(category)
-                    .where(eq(category.id, cat.parent_uuid))
+                    .where(eq(category.id, cat.parent_id))
                     .limit(1);
                 parent_uuid = parentResult[0]?.uuid || null;
             }
@@ -145,17 +134,12 @@ export async function listCategories(db: DrizzleDB): Promise<Category[]> {
         })
     );
 
-    return buildCategoryTree(categoriesWithParentUuid.map(convertCategoryData));
+    return buildCategoryTree(categoriesWithParentUuid);
 }
 
 /**
  * Get all categories with work counts
  */
-export interface CategoryWithCount extends Category {
-    work_count: number;
-    children?: CategoryWithCount[];
-}
-
 export async function listCategoriesWithCounts(db: DrizzleDB): Promise<CategoryWithCount[]> {
     const categories = await db
         .select({
@@ -231,38 +215,18 @@ function buildCategoryTreeWithCounts(categories: CategoryWithCount[]): CategoryW
 /**
  * Get category by UUID
  */
-export async function getCategoryByUUID(db: DrizzleDB, categoryUuid: string): Promise<Category | null> {
+export async function getCategoryByUUID(db: DrizzleDB, categoryUuid: string): Promise<CategoryApi | null> {
     if (!validateUUID(categoryUuid)) return null;
 
     const categoryResult = await db
-        .select({
-            uuid: category.uuid,
-            name: category.name,
-            parent_id: category.parent_id, // Get parent_id to convert to UUID later
-        })
+        .select()
         .from(category)
         .where(eq(category.uuid, categoryUuid))
         .limit(1);
 
     if (!categoryResult[0]) return null;
 
-    // Convert parent_id to parent_uuid for API compatibility
-    let parent_uuid: string | null = null;
-    if (categoryResult[0].parent_id !== null) {
-        const parentResult = await db.select({ uuid: category.uuid })
-            .from(category)
-            .where(eq(category.id, categoryResult[0].parent_id))
-            .limit(1);
-        parent_uuid = parentResult[0]?.uuid || null;
-    }
-
-    const categoryWithParentUuid = {
-        uuid: categoryResult[0].uuid,
-        name: categoryResult[0].name,
-        parent_uuid: parent_uuid,
-    };
-
-    return convertCategoryData(categoryWithParentUuid);
+    return convertCategoryToApi(db, categoryResult[0]);
 }
 
 /**
@@ -329,7 +293,7 @@ export async function getWorksByCategory(
     // Get work details for each work
     const workListPromises = workUuidList.map(async (work_uuid) => {
         // Get titles
-        const titles = await getWorkTitles(db, work_uuid);
+        const titles = await getWorkTitlesApi(db, work_uuid);
 
         // Get assets
         const previewAssets = await db
@@ -408,7 +372,7 @@ export async function getWorkCountByCategory(db: DrizzleDB, categoryUuid: string
 /**
  * Create a new category
  */
-export async function inputCategory(db: DrizzleDB, categoryData: Category): Promise<boolean> {
+export async function inputCategory(db: DrizzleDB, categoryData: CategoryApi): Promise<boolean> {
     try {
         // Convert parent UUID to ID if provided
         let parent_id: number | null = null;

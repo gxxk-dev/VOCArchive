@@ -2,8 +2,7 @@ import { jsx } from 'hono/jsx'
 import { BaseLayout } from './layouts/base-layout'
 import { FooterSetting } from '../db/operations/admin'
 import { LanguageSelector } from './components/language-selector'
-import { TagWithCount } from '../db/operations/tag'
-import { CategoryWithCount } from '../db/operations/category'
+import { TagWithCount, CategoryWithCount } from '../db/types'
 
 export interface TagsCategoriesPageProps {
     tags: TagWithCount[]

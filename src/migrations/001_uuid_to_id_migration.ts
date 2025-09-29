@@ -9,7 +9,7 @@
  */
 
 import type { DrizzleDB } from '../app/db/client';
-import type { MigrationParameters, MigrationParameterDefinition } from '../app/db/types/migration';
+import type { MigrationParameters, MigrationParameterDefinition } from '../app/db/types';
 
 export const version = 1;
 export const description = '主键改为自增ID 对外访问改为UUID索引';

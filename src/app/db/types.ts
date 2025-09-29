@@ -63,7 +63,16 @@ export type Asset = InferSelectModel<typeof asset>;
 export type NewAsset = InferInsertModel<typeof asset>;
 
 // Application-layer Asset type that excludes redundant fields
-export type AssetForApplication = Omit<Asset, 'file_id'>;
+export type AssetForApplication = {
+    id: number;
+    work_id: number;
+    uuid: string;
+    work_uuid: string;
+    asset_type: 'lyrics' | 'picture';
+    file_name: string;
+    is_previewpic?: boolean;
+    language?: string;
+};
 
 // Custom type for asset input where file_id is optional (redundant with external objects)
 export type AssetInput = Omit<NewAsset, 'file_id'> & {
@@ -185,53 +194,127 @@ export interface CreatorWithRole {
     wikis?: WikiRef[];
 }
 
-export interface AssetWithCreators extends AssetForApplication {
-    creator: CreatorWithRole[];
-    external_objects?: ExternalObject[];
+// API-layer types (for external interfaces) - use UUID references
+export interface CreatorApi {
+    uuid: string;
+    name: string;
+    type: 'human' | 'virtual';
 }
 
-export interface MediaSourceWithExternalObjects extends MediaSourceForApplication {
-    external_objects?: ExternalObject[];
+export interface TagApi {
+    uuid: string;
+    name: string;
 }
 
-export interface CategoryWithChildren extends Category {
-    children?: CategoryWithChildren[];
+export interface CategoryApi {
+    uuid: string;
+    name: string;
+    parent_uuid?: string | null;
+    children?: CategoryApi[];
 }
 
-export interface WorkRelationWithTitles extends WorkRelation {
+export interface WorkTitleApi {
+    uuid: string;
+    work_uuid: string;
+    is_official: boolean;
+    is_for_search: boolean;
+    language: string;
+    title: string;
+}
+
+export interface AssetApi {
+    uuid: string;
+    work_uuid: string;
+    asset_type: 'lyrics' | 'picture';
+    file_name: string;
+    is_previewpic?: boolean;
+    language?: string;
+}
+
+export interface MediaSourceApi {
+    uuid: string;
+    work_uuid: string;
+    is_music: boolean;
+    file_name: string;
+    mime_type: string;
+    info: string;
+}
+
+export interface WorkRelationApi {
+    uuid: string;
+    from_work_uuid: string;
+    to_work_uuid: string;
+    relation_type: 'original' | 'remix' | 'cover' | 'remake' | 'picture' | 'lyrics';
     related_work_titles?: {
-        from_work_titles: Array<{ 
+        from_work_titles: Array<{
             language: string;
             title: string;
         }>;
-        to_work_titles: Array<{ 
+        to_work_titles: Array<{
             language: string;
             title: string;
         }>;
     };
 }
 
+export interface AssetWithCreators extends AssetApi {
+    creator: CreatorWithRole[];
+    external_objects?: ExternalObject[];
+}
+
+export interface MediaSourceWithExternalObjects extends MediaSourceApi {
+    external_objects?: ExternalObject[];
+}
+
+// API-layer composite types
 export interface WorkInfo {
     work: Work;
-    titles: WorkTitle[];
+    titles: WorkTitleApi[];
     license?: string;
     media_sources: MediaSourceWithExternalObjects[];
     asset: AssetWithCreators[];
     creator: CreatorWithRole[];
-    relation: WorkRelationWithTitles[];
+    relation: WorkRelationApi[];
     wikis: WikiRef[];
-    tags?: Tag[];
-    categories?: Category[];
+    tags?: TagApi[];
+    categories?: CategoryApi[];
 }
 
 export interface WorkListItem {
     work_uuid: string;
-    titles: WorkTitle[];
-    preview_asset?: Asset;
-    non_preview_asset?: Asset;
+    titles: WorkTitleApi[];
+    preview_asset?: AssetApi;
+    non_preview_asset?: AssetApi;
     creator: CreatorWithRole[];
-    tags: Tag[];
-    categories: Category[];
+    tags: TagApi[];
+    categories: CategoryApi[];
+}
+
+export interface CategoryWithChildren extends CategoryApi {
+    children?: CategoryWithChildren[];
+}
+
+export interface WorkRelationWithTitles extends WorkRelationApi {
+    related_work_titles?: {
+        from_work_titles: Array<{
+            language: string;
+            title: string;
+        }>;
+        to_work_titles: Array<{
+            language: string;
+            title: string;
+        }>;
+    };
+}
+
+// Extended interfaces from operations
+export interface TagWithCount extends TagApi {
+    work_count: number;
+}
+
+export interface CategoryWithCount extends CategoryApi {
+    work_count: number;
+    children?: CategoryWithCount[];
 }
 
 // Enum types for better type safety
@@ -241,6 +324,30 @@ export type AssetType = 'lyrics' | 'picture';
 export type RelationType = 'original' | 'remix' | 'cover' | 'remake' | 'picture' | 'lyrics';
 export type FooterItemType = 'link' | 'social' | 'copyright';
 export type ExternalSourceType = 'raw_url' | 'ipfs';
+
+export interface WikiReferenceWithUrl {
+    platform: string;
+    platform_name: string;
+    identifier: string;
+    url: string;
+    icon_class?: string;
+}
+
+// WorkTitle input/update types
+export interface WorkTitleInput {
+    work_uuid: string;
+    is_official: boolean;
+    is_for_search?: boolean;
+    language: string;
+    title: string;
+}
+
+export interface WorkTitleUpdate {
+    isOfficial?: boolean;
+    is_for_search?: boolean;
+    language?: string;
+    title?: string;
+}
 
 // Utility types for API responses
 export interface PaginationParams {
@@ -258,4 +365,113 @@ export interface FilterParams {
     tag?: string;
     category?: string;
     language?: string;
+}
+
+// Migration system types
+export interface Migration {
+    version: number;
+    description: string;
+    filename?: string;
+    upSql?: string;
+    downSql?: string;
+    parameters?: MigrationParameterDefinition[];
+    up: (db: any, parameters?: MigrationParameters) => Promise<void>;
+    down?: (db: any, parameters?: MigrationParameters) => Promise<void>;
+    requiresParameters?: boolean;
+}
+
+export interface MigrationInfo {
+    version: number;
+    description: string;
+    fileName: string;
+    status: 'applied' | 'current' | 'pending' | 'available';
+    appliedAt?: Date;
+    error?: string;
+    canExecute?: boolean;
+    parameters?: MigrationParameterDefinition[];
+    filePath?: string;
+}
+
+export interface MigrationResult {
+    version: number;
+    success: boolean;
+    error?: string;
+    executionTime?: number;
+    rollbackApplied?: boolean;
+    duration?: number;
+    details?: string;
+}
+
+export interface MigrationBatchResult {
+    success: boolean;
+    results: MigrationResult[];
+    totalExecuted: number;
+    totalFailed: number;
+    rollbacksApplied: number;
+    error?: string;
+    fromVersion?: number;
+    toVersion?: number;
+    totalDuration?: number;
+}
+
+export interface MigrationSystemStatus {
+    currentVersion: number;
+    latestVersion: number;
+    pendingCount: number;
+    needsMigration: boolean;
+    migrations: MigrationInfo[];
+    status?: any;
+    error?: string;
+}
+
+export interface MigrationExecuteOptions {
+    dryRun?: boolean;
+    force?: boolean;
+    targetVersion?: number;
+    parameters?: Record<number, MigrationParameters>;
+    batchSize?: number;
+}
+
+export interface MigrationParameterDefinition {
+    name: string;
+    type: 'string' | 'number' | 'boolean' | 'url';
+    description: string;
+    required?: boolean;
+    defaultValue?: any;
+    validation?: {
+        min?: number;
+        max?: number;
+        pattern?: string;
+        enum?: string[];
+    };
+}
+
+export interface MigrationParameters {
+    [key: string]: any;
+}
+
+export interface MigrationParameterRequirement {
+    version: number;
+    description: string;
+    parameters: MigrationParameterDefinition[];
+}
+
+export interface BatchParameterRequirements {
+    hasUnmetRequirements: boolean;
+    requirementsWithParameters: MigrationParameterRequirement[];
+    missingParameters?: number[];
+}
+
+export interface ParameterValidationResult {
+    valid: boolean;
+    errors: string[];
+    isValid?: boolean;
+    processedValues?: MigrationParameters;
+}
+
+export interface MigrationValidationResult {
+    valid: boolean;
+    errors: string[];
+    warnings: string[];
+    isValid?: boolean;
 }

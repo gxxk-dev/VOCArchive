@@ -1,10 +1,10 @@
 // Utility functions for database operations
 
-import type { 
-    Asset, 
-    Category, 
+import type {
+    AssetApi,
+    CategoryApi,
     CreatorWithRole
-} from './operations/work';
+} from './types';
 
 /**
  * Convert null values to undefined to match interface expectations
@@ -24,15 +24,14 @@ export function convertAssetData(asset: {
     file_name: string;
     is_previewpic: boolean | null;
     language: string | null;
-}): Asset {
+}): AssetApi {
     return {
         uuid: asset.uuid,
-        // file_id: asset.file_id, // Removed - use external objects for file info
         work_uuid: asset.work_uuid,
         asset_type: asset.asset_type,
         file_name: asset.file_name,
         is_previewpic: nullToUndefined(asset.is_previewpic),
-        language: nullToUndefined(asset.language), // Convert null to undefined to match Asset type
+        language: nullToUndefined(asset.language),
     };
 }
 
@@ -43,7 +42,7 @@ export function convertCategoryData(category: {
     uuid: string;
     name: string;
     parent_uuid: string | null;
-}): Category {
+}): CategoryApi {
     return {
         uuid: category.uuid,
         name: category.name,

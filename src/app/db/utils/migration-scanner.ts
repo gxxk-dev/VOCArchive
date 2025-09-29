@@ -7,7 +7,7 @@ import type {
     MigrationParameterDefinition,
     MigrationParameters,
     ParameterValidationResult
-} from '../types/migration';
+} from '../types';
 import { getCurrentDbVersion } from '../operations/config';
 import type { DrizzleDB } from '../client';
 import { getRegisteredMigrationFiles, getMigrationModule } from './migration-registry';

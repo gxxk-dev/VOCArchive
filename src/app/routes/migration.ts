@@ -8,7 +8,7 @@ import {
     getParameterRequirements
 } from '../db/utils/migration-engine';
 import { getCurrentDbVersion } from '../db/operations/config';
-import type { MigrationExecuteOptions, MigrationParameters } from '../db/types/migration';
+import type { MigrationExecuteOptions, MigrationParameters } from '../db/types';
 
 /**
  * 迁移管理 API 路由

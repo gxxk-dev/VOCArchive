@@ -9,7 +9,7 @@
  */
 
 import type { DrizzleDB } from '../app/db/client';
-import type { MigrationParameters, MigrationParameterDefinition } from '../app/db/types/migration';
+import type { MigrationParameters, MigrationParameterDefinition } from '../app/db/types';
 import { wikiPlatform } from '../app/db/schema';
 import { eq } from 'drizzle-orm';
 

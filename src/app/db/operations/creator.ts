@@ -4,17 +4,7 @@ import { creator, creatorWiki, workCreator, work } from '../schema';
 import { creatorUuidToId } from '../utils/uuid-id-converter';
 import { enrichWikiReferences } from './wiki-platforms';
 
-// Types matching current interfaces
-export interface Creator {
-    uuid: string;
-    name: string;
-    type: 'human' | 'virtual';
-}
-
-export interface WikiRef {
-    platform: string;
-    identifier: string;
-}
+import { Creator, CreatorApi, WikiRef } from '../types';
 
 // UUID validation
 const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -23,23 +13,30 @@ export function validateUUID(uuid: string): boolean {
 }
 
 /**
+ * Convert Creator (DB layer) to CreatorApi (API layer)
+ */
+function convertCreatorToApi(creator: Creator): CreatorApi {
+    return {
+        uuid: creator.uuid,
+        name: creator.name,
+        type: creator.type,
+    };
+}
+
+/**
  * Get creator by UUID with wiki references
  */
 export async function getCreatorByUUID(
-    db: DrizzleDB, 
+    db: DrizzleDB,
     creatorUuid: string
-): Promise<{ creator: Creator, wikis: WikiRef[] } | null> {
+): Promise<{ creator: CreatorApi, wikis: WikiRef[] } | null> {
     if (!validateUUID(creatorUuid)) {
         return null;
     }
 
     // Get creator
     const creatorResult = await db
-        .select({
-            uuid: creator.uuid,
-            name: creator.name,
-            type: creator.type,
-        })
+        .select()
         .from(creator)
         .where(eq(creator.uuid, creatorUuid))
         .limit(1);
@@ -62,7 +59,7 @@ export async function getCreatorByUUID(
     const wikis = await enrichWikiReferences(db, wikiRefs);
 
     return {
-        creator: creatorResult[0],
+        creator: convertCreatorToApi(creatorResult[0]),
         wikis: wikis,
     };
 }
@@ -71,27 +68,23 @@ export async function getCreatorByUUID(
  * Get paginated list of creators
  */
 export async function listCreators(
-    db: DrizzleDB, 
-    page: number, 
+    db: DrizzleDB,
+    page: number,
     pageSize: number
-): Promise<Creator[]> {
+): Promise<CreatorApi[]> {
     if (page < 1 || pageSize < 1) {
         return [];
     }
 
     const offset = (page - 1) * pageSize;
-    
+
     const creators = await db
-        .select({
-            uuid: creator.uuid,
-            name: creator.name,
-            type: creator.type,
-        })
+        .select()
         .from(creator)
         .limit(pageSize)
         .offset(offset);
 
-    return creators;
+    return creators.map(convertCreatorToApi);
 }
 
 /**
@@ -99,7 +92,7 @@ export async function listCreators(
  */
 export async function inputCreator(
     db: DrizzleDB,
-    creatorData: Creator,
+    creatorData: CreatorApi,
     wikis?: WikiRef[]
 ): Promise<void> {
     // For D1 compatibility, execute operations sequentially without transactions
@@ -134,7 +127,7 @@ export async function inputCreator(
 export async function updateCreator(
     db: DrizzleDB,
     creatorUuid: string,
-    creatorData: Creator,
+    creatorData: CreatorApi,
     wikis?: WikiRef[]
 ): Promise<boolean> {
     if (!validateUUID(creatorUuid)) return false;

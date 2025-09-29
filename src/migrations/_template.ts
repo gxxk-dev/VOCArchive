@@ -11,7 +11,7 @@
  */
 
 import type { DrizzleDB } from '../app/db/client';
-import type { MigrationParameters, MigrationParameterDefinition } from '../app/db/types/migration';
+import type { MigrationParameters, MigrationParameterDefinition } from '../app/db/types';
 import { upsertSiteConfig, deleteSiteConfig } from '../app/db/operations/config';
 import { siteConfig } from '../app/db/schema';
 import { eq } from 'drizzle-orm';

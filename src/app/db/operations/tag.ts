@@ -12,49 +12,7 @@ import {
 import { convertAssetData, convertCreatorData } from '../utils';
 import { workUuidToId, tagUuidToId } from '../utils/uuid-id-converter';
 
-// Types matching current interfaces
-export interface Tag {
-    uuid: string;
-    name: string;
-}
-
-export interface WorkTitle {
-    is_official: boolean;
-    language: string;
-    title: string;
-}
-
-export interface CreatorWithRole {
-    creator_uuid: string;
-    creator_name?: string;
-    creator_type: 'human' | 'virtual';
-    role: string;
-}
-
-export interface Asset {
-    uuid: string;
-    work_uuid: string;
-    asset_type: 'lyrics' | 'picture';
-    file_name: string;
-    is_previewpic?: boolean;
-    language?: string;
-}
-
-export interface Category {
-    uuid: string;
-    name: string;
-    parent_uuid?: string;
-}
-
-export interface WorkListItem {
-    work_uuid: string;
-    titles: WorkTitle[];
-    preview_asset?: Asset;
-    non_preview_asset?: Asset;
-    creator: CreatorWithRole[];
-    tags: Tag[];
-    categories: Category[];
-}
+import { Tag, TagApi, WorkTitleApi, CreatorWithRole, AssetApi, CategoryApi, WorkListItem, TagWithCount, WorkTitle } from '../types';
 
 // UUID validation
 const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -63,29 +21,39 @@ export function validateUUID(uuid: string): boolean {
 }
 
 /**
- * Get work titles for a specific work UUID
+ * Get work titles for API layer (complete with all fields)
  */
-async function getWorkTitles(db: DrizzleDB, workUUID: string): Promise<WorkTitle[]> {
+async function getWorkTitlesApi(db: DrizzleDB, workUUID: string): Promise<WorkTitleApi[]> {
     // Convert work UUID to ID for database query
     const workId = await workUuidToId(db, workUUID);
     if (!workId) return [];
 
     const titles = await db
         .select({
+            uuid: workTitle.uuid,
             is_official: workTitle.is_official,
+            is_for_search: workTitle.is_for_search,
             language: workTitle.language,
             title: workTitle.title,
         })
         .from(workTitle)
         .where(eq(workTitle.work_id, workId));
 
-    return titles;
+    // Convert to API format with work_uuid
+    return titles.map(title => ({
+        uuid: title.uuid,
+        work_uuid: workUUID, // Use the provided work UUID
+        is_official: title.is_official,
+        is_for_search: title.is_for_search,
+        language: title.language,
+        title: title.title,
+    }));
 }
 
 /**
  * Get all tags
  */
-export async function listTags(db: DrizzleDB): Promise<Tag[]> {
+export async function listTags(db: DrizzleDB): Promise<TagApi[]> {
     const tags = await db
         .select({
             uuid: tag.uuid,
@@ -100,10 +68,6 @@ export async function listTags(db: DrizzleDB): Promise<Tag[]> {
 /**
  * Get all tags with work counts
  */
-export interface TagWithCount extends Tag {
-    work_count: number;
-}
-
 export async function listTagsWithCounts(db: DrizzleDB): Promise<TagWithCount[]> {
     const tags = await db
         .select({
@@ -122,7 +86,7 @@ export async function listTagsWithCounts(db: DrizzleDB): Promise<TagWithCount[]>
 /**
  * Get tag by UUID
  */
-export async function getTagByUUID(db: DrizzleDB, tagUuid: string): Promise<Tag | null> {
+export async function getTagByUUID(db: DrizzleDB, tagUuid: string): Promise<TagApi | null> {
     if (!validateUUID(tagUuid)) return null;
 
     const tagResult = await db
@@ -199,7 +163,7 @@ export async function getWorksByTag(
     // Get work details for each work
     const workListPromises = workUuidList.map(async (work_uuid) => {
         // Get titles
-        const titles = await getWorkTitles(db, work_uuid);
+        const titles = await getWorkTitlesApi(db, work_uuid);
 
         // Get assets
         const previewAssets = await db
@@ -278,7 +242,7 @@ export async function getWorkCountByTag(db: DrizzleDB, tagUuid: string): Promise
 /**
  * Create a new tag
  */
-export async function inputTag(db: DrizzleDB, tagData: Tag): Promise<boolean> {
+export async function inputTag(db: DrizzleDB, tagData: TagApi): Promise<boolean> {
     try {
         await db.insert(tag).values({
             uuid: tagData.uuid,

@@ -19,9 +19,7 @@ import {
     type MigrationResult,
     type MigrationStatus
 } from '../db/operations/admin';
-import type { Work, WorkTitle, CreatorWithRole, WikiRef, Asset, MediaSource, WorkRelation, Tag, Category } from '../db/operations/work';
-import type { WorkTitleInput } from '../db/operations/work-title';
-import type { MediaSourceForDatabase, MediaSourceApiInput, ExternalSourceApiInput, ExternalObjectApiInput, WikiPlatformApiInput } from '../db/types';
+import type { Work, WorkTitle, CreatorWithRole, WikiRef, Asset, MediaSource, WorkRelation, Tag, Category, WorkTitleInput, MediaSourceForDatabase, MediaSourceApiInput, ExternalSourceApiInput, ExternalObjectApiInput, WikiPlatformApiInput } from '../db/types';
 import { workUuidToId, externalSourceUuidToId } from '../db/utils/uuid-id-converter';
 import { validateStorageSource } from '../db/utils/storage-handlers';
 import { Hono } from "hono";

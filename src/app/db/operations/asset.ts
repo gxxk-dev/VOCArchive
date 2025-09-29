@@ -87,11 +87,7 @@ export async function getAssetByUUID(
 
     const convertedAsset = convertAssetData(assetResult[0]);
     return {
-        id: 0, // Will be filled with actual ID if needed
-        work_id: 0, // Will be filled with actual ID if needed
         ...convertedAsset,
-        language: convertedAsset.language || null, // Convert undefined to null for consistency
-        is_previewpic: convertedAsset.is_previewpic ?? null, // Convert undefined to null for consistency
         creator: assetCreators,
         external_objects: externalObjectsWithSource,
     };
@@ -132,9 +128,12 @@ export async function listAssets(
         return {
             id: asset.id,
             work_id: asset.work_id,
-            ...converted,
-            language: converted.language || null, // Convert undefined to null for consistency
-            is_previewpic: converted.is_previewpic ?? null, // Convert undefined to null for consistency
+            work_uuid: converted.work_uuid,
+            uuid: converted.uuid,
+            asset_type: converted.asset_type,
+            file_name: converted.file_name,
+            language: converted.language,
+            is_previewpic: converted.is_previewpic,
         };
     });
 }

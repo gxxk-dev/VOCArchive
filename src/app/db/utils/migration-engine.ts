@@ -5,8 +5,9 @@ import type {
     MigrationResult,
     MigrationBatchResult,
     MigrationSystemStatus,
-    MigrationExecuteOptions
-} from '../types/migration';
+    MigrationExecuteOptions,
+    BatchParameterRequirements
+} from '../types';
 import { getCurrentDbVersion, updateDbVersion } from '../operations/config';
 import {
     scanMigrationFiles,
@@ -575,6 +576,6 @@ export async function validateMigrationSystem(db: DrizzleDB): Promise<{
 export async function getParameterRequirements(
     db: DrizzleDB,
     targetVersion?: number
-): Promise<import('../types/migration').BatchParameterRequirements> {
+): Promise<BatchParameterRequirements> {
     return await checkBatchParameterRequirements(db, targetVersion);
 }
