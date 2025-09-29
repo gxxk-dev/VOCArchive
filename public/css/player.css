@@ -1005,10 +1005,26 @@ a {
 .work-meta {
     margin-top: 16px;
     padding-top: 16px;
-    border-top: 1px solid var(--md-sys-color-outline-variant);
     display: flex;
     flex-direction: column;
     gap: 12px;
+    width: 100%;
+    margin-left: calc(-32px);
+    margin-right: calc(-32px);
+    padding-left: 32px;
+    padding-right: 32px;
+    position: relative;
+}
+
+.work-meta::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 32px;
+    right: 32px;
+    height: 1px;
+    opacity: 0.6;
+    background: var(--md-sys-color-outline);
 }
 
 .work-meta-tags, .work-meta-categories {
