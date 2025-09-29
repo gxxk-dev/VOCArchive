@@ -4,10 +4,10 @@ function setupPlayerEventListeners() {
     document.addEventListener('click', function(e) {
         const target = e.target.closest('.tag-chip.clickable, .category-chip.clickable, .tags-expand');
         if (!target) return;
-        
+
         e.preventDefault();
         e.stopPropagation();
-        
+
         if (target.classList.contains('tag-chip')) {
             const tagUuid = target.dataset.tag;
             if (tagUuid) {
@@ -20,6 +20,21 @@ function setupPlayerEventListeners() {
             }
         } else if (target.classList.contains('tags-expand')) {
             expandPlayerTags(target);
+        }
+    });
+
+    // Handle version card clicks for mobile download
+    document.addEventListener('click', function(e) {
+        const versionCard = e.target.closest('.version-card');
+        if (!versionCard) return;
+
+        // Don't trigger if clicking on download button directly
+        if (e.target.closest('.download-btn')) return;
+
+        const downloadBtn = versionCard.querySelector('.download-btn');
+        if (downloadBtn) {
+            // Trigger download
+            downloadBtn.click();
         }
     });
 }

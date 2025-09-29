@@ -820,12 +820,9 @@ body {
         flex-shrink: 0;
     }
 
-    /* 移动端触控目标优化 */
+    /* 移动端隐藏播放按钮 */
     .work-play-btn {
-        width: 56px;
-        height: 56px;
-        font-size: 1.4rem;
-        opacity: 1; /* 移动端始终显示播放按钮 */
+        display: none;
     }
 
     .floating-search-btn {
@@ -862,12 +859,9 @@ body {
     }
 
 
-    /* 移动端触控目标优化 */
+    /* 移动端隐藏播放按钮 */
     .work-play-btn {
-        width: 56px;
-        height: 56px;
-        font-size: 1.4rem;
-        opacity: 1; /* 移动端始终显示播放按钮 */
+        display: none;
     }
 
     .floating-search-btn {

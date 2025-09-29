@@ -562,7 +562,7 @@ a {
 /* Responsive Design */
 @media (max-width: 1024px) and (min-width: 769px) {
     body {
-        padding: 20px;
+        padding: 0px;
     }
 
     .player-container {
@@ -585,12 +585,17 @@ a {
 /* 大手机/小平板 (415px - 768px) */
 @media (max-width: 768px) and (min-width: 415px) {
     body {
-        padding: 18px;
+        padding: 0;
     }
 
     .player-container {
-        padding: 26px;
+        padding: 26px 0 0 0;
         border-radius: 24px;
+    }
+
+    /* 移动端隐藏播放/下载按钮，点击即播放下载 */
+    .download-btn {
+        display: none;
     }
 
     .work-title {
@@ -640,12 +645,17 @@ a {
 /* 中等手机屏幕 (361px - 414px) */
 @media (max-width: 414px) and (min-width: 361px) {
     body {
-        padding: 17px;
+        padding: 0;
     }
 
     .player-container {
-        padding: 25px;
+        padding: 25px 0 0 0;
         border-radius: 22px;
+    }
+
+    /* 移动端隐藏播放/下载按钮，点击即播放下载 */
+    .download-btn {
+        display: none;
     }
 
     .work-title {
@@ -707,12 +717,17 @@ a {
 /* 小手机屏幕 (320px - 360px) */
 @media (max-width: 360px) {
     body {
-        padding: 14px;
+        padding: 0;
     }
 
     .player-container {
-        padding: 22px;
+        padding: 22px 0 0 0;
         border-radius: 20px;
+    }
+
+    /* 移动端隐藏播放/下载按钮，点击即播放下载 */
+    .download-btn {
+        display: none;
     }
 
     .work-title {
@@ -798,11 +813,37 @@ a {
 
 @media (max-width: 768px) {
     body {
-        padding: 16px;
+        padding: 0px;
     }
 
     .player-container {
         padding: 24px;
+    }
+
+    /* 移动端隐藏播放/下载按钮，点击即播放下载 */
+    .download-btn {
+        display: none;
+    }
+
+    /* 移动端版本卡片样式改进 */
+    .version-card {
+        background: var(--md-sys-color-surface-container);
+        border: 2px solid var(--md-sys-color-outline-variant);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .version-card::after {
+        content: '点击下载';
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        font-size: 0.75rem;
+        color: var(--md-sys-color-on-surface-variant);
+        background: var(--md-sys-color-surface-container-high);
+        padding: 4px 8px;
+        border-radius: 12px;
+        opacity: 0.8;
     }
 
     .work-title {
