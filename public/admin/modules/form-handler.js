@@ -59,12 +59,12 @@ export async function showFormModal(target, data = null) {
     const options = {};
     try {
         if (['work', 'asset'].includes(target)) {
-            const allCreators = await apiFetch(`/list/creator/1?pageSize=999`);
+            const allCreators = await apiFetch(`/list/creator/1/999`);
             setAllCreators(allCreators);
             options.creators = allCreators;
         }
         if (['media', 'asset', 'relation'].includes(target)) {
-            const allWorks = await apiFetch(`/list/work/1?pageSize=999`);
+            const allWorks = await apiFetch(`/list/work/1/999`);
             setAllWorks(allWorks);
             options.works = allWorks;
         }

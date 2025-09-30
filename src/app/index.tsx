@@ -18,7 +18,6 @@ import { IndexPage } from './pages/index'
 import { PlayerPage } from './pages/player'
 import { InitPage } from './pages/init'
 import { TagsCategoriesPage } from './pages/tags-categories'
-import { MigrationPage } from './pages/migration'
 import { createDrizzleClient } from './db/client'
 import { getFooterSettings, initializeDatabaseWithMigrations, isDatabaseInitialized } from './db/operations/admin'
 import { getPublicSiteConfig, getSiteConfig } from './db/operations/config'
@@ -216,17 +215,6 @@ app.get('/tags-categories', async (c) => {
         siteConfig={siteConfig}
         availableLanguages={availableLanguages}
         preferredLanguage={preferredLanguage}
-    />)
-})
-
-app.get('/migration', async (c) => {
-    const db = createDrizzleClient(c.env.DB);
-    const footerSettings = await getFooterSettings(db);
-    const siteConfig = await getPublicSiteConfig(db);
-
-    return c.html(<MigrationPage
-        footerSettings={footerSettings}
-        siteConfig={siteConfig}
     />)
 })
 

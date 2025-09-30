@@ -9,15 +9,18 @@
  */
 export const UUID_SELECTOR_CONFIG = {
     work: {
-        apiEndpoint: '/api/list/works',
-        valueField: 'uuid',
+        apiEndpoint: '/api/list/work',
+        valueField: 'work_uuid',
         displayField: 'titles',
         label: '作品',
         placeholder: '--选择作品--',
         displayFormatter: (item) => {
+            if (!item || !item.work_uuid) {
+                return 'Invalid Item';
+            }
             const officialTitle = item.titles?.find(t => t.is_official);
             const title = officialTitle ? officialTitle.title : item.titles?.[0]?.title || 'Untitled';
-            return `${title} (${item.uuid.substring(0, 8)}...)`;
+            return `${title} (${item.work_uuid.substring(0, 8)}...)`;
         }
     },
     creator: {
@@ -26,7 +29,12 @@ export const UUID_SELECTOR_CONFIG = {
         displayField: 'name',
         label: '创作者',
         placeholder: '--选择创作者--',
-        displayFormatter: (item) => `${item.name} (${item.uuid.substring(0, 8)}...)`
+        displayFormatter: (item) => {
+            if (!item || !item.uuid) {
+                return 'Invalid Item';
+            }
+            return `${item.name} (${item.uuid.substring(0, 8)}...)`;
+        }
     },
     external_source: {
         apiEndpoint: '/api/list/external_sources',
@@ -34,7 +42,12 @@ export const UUID_SELECTOR_CONFIG = {
         displayField: 'name',
         label: '存储源',
         placeholder: '--选择存储源--',
-        displayFormatter: (item) => `${item.name} (${item.uuid.substring(0, 8)}...)`
+        displayFormatter: (item) => {
+            if (!item || !item.uuid) {
+                return 'Invalid Item';
+            }
+            return `${item.name} (${item.uuid.substring(0, 8)}...)`;
+        }
     },
     category: {
         apiEndpoint: '/api/list/categories',
@@ -43,6 +56,9 @@ export const UUID_SELECTOR_CONFIG = {
         label: '分类',
         placeholder: '--选择父分类--',
         displayFormatter: (item, level = 0) => {
+            if (!item || !item.uuid) {
+                return 'Invalid Item';
+            }
             const indent = '　'.repeat(level);
             return `${indent}${item.name} (${item.uuid.substring(0, 8)}...)`;
         },
