@@ -28,13 +28,11 @@ import {
     setupUuidGeneration
 } from './modules/tools.js';
 import {
-    filterTags,
-    filterCategories,
-    filterExternalObjects,
     copyToClipboard,
     renderExternalObjectsList
 } from './modules/utils.js';
 import { updatePageTitle } from './modules/utils.js';
+import { initializeLegacySelectors } from './modules/form-generator-legacy.js';
 
 // Application initialization
 document.addEventListener('DOMContentLoaded', async () => {
@@ -74,10 +72,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Setup tool functionalities
     setupUuidGeneration();
 
-    // Make filter functions globally available
-    window.filterTags = filterTags;
-    window.filterCategories = filterCategories;
-    window.filterExternalObjects = filterExternalObjects;
+    // Initialize legacy selectors for backward compatibility
+    initializeLegacySelectors();
 
     // --- Initial Check ---
     if (jwtToken) {

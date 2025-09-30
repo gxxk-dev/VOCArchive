@@ -1,0 +1,539 @@
+/**
+ * 选择器样式文件
+ * 包含所有选择器组件的CSS样式定义
+ */
+
+/* ===== UUID选择器样式 ===== */
+
+/* 快速选择容器 */
+.quick-select-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.quick-select-hint {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    font-weight: 500;
+    padding-left: 4px;
+    opacity: 0.8;
+}
+
+.quick-select-field {
+    margin: 0; /* Remove default margin to keep compact */
+}
+
+.quick-select-field select {
+    padding: 12px 16px; /* Simplified padding without floating label space */
+}
+
+.quick-select-container:hover .quick-select-hint {
+    opacity: 1;
+    color: rgba(120, 119, 198, 0.9);
+}
+
+/* 输入框与快速选择器组合 */
+.input-with-quick-select {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.input-with-quick-select input {
+    flex-grow: 1; /* Input takes up available space */
+}
+
+.input-with-quick-select select {
+    flex-grow: 0;
+    width: auto; /* Select only takes as much space as needed */
+    min-width: 150px; /* Optional: give it a minimum width */
+}
+
+/* ===== 动态列表中的选择器修复 ===== */
+
+/* 修复动态列表项中的 MD3 选择器样式 */
+.dynamic-list-item .md3-select-field {
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-height: 56px; /* 确保足够高度 */
+    padding: 0; /* 重置padding，使用默认MD3样式 */
+}
+
+.dynamic-list-item .md3-select-field select {
+    background-color: transparent;
+    color: #333;
+    padding: 20px 16px 8px 16px; /* 确保顶部有足够空间给label */
+}
+
+.dynamic-list-item .md3-select-field .md3-label {
+    color: #666;
+    background-color: #ffffff;
+    /* 确保label在正确位置，使用主样式的定位逻辑 */
+}
+
+/* 确保label状态切换正常工作 */
+.dynamic-list-item .md3-select-field.has-value .md3-label,
+.dynamic-list-item .md3-select-field:focus-within .md3-label {
+    top: 8px;
+    transform: translateY(0);
+    font-size: 12px;
+    background-color: #ffffff;
+    padding: 0 4px;
+}
+
+/* 深色主题下的动态列表选择器修复 */
+[data-theme="dark"] .dynamic-list-item .md3-select-field {
+    background-color: #555;
+    border-color: #666;
+}
+
+[data-theme="dark"] .dynamic-list-item .md3-select-field select {
+    background-color: transparent;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .dynamic-list-item .md3-select-field .md3-label {
+    color: #ccc;
+    background-color: #555;
+}
+
+[data-theme="dark"] .dynamic-list-item .md3-select-field.has-value .md3-label,
+[data-theme="dark"] .dynamic-list-item .md3-select-field:focus-within .md3-label {
+    background-color: #555;
+    color: #007bff;
+}
+
+[data-theme="dark"] .dynamic-list-item .md3-select-field:hover {
+    background-color: #666;
+    border-color: #777;
+}
+
+[data-theme="dark"] .dynamic-list-item .md3-select-field:focus-within {
+    background-color: #666;
+    border-color: #007bff;
+    box-shadow: 0 0 0 1px #007bff;
+}
+
+[data-theme="dark"] .dynamic-list-item .md3-select-field:focus-within .md3-label {
+    color: #007bff;
+    background-color: #666;
+}
+
+/* ===== 多选器样式 ===== */
+
+/* 标签选择器 */
+.tag-selector {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.tag-selector input[type="text"] {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.tag-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tag-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.tag-checkbox:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.tag-chip {
+    display: inline-block;
+    padding: 4px 8px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 16px;
+    font-size: 0.9em;
+    transition: all 0.2s ease;
+}
+
+.tag-chip.selected {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+/* 分类选择器 */
+.category-selector {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.category-selector input[type="text"] {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.category-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.category-tree {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.category-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.category-checkbox:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.category-name {
+    font-size: 0.9em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.category-checkbox input[type="checkbox"]:checked + .category-name {
+    background-color: #007bff;
+    color: white;
+}
+
+/* 外部对象选择器 */
+.external-objects-selector {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    background-color: #fdfdfd;
+}
+
+.form-section .external-objects-selector {
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+}
+
+.external-objects-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.external-object-filter-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.external-object-filter-field input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.external-objects-info {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 8px;
+}
+
+.external-objects-info p {
+    margin: 0 0 8px 0;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.refresh-button {
+    padding: 6px 12px;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: all 0.2s ease;
+}
+
+.refresh-button:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.external-objects-container {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.external-object-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.external-object-checkbox:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.external-object-chip {
+    font-size: 0.85em;
+    color: #495057;
+}
+
+/* ===== 通用过滤输入框样式 ===== */
+.filter-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-bottom: 8px;
+    transition: border-color 0.2s ease;
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* ===== 深色主题样式 ===== */
+[data-theme="dark"] .quick-select-hint {
+    color: #cac4d0;
+}
+
+[data-theme="dark"] .quick-select-container:hover .quick-select-hint {
+    color: #d0bcff;
+}
+
+[data-theme="dark"] .input-with-quick-select {
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .input-with-quick-select .md3-select-field {
+    background-color: #2b2930;
+    border-color: #938f99;
+}
+
+[data-theme="dark"] .input-with-quick-select input::placeholder {
+    color: #888;
+}
+
+[data-theme="dark"] .input-with-quick-select label {
+    color: #e0e0e0;
+}
+
+/* 标签选择器深色主题 */
+[data-theme="dark"] .tag-selector {
+    background-color: #2d2d2d;
+    border-color: #444;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .tag-selector input[type="text"] {
+    background-color: #333;
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .tag-selector input[type="text"]:focus {
+    border-color: #007bff;
+}
+
+[data-theme="dark"] .tag-checkbox {
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .tag-chip {
+    background-color: #444;
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .tag-chip.selected {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+/* 分类选择器深色主题 */
+[data-theme="dark"] .category-selector {
+    background-color: #2d2d2d;
+    border-color: #444;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .category-selector input[type="text"] {
+    background-color: #333;
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .category-selector input[type="text"]:focus {
+    border-color: #007bff;
+}
+
+[data-theme="dark"] .category-checkbox {
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .category-name {
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .category-checkbox input[type="checkbox"]:checked + .category-name {
+    background-color: #007bff;
+    color: white;
+}
+
+/* 外部对象选择器深色主题 */
+[data-theme="dark"] .form-section .external-objects-selector {
+    background-color: rgba(15, 15, 15, 0.85);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .external-object-filter-field input {
+    background-color: #333;
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .external-object-filter-field input:focus {
+    border-color: #007bff;
+}
+
+[data-theme="dark"] .external-objects-info p {
+    color: #ccc;
+}
+
+[data-theme="dark"] .refresh-button {
+    background-color: #444;
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .refresh-button:hover {
+    background-color: #555;
+    border-color: #666;
+}
+
+[data-theme="dark"] .external-object-checkbox {
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .external-object-chip {
+    color: #ccc;
+}
+
+/* 通用过滤输入框深色主题 */
+[data-theme="dark"] .filter-input {
+    background-color: #333;
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .filter-input:focus {
+    border-color: #007bff;
+}
+
+[data-theme="dark"] .filter-input::placeholder {
+    color: #888;
+}
+
+/* ===== 响应式设计 ===== */
+@media (max-width: 768px) {
+    .input-with-quick-select {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+    }
+
+    .input-with-quick-select select {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .quick-select-container {
+        gap: 2px;
+    }
+
+    .tag-selector,
+    .category-selector {
+        max-height: 150px;
+    }
+
+    .external-objects-container {
+        max-height: 150px;
+    }
+}
+
+/* ===== 动画效果 ===== */
+@keyframes selector-flash {
+    0% { background-color: rgba(120, 119, 198, 0.3); }
+    100% { background-color: transparent; }
+}
+
+.selector-flash {
+    animation: selector-flash 0.5s ease-out;
+}
+
+/* 加载状态 */
+.selector-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.selector-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

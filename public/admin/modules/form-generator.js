@@ -1,6 +1,14 @@
 // Form generation module
 
 import { allExternalSources } from './config.js';
+import {
+    createQuickSelect,
+    createCategoryQuickSelect,
+    createTagSelector,
+    createCategorySelector,
+    createExternalObjectsSelector,
+    createMD3Select
+} from './form-generator-legacy.js';
 
 // --- Main Form Generation ---
 export function generateFormFields(target, data = null, options = {}) {
@@ -278,183 +286,6 @@ export function generateFormFields(target, data = null, options = {}) {
         `
     };
     return (fields[target] || '<p>Form not implemented for this type.</p>') + '<button type="submit">Submit</button>';
-}
-
-// --- Helper Functions for Form Generation ---
-export function createMD3Select(id, name, labelText, options, selectedValue = '', required = false) {
-    const requiredAttr = required ? 'required' : '';
-    const optionsHtml = options.map(option => {
-        const value = typeof option === 'object' ? option.value : option;
-        const text = typeof option === 'object' ? option.text : option;
-        const selected = value === selectedValue ? 'selected' : '';
-        return `<option value="${value}" ${selected}>${text}</option>`;
-    }).join('');
-
-    return `
-        <div class="md3-select-field">
-            <select id="${id}" name="${name}" ${requiredAttr}>
-                ${optionsHtml}
-            </select>
-        </div>
-    `;
-}
-
-export function createQuickSelect(id, name, data, valueField, displayField, selectedValue, targetInputId) {
-    if (!data || data.length === 0) return '';
-
-    const getDisplayValue = (item) => {
-        if (displayField === 'titles') {
-            const officialTitle = item.titles.find(t => t.is_official);
-            return officialTitle ? officialTitle.title : item.titles[0]?.title || 'Untitled';
-        }
-        return item[displayField] || 'Unnamed';
-    };
-
-    const options = data.map(item => {
-        const value = item[valueField];
-        const display = getDisplayValue(item);
-        const isSelected = value === selectedValue ? 'selected' : '';
-        return `<option value="${value}" ${isSelected}>${display} (${value.substring(0, 8)}...)</option>`;
-    }).join('');
-
-    return `
-        <div class="quick-select-container">
-            <span class="quick-select-hint">快速选择</span>
-            <div class="md3-select-field quick-select-field">
-                <select id="${id}" name="${name}" class="quick-select" data-target-input="${targetInputId}">
-                    <option value="">--选择项目--</option>
-                    ${options}
-                </select>
-                <div class="md3-state-layer"></div>
-            </div>
-        </div>
-    `;
-}
-
-export function createCategoryQuickSelect(id, name, categories, selectedValue, targetInputId) {
-    if (!categories || categories.length === 0) return '';
-
-    const flattenCategories = (cats, level = 0) => {
-        let result = [];
-        cats.forEach(cat => {
-            result.push({ ...cat, level });
-            if (cat.children && cat.children.length > 0) {
-                result.push(...flattenCategories(cat.children, level + 1));
-            }
-        });
-        return result;
-    };
-
-    const flatCategories = flattenCategories(categories);
-    const options = flatCategories.map(cat => {
-        const prefix = '　'.repeat(cat.level); // 使用全角空格缩进
-        const isSelected = cat.uuid === selectedValue ? 'selected' : '';
-        return `<option value="${cat.uuid}" ${isSelected}>${prefix}${cat.name} (${cat.uuid.substring(0, 8)}...)</option>`;
-    }).join('');
-
-    return `
-        <div class="quick-select-container">
-            <span class="quick-select-hint">选择父分类</span>
-            <div class="md3-select-field quick-select-field">
-                <select id="${id}" name="${name}" class="quick-select" data-target-input="${targetInputId}">
-                    <option value="">--选择父分类--</option>
-                    ${options}
-                </select>
-                <div class="md3-state-layer"></div>
-            </div>
-        </div>
-    `;
-}
-
-export function createTagSelector(tags = [], selectedTags = []) {
-    if (!tags || tags.length === 0) {
-        return '<p>暂无可用标签</p>';
-    }
-
-    const selectedTagIds = selectedTags.map(tag => tag.uuid || tag.tag_uuid);
-    const tagCheckboxes = tags.map(tag => {
-        const isChecked = selectedTagIds.includes(tag.uuid) ? 'checked' : '';
-        return `
-            <label class="tag-checkbox">
-                <input type="checkbox" name="selected_tags" value="${tag.uuid}" ${isChecked}>
-                <span class="tag-chip ${isChecked ? 'selected' : ''}">${tag.name}</span>
-            </label>
-        `;
-    }).join('');
-
-    return `
-        <div class="tag-list">
-            <input type="text" id="tag-filter" placeholder="搜索标签..." oninput="filterTags(this.value)">
-            <div id="tag-checkboxes">
-                ${tagCheckboxes}
-            </div>
-        </div>
-    `;
-}
-
-export function createCategorySelector(categories = [], selectedCategories = []) {
-    if (!categories || categories.length === 0) {
-        return '<p>暂无可用分类</p>';
-    }
-
-    const selectedCategoryIds = selectedCategories.map(cat => cat.uuid || cat.category_uuid);
-
-    const flattenCategories = (cats, level = 0) => {
-        let result = [];
-        cats.forEach(cat => {
-            result.push({ ...cat, level });
-            if (cat.children && cat.children.length > 0) {
-                result.push(...flattenCategories(cat.children, level + 1));
-            }
-        });
-        return result;
-    };
-
-    const flatCategories = flattenCategories(categories);
-    const categoryCheckboxes = flatCategories.map(cat => {
-        const isChecked = selectedCategoryIds.includes(cat.uuid) ? 'checked' : '';
-        const prefix = '　'.repeat(cat.level);
-        return `
-            <label class="category-checkbox" style="margin-left: ${cat.level * 20}px;">
-                <input type="checkbox" name="selected_categories" value="${cat.uuid}" ${isChecked}>
-                <span class="category-name">${prefix}${cat.name}</span>
-            </label>
-        `;
-    }).join('');
-
-    return `
-        <div class="category-list">
-            <input type="text" id="category-filter" placeholder="搜索分类..." oninput="filterCategories(this.value)">
-            <div id="category-checkboxes" class="category-tree">
-                ${categoryCheckboxes}
-            </div>
-        </div>
-    `;
-}
-
-export function createExternalObjectsSelector(externalSources = [], selectedExternalObjects = []) {
-    if (!externalSources || externalSources.length === 0) {
-        return '<p>暂无可用存储源</p>';
-    }
-
-    return `
-        <div class="external-objects-list">
-            <div class="external-object-filter-field">
-                <input type="text" id="external-object-filter" oninput="filterExternalObjects(this.value)">
-                <label class="md3-label">搜索外部对象...</label>
-                <div class="md3-state-layer"></div>
-            </div>
-            <div id="external-object-checkboxes">
-                <div class="external-objects-info">
-                    <p>选择关联的外部对象。这些对象将用于在不同存储源中访问此资产的文件。</p>
-                    <button type="button" id="refresh-external-objects" class="refresh-button">刷新外部对象列表</button>
-                </div>
-                <div id="external-objects-container">
-                    <p>正在加载外部对象...</p>
-                </div>
-            </div>
-        </div>
-    `;
 }
 
 // --- Dynamic Row Creators ---

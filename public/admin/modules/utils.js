@@ -59,48 +59,6 @@ export function updatePageTitle(tabId) {
     }
 }
 
-// --- Filter Functions ---
-export function filterTags(searchTerm) {
-    const checkboxes = document.querySelectorAll('#tag-checkboxes .tag-checkbox');
-    checkboxes.forEach(checkbox => {
-        const tagName = checkbox.querySelector('.tag-chip').textContent.toLowerCase();
-        const matches = tagName.includes(searchTerm.toLowerCase());
-        checkbox.style.display = matches ? 'flex' : 'none';
-    });
-}
-
-export function filterCategories(searchTerm) {
-    const checkboxes = document.querySelectorAll('#category-checkboxes .category-checkbox');
-    checkboxes.forEach(checkbox => {
-        const categoryName = checkbox.querySelector('.category-name').textContent.toLowerCase();
-        const matches = categoryName.includes(searchTerm.toLowerCase());
-        checkbox.style.display = matches ? 'flex' : 'none';
-    });
-}
-
-export function filterExternalObjects(searchTerm) {
-    const container = document.getElementById('external-objects-container');
-    if (!container) return;
-
-    // Get currently selected external objects
-    const selectedCheckboxes = document.querySelectorAll('input[name="external_objects"]:checked');
-    const currentSelectedObjects = Array.from(selectedCheckboxes).map(checkbox => ({
-        uuid: checkbox.value
-    }));
-
-    const filteredObjects = allExternalObjects.filter(obj => {
-        const sourceName = obj.source?.name || allExternalSources.find(s => s.uuid === obj.external_source_uuid)?.name || '';
-        return (
-            obj.file_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            obj.mime_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            sourceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            obj.uuid.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    });
-
-    renderExternalObjectsList(filteredObjects, container, currentSelectedObjects);
-}
-
 // --- External Objects Management ---
 export function enhanceExternalObjectFilter(field) {
     const input = field.querySelector('input[type="text"]');
