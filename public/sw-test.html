@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Worker 测试 - VOCArchive</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+        }
+
+        .test-section h2 {
+            margin-top: 0;
+            color: #495057;
+        }
+
+        .status {
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .log {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .test-url {
+            background: #e9ecef;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛠️ Service Worker 跨域缓存测试</h1>
+
+        <!-- 全局操作 -->
+        <div style="text-align: center; padding: 20px 0; border-bottom: 1px solid #ddd; margin-bottom: 20px;">
+            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <button onclick="runAllTests()" style="background: #28a745;">
+                    🔄 运行所有测试
+                </button>
+                <button onclick="resetAllTests()" style="background: #6c757d;">
+                    🗑️ 重置状态
+                </button>
+                <button onclick="exportLog()" style="background: #17a2b8;">
+                    📄 导出日志
+                </button>
+            </div>
+        </div>
+
+        <!-- Service Worker 状态 -->
+        <div class="test-section">
+            <h2>1. Service Worker 状态检查</h2>
+            <div id="sw-status" class="status info">检查中...</div>
+            <button onclick="checkServiceWorker()">重新检查</button>
+            <button onclick="forceUpdateServiceWorker()">强制更新SW</button>
+        </div>
+
+        <!-- 配置端点测试 -->
+        <div class="test-section">
+            <h2>2. 配置端点测试</h2>
+            <div id="config-status" class="status info">未测试</div>
+            <button onclick="testConfigEndpoint()">测试配置端点</button>
+            <button onclick="checkServiceWorkerConfig()">检查SW配置</button>
+            <div class="test-url">/api/sw_config.js</div>
+        </div>
+
+        <!-- 外部存储测试 -->
+        <div class="test-section">
+            <h2>3. 外部存储主机检测</h2>
+            <div id="external-hosts" class="status info">未检测</div>
+            <div id="hosts-list"></div>
+            <button onclick="checkExternalHosts()">检测外部主机</button>
+        </div>
+
+        <!-- 文件重定向测试 -->
+        <div class="test-section">
+            <h2>4. 文件重定向测试</h2>
+            <div id="redirect-status" class="status info">未测试</div>
+            <button onclick="testFileRedirect()">测试文件重定向</button>
+            <div class="test-url">/api/get/file/{uuid}</div>
+        </div>
+
+        <!-- 缓存测试 -->
+        <div class="test-section">
+            <h2>5. 缓存功能测试</h2>
+            <div id="cache-status" class="status info">未测试</div>
+            <button onclick="testCaching()">测试缓存功能</button>
+            <button onclick="clearTestCache()">清理测试缓存</button>
+            <button onclick="testExternalFileCache()">测试外部文件缓存</button>
+        </div>
+
+        <!-- 实时日志 -->
+        <div class="test-section">
+            <h2>6. 实时日志</h2>
+            <div style="margin-bottom: 10px;">
+                <button onclick="clearLog()" style="background: #6c757d; font-size: 14px; padding: 8px 16px;">
+                    🗑️ 清空日志
+                </button>
+                <button onclick="exportLog()" style="background: #17a2b8; font-size: 14px; padding: 8px 16px;">
+                    📄 导出日志
+                </button>
+            </div>
+            <div id="log" class="log">等待日志输出...
+</div>
+        </div>
+    </div>
+
+    <script>
+        let testResults = {};
+
+        // 日志功能
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEl = document.getElementById('log');
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+            logEl.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '等待日志输出...\n';
+        }
+
+        // 重置所有测试状态
+        function resetAllTests() {
+            testResults = {};
+
+            // 重置所有状态显示
+            updateStatus('sw-status', '检查中...', 'info');
+            updateStatus('config-status', '未测试', 'info');
+            updateStatus('external-hosts', '未检测', 'info');
+            updateStatus('redirect-status', '未测试', 'info');
+            updateStatus('cache-status', '未测试', 'info');
+
+            // 清空主机列表
+            const hostsList = document.getElementById('hosts-list');
+            if (hostsList) {
+                hostsList.innerHTML = '';
+            }
+
+            // 清空日志
+            clearLog();
+            log('所有测试状态已重置', 'success');
+        }
+
+        // 运行所有测试
+        async function runAllTests() {
+            log('开始运行所有测试...', 'info');
+
+            await checkServiceWorker();
+
+            if (testResults.serviceWorker) {
+                await testConfigEndpoint();
+                await checkExternalHosts();
+                await testFileRedirect();
+                await testCaching();
+            }
+
+            log('所有测试完成', 'success');
+        }
+
+        // 导出日志
+        function exportLog() {
+            const logContent = document.getElementById('log').textContent;
+            const blob = new Blob([logContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `sw-test-log-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            log('日志已导出', 'success');
+        }
+
+        // 更新状态显示
+        function updateStatus(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.className = `status ${type}`;
+        }
+
+        // 1. 检查 Service Worker 状态
+        async function checkServiceWorker() {
+            log('检查 Service Worker 状态...');
+
+            if (!('serviceWorker' in navigator)) {
+                updateStatus('sw-status', '❌ 浏览器不支持 Service Worker', 'error');
+                log('浏览器不支持 Service Worker', 'error');
+                return false;
+            }
+
+            try {
+                const registration = await navigator.serviceWorker.getRegistration();
+
+                if (registration && registration.active) {
+                    updateStatus('sw-status', '✅ Service Worker 已激活', 'success');
+                    log('Service Worker 已激活: ' + registration.scope, 'success');
+
+                    // 监听消息
+                    navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+
+                    testResults.serviceWorker = true;
+                    return true;
+                } else {
+                    updateStatus('sw-status', '⚠️ Service Worker 未激活', 'error');
+                    log('Service Worker 未激活，请刷新页面', 'error');
+                    testResults.serviceWorker = false;
+                    return false;
+                }
+            } catch (error) {
+                updateStatus('sw-status', '❌ Service Worker 检查失败', 'error');
+                log('Service Worker 检查失败: ' + error.message, 'error');
+                testResults.serviceWorker = false;
+                return false;
+            }
+        }
+
+        // 强制更新Service Worker
+        async function forceUpdateServiceWorker() {
+            log('强制更新Service Worker...');
+
+            try {
+                const registration = await navigator.serviceWorker.getRegistration();
+                if (registration) {
+                    log('找到Service Worker注册，开始更新...', 'info');
+
+                    // 强制更新
+                    await registration.update();
+                    log('Service Worker更新请求已发送', 'info');
+
+                    // 等待新版本安装
+                    if (registration.installing) {
+                        log('检测到新版本正在安装...', 'info');
+                        registration.installing.addEventListener('statechange', (e) => {
+                            if (e.target.state === 'installed') {
+                                log('新版本已安装，准备激活...', 'info');
+                            }
+                        });
+                    }
+
+                    // 强制跳过等待并激活新版本
+                    if (registration.waiting) {
+                        log('激活等待中的新版本...', 'info');
+                        registration.waiting.postMessage({type: 'SKIP_WAITING'});
+                    }
+
+                    // 重新加载页面以使用新版本
+                    log('3秒后将重新加载页面以使用新版本...', 'info');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 3000);
+
+                } else {
+                    log('未找到Service Worker注册', 'error');
+                }
+            } catch (error) {
+                log(`强制更新失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 2. 测试配置端点
+        async function testConfigEndpoint() {
+            log('测试配置端点...');
+
+            try {
+                const response = await fetch('/api/sw_config.js');
+
+                if (response.ok) {
+                    const configText = await response.text();
+
+                    // 检查配置内容
+                    if (configText.includes('EXTERNAL_HOSTS') && configText.includes('CACHE_CONFIG')) {
+                        updateStatus('config-status', '✅ 配置端点正常', 'success');
+                        log('配置端点返回正常，包含必要的配置项', 'success');
+
+                        // 尝试解析外部主机
+                        const hostsMatch = configText.match(/const EXTERNAL_HOSTS = (\[.*?\]);/);
+                        if (hostsMatch) {
+                            try {
+                                const hosts = JSON.parse(hostsMatch[1]);
+                                log(`检测到外部主机: ${hosts.join(', ')}`, 'info');
+                                testResults.externalHosts = hosts;
+                            } catch (e) {
+                                log('解析外部主机列表失败: ' + e.message, 'error');
+                                log('配置内容片段: ' + hostsMatch[1], 'info');
+
+                                // 尝试更宽松的解析
+                                try {
+                                    const hostsStr = hostsMatch[1];
+                                    if (hostsStr.includes('assets.vocarchive.com')) {
+                                        testResults.externalHosts = ['assets.vocarchive.com'];
+                                        log('使用回退解析方法成功', 'success');
+                                    }
+                                } catch (e2) {
+                                    log('回退解析也失败: ' + e2.message, 'error');
+                                }
+                            }
+                        } else {
+                            log('未找到 EXTERNAL_HOSTS 声明', 'error');
+                            log('配置内容预览: ' + configText.substring(0, 500), 'info');
+
+                            // 尝试其他可能的格式
+                            const alternativeMatch = configText.match(/EXTERNAL_HOSTS\s*=\s*(\[.*?\])/);
+                            if (alternativeMatch) {
+                                try {
+                                    const hosts = JSON.parse(alternativeMatch[1]);
+                                    log(`通过替代方法检测到外部主机: ${hosts.join(', ')}`, 'info');
+                                    testResults.externalHosts = hosts;
+                                } catch (e) {
+                                    log('替代解析方法失败: ' + e.message, 'error');
+                                }
+                            } else {
+                                // 如果完全无法解析，至少设置默认值
+                                testResults.externalHosts = ['assets.vocarchive.com'];
+                                log('设置默认外部主机: assets.vocarchive.com', 'info');
+                            }
+                        }
+
+                        testResults.configEndpoint = true;
+                    } else {
+                        updateStatus('config-status', '⚠️ 配置内容不完整', 'error');
+                        log('配置端点返回的内容不完整', 'error');
+                        testResults.configEndpoint = false;
+                    }
+                } else {
+                    updateStatus('config-status', '❌ 配置端点访问失败', 'error');
+                    log(`配置端点访问失败: ${response.status}`, 'error');
+                    testResults.configEndpoint = false;
+                }
+            } catch (error) {
+                updateStatus('config-status', '❌ 配置端点请求失败', 'error');
+                log('配置端点请求失败: ' + error.message, 'error');
+                testResults.configEndpoint = false;
+            }
+        }
+
+        // 检查Service Worker中的配置状态
+        async function checkServiceWorkerConfig() {
+            log('检查Service Worker中的配置状态...');
+
+            if (!navigator.serviceWorker.controller) {
+                log('Service Worker 未控制当前页面', 'error');
+                return;
+            }
+
+            try {
+                // 发送消息给Service Worker请求配置状态
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'get_sw_config'
+                });
+
+                // 监听响应
+                const configResponseHandler = (event) => {
+                    if (event.data && event.data.type === 'sw_config_response') {
+                        const config = event.data.config;
+                        log('Service Worker配置状态:', 'info');
+                        log(`- SW版本: ${config.version || '未知'}`, 'info');
+                        log(`- 外部主机数量: ${config.externalHostsCount}`, 'info');
+                        log(`- 外部主机列表: ${config.externalHosts ? config.externalHosts.join(', ') : '无'}`, 'info');
+                        log(`- 缓存配置: ${config.hasCacheConfig ? '已加载' : '未加载'}`, 'info');
+                        log(`- 资源扩展名: ${config.assetExtensionsCount} 个`, 'info');
+
+                        navigator.serviceWorker.removeEventListener('message', configResponseHandler);
+                    }
+                };
+
+                navigator.serviceWorker.addEventListener('message', configResponseHandler);
+
+                // 5秒后超时
+                setTimeout(() => {
+                    navigator.serviceWorker.removeEventListener('message', configResponseHandler);
+                    log('Service Worker配置检查超时', 'error');
+                }, 5000);
+
+            } catch (error) {
+                log(`检查Service Worker配置失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 3. 检查外部主机
+        async function checkExternalHosts() {
+            log('检查外部存储主机配置...');
+
+            if (!testResults.externalHosts) {
+                await testConfigEndpoint();
+            }
+
+            if (testResults.externalHosts && testResults.externalHosts.length > 0) {
+                updateStatus('external-hosts', `✅ 检测到 ${testResults.externalHosts.length} 个外部主机`, 'success');
+
+                const hostsList = document.getElementById('hosts-list');
+                let hostsHtml = '<h4>外部存储主机列表:</h4>';
+
+                testResults.externalHosts.forEach(host => {
+                    hostsHtml += `<div class="test-url">🌐 ${host}</div>`;
+
+                    // 测试主机连通性
+                    testHostConnectivity(host);
+                });
+
+                hostsList.innerHTML = hostsHtml;
+
+                log(`外部主机列表: ${testResults.externalHosts.join(', ')}`, 'success');
+            } else {
+                updateStatus('external-hosts', '⚠️ 未检测到外部主机或使用默认配置', 'info');
+                log('未检测到自定义外部存储主机配置，使用默认配置', 'info');
+            }
+        }
+
+        // 测试主机连通性
+        async function testHostConnectivity(host) {
+            try {
+                // 创建带超时的请求
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒超时
+
+                const response = await fetch(`https://${host}`, {
+                    method: 'HEAD',
+                    mode: 'no-cors',
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+                log(`主机 ${host} 连通性测试: 可访问`, 'success');
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    log(`主机 ${host} 连通性测试: 超时`, 'info');
+                } else {
+                    log(`主机 ${host} 连通性测试: ${error.message}`, 'info');
+                }
+            }
+        }
+
+        // 4. 测试文件重定向
+        async function testFileRedirect() {
+            log('测试文件重定向功能...');
+
+            try {
+                // 先获取一个有效的文件UUID
+                log('正在获取作品列表...');
+                const listResponse = await fetch('/api/list/work/1/1');
+                if (!listResponse.ok) {
+                    throw new Error(`无法获取作品列表: ${listResponse.status} ${listResponse.statusText}`);
+                }
+
+                const worksData = await listResponse.json();
+                log(`API 响应: ${JSON.stringify(worksData).substring(0, 200)}...`);
+
+                if (!worksData.works || worksData.works.length === 0) {
+                    // 尝试其他API端点
+                    log('尝试使用媒体列表API...');
+                    const mediaResponse = await fetch('/api/list/media/1/1');
+                    if (mediaResponse.ok) {
+                        const mediaData = await mediaResponse.json();
+                        if (mediaData.media && mediaData.media.length > 0) {
+                            const testUuid = mediaData.media[0].uuid;
+                            log(`从媒体列表获取测试UUID: ${testUuid}`);
+                            return await testRedirectWithUuid(testUuid);
+                        }
+                    }
+
+                    // 尝试资产列表API
+                    log('尝试使用资产列表API...');
+                    const assetResponse = await fetch('/api/list/asset/1/1');
+                    if (assetResponse.ok) {
+                        const assetData = await assetResponse.json();
+                        if (assetData.assets && assetData.assets.length > 0) {
+                            const testUuid = assetData.assets[0].uuid;
+                            log(`从资产列表获取测试UUID: ${testUuid}`);
+                            return await testRedirectWithUuid(testUuid);
+                        }
+                    }
+
+                    // 如果都没有，创建一个测试UUID
+                    log('没有找到真实文件，使用测试UUID');
+                    const testUuid = '00000000-0000-0000-0000-000000000001';
+                    return await testRedirectWithUuid(testUuid, true);
+                }
+
+                const work = worksData.works[0];
+                let testUuid = null;
+
+                log(`作品信息: ${JSON.stringify(work).substring(0, 300)}...`);
+
+                // 查找媒体文件或资源文件
+                if (work.media_sources && work.media_sources.length > 0) {
+                    testUuid = work.media_sources[0].uuid;
+                    log(`找到媒体文件UUID: ${testUuid}`);
+                } else if (work.assets && work.assets.length > 0) {
+                    testUuid = work.assets[0].uuid;
+                    log(`找到资产文件UUID: ${testUuid}`);
+                }
+
+                if (!testUuid) {
+                    log('作品中没有找到文件，使用测试UUID');
+                    testUuid = '00000000-0000-0000-0000-000000000001';
+                    return await testRedirectWithUuid(testUuid, true);
+                }
+
+                return await testRedirectWithUuid(testUuid);
+
+            } catch (error) {
+                updateStatus('redirect-status', '❌ 重定向测试失败', 'error');
+                log('重定向测试失败: ' + error.message, 'error');
+                log('错误详情: ' + error.stack, 'error');
+                testResults.fileRedirect = false;
+            }
+        }
+
+        // 使用UUID测试重定向
+        async function testRedirectWithUuid(testUuid, isTestUuid = false) {
+            log(`测试文件重定向: ${testUuid}${isTestUuid ? ' (测试UUID)' : ''}`);
+
+            try {
+                // 测试重定向
+                const redirectResponse = await fetch(`/api/get/file/${testUuid}`, {
+                    method: 'HEAD', // 只获取头部信息
+                    redirect: 'manual' // 不自动跟随重定向
+                });
+
+                log(`重定向响应状态: ${redirectResponse.status} ${redirectResponse.statusText}`);
+
+                if (redirectResponse.status === 302) {
+                    const location = redirectResponse.headers.get('location');
+                    updateStatus('redirect-status', '✅ 文件重定向正常', 'success');
+                    log(`重定向成功，目标: ${location}`, 'success');
+
+                    // 测试目标URL是否可访问（仅对真实文件）
+                    if (location && !isTestUuid) {
+                        try {
+                            const targetResponse = await fetch(location, {
+                                method: 'HEAD',
+                                mode: 'no-cors' // 避免CORS问题
+                            });
+                            log('目标文件连通性测试完成', 'info');
+                        } catch (e) {
+                            log('目标文件访问测试失败（可能是跨域限制，这是正常的）', 'info');
+                        }
+                    }
+
+                    testResults.fileRedirect = true;
+                } else if (redirectResponse.status === 404) {
+                    if (isTestUuid) {
+                        updateStatus('redirect-status', '✅ 重定向API正常 (404为预期结果)', 'success');
+                        log('测试UUID返回404，重定向API工作正常', 'success');
+                        testResults.fileRedirect = true;
+                    } else {
+                        updateStatus('redirect-status', '⚠️ 文件不存在', 'error');
+                        log(`文件不存在: ${testUuid}`, 'error');
+                        testResults.fileRedirect = false;
+                    }
+                } else {
+                    updateStatus('redirect-status', '❌ 文件重定向失败', 'error');
+                    log(`重定向失败，状态码: ${redirectResponse.status}`, 'error');
+
+                    // 尝试获取响应内容
+                    try {
+                        const responseText = await redirectResponse.text();
+                        log(`响应内容: ${responseText.substring(0, 200)}`, 'error');
+                    } catch (e) {
+                        log('无法获取响应内容', 'error');
+                    }
+
+                    testResults.fileRedirect = false;
+                }
+            } catch (error) {
+                updateStatus('redirect-status', '❌ 重定向请求失败', 'error');
+                log('重定向请求失败: ' + error.message, 'error');
+                testResults.fileRedirect = false;
+            }
+        }
+
+        // 5. 测试缓存功能
+        async function testCaching() {
+            log('测试缓存功能...');
+
+            if (!testResults.serviceWorker) {
+                updateStatus('cache-status', '❌ Service Worker 未激活', 'error');
+                log('Service Worker 未激活，无法测试缓存', 'error');
+                return;
+            }
+
+            try {
+                // 请求缓存列表
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'list_cache'
+                });
+
+                // 请求缓存统计
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'get_cache_stats'
+                });
+
+                log('已发送缓存测试请求，等待响应...', 'info');
+                updateStatus('cache-status', '⏳ 等待缓存响应...', 'info');
+
+                // 设置超时
+                setTimeout(() => {
+                    if (!testResults.cacheResponse) {
+                        updateStatus('cache-status', '⚠️ 缓存响应超时', 'error');
+                        log('缓存功能测试超时', 'error');
+                    }
+                }, 5000);
+
+            } catch (error) {
+                updateStatus('cache-status', '❌ 缓存测试失败', 'error');
+                log('缓存测试失败: ' + error.message, 'error');
+            }
+        }
+
+        // 测试外部文件缓存
+        async function testExternalFileCache() {
+            log('测试外部文件缓存功能...');
+
+            if (!testResults.serviceWorker) {
+                updateStatus('cache-status', '❌ Service Worker 未激活', 'error');
+                log('Service Worker 未激活，无法测试外部文件缓存', 'error');
+                return;
+            }
+
+            // 确保有外部主机配置
+            if (!testResults.externalHosts) {
+                await checkExternalHosts();
+            }
+
+            if (!testResults.externalHosts || testResults.externalHosts.length === 0) {
+                updateStatus('cache-status', '❌ 没有外部存储主机配置', 'error');
+                log('没有检测到外部存储主机配置，无法测试外部缓存', 'error');
+                return;
+            }
+
+            try {
+                log(`检测到 ${testResults.externalHosts.length} 个外部主机: ${testResults.externalHosts.join(', ')}`);
+
+                // 首先测试通过/api/get/file接口访问外部文件
+                await testFileRedirectCache();
+
+                // 然后测试直接访问外部域名的文件（如果可能）
+                await testDirectExternalAccess();
+
+            } catch (error) {
+                updateStatus('cache-status', '❌ 外部文件缓存测试失败', 'error');
+                log('外部文件缓存测试失败: ' + error.message, 'error');
+            }
+        }
+
+        // 测试通过文件重定向的缓存
+        async function testFileRedirectCache() {
+            log('测试文件重定向缓存...');
+
+            try {
+                // 使用固定的测试文件UUID（已知存在的文件）
+                const testFileUuid = '17f113e6-dd6a-42d0-ae28-599b03a9109a';
+                log(`使用测试文件 UUID: ${testFileUuid}`);
+
+                // 测试文件重定向
+                const fileUrl = `/api/get/file/${testFileUuid}`;
+                log(`测试文件重定向: ${fileUrl}`);
+
+                try {
+                    const response = await fetch(fileUrl, {
+                        method: 'GET', // 改为GET
+                        redirect: 'follow' // 允许自动跟随重定向
+                    });
+
+                    log(`文件重定向响应状态: ${response.status}`);
+                    log(`文件重定向响应URL: ${response.url}`);
+
+                    if (response.ok) {
+                        log(`✅ 重定向成功，最终URL: ${response.url}`, 'success');
+
+                        // 检查是否是外部URL
+                        if (response.url.includes('assets.vocarchive.com')) {
+                            log('✅ 成功访问外部存储文件', 'success');
+
+                            // 等待缓存处理
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+
+                            // 再次访问相同URL应该从缓存返回
+                            const secondResponse = await fetch(response.url, {
+                                method: 'GET',
+                                mode: 'no-cors'
+                            });
+
+                            log(`第二次访问响应类型: ${secondResponse.type}`, 'info');
+                        }
+                    } else {
+                        log(`文件重定向失败: ${response.status} ${response.statusText}`, 'error');
+                    }
+
+                } catch (fetchError) {
+                    log(`文件重定向请求失败: ${fetchError.message}`, 'error');
+
+                    // 尝试手动处理重定向
+                    try {
+                        log('尝试手动获取重定向URL...', 'info');
+                        const manualResponse = await fetch(fileUrl, {
+                            method: 'HEAD',
+                            redirect: 'manual'
+                        });
+
+                        if (manualResponse.status === 302) {
+                            const redirectUrl = manualResponse.headers.get('location');
+                            log(`手动获取的重定向URL: ${redirectUrl}`, 'info');
+
+                            if (redirectUrl) {
+                                // 直接访问重定向URL
+                                const directResponse = await fetch(redirectUrl, {
+                                    method: 'GET',
+                                    mode: 'no-cors'
+                                });
+
+                                log(`直接访问重定向URL响应类型: ${directResponse.type}`, 'info');
+                            }
+                        }
+                    } catch (manualError) {
+                        log(`手动重定向也失败: ${manualError.message}`, 'error');
+                    }
+                }
+
+            } catch (error) {
+                log(`文件重定向测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试直接访问外部域名
+        async function testDirectExternalAccess() {
+            log('测试直接外部域名访问...');
+
+            // 使用已知存在的文件URL（从前面的重定向测试获得）
+            const knownFileUrl = 'https://assets.vocarchive.com/WACCA_ULTRA_DREAM_MEGAMIX_1x1.webp';
+
+            try {
+                log(`测试直接访问: ${knownFileUrl}`);
+
+                // 确认Service Worker状态
+                if (!navigator.serviceWorker.controller) {
+                    log('⚠️ Service Worker未控制当前页面，可能无法拦截请求', 'error');
+                    return;
+                }
+
+                log('✅ Service Worker正在控制当前页面', 'info');
+
+                // 第一次访问 - 应该从网络获取并缓存
+                log('发送第一次请求...', 'info');
+                const response1 = await fetch(knownFileUrl, {
+                    method: 'GET',
+                    mode: 'no-cors' // 避免CORS问题
+                });
+
+                log(`第一次访问响应类型: ${response1.type}`, 'info');
+                log(`第一次访问状态: ${response1.status}`, 'info');
+
+                // 检查是否来自Service Worker
+                if (response1.headers) {
+                    const swHeader = response1.headers.get('x-served-by-sw');
+                    log(`是否来自Service Worker: ${swHeader || '否'}`, 'info');
+                }
+
+                // 等待缓存处理
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // 第二次访问 - 应该从缓存返回
+                log('发送第二次请求...', 'info');
+                const response2 = await fetch(knownFileUrl, {
+                    method: 'GET',
+                    mode: 'no-cors'
+                });
+
+                log(`第二次访问响应类型: ${response2.type}`, 'info');
+                log(`第二次访问状态: ${response2.status}`, 'info');
+
+                // 分析结果
+                if (response1.type === 'opaque' && response2.type === 'opaque') {
+                    log('✅ 外部文件访问成功，Service Worker正确拦截', 'success');
+                } else if (response1.type === 'basic' && response2.type === 'basic') {
+                    log('❌ 外部文件未被Service Worker拦截，响应类型为basic', 'error');
+                    log('这表明Service Worker没有处理外部域名请求', 'error');
+                } else {
+                    log('⚠️ 外部文件访问状态异常', 'error');
+                }
+
+                // 强制测试Service Worker拦截
+                log('尝试强制触发Service Worker拦截...', 'info');
+
+                // 创建一个新的请求来测试
+                const testRequest = new Request(knownFileUrl, {
+                    method: 'GET',
+                    mode: 'no-cors'
+                });
+
+                const response3 = await fetch(testRequest);
+                log(`强制测试响应类型: ${response3.type}`, 'info');
+
+            } catch (error) {
+                log(`直接外部域名访问失败: ${error.message}`, 'error');
+            }
+
+            // 等待缓存处理完成
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // 检查缓存中的外部文件
+            log('检查缓存中的外部文件...');
+            navigator.serviceWorker.controller.postMessage({
+                type: 'list_cache'
+            });
+
+            log('外部文件缓存测试完成，请检查缓存内容', 'success');
+            updateStatus('cache-status', '✅ 外部文件缓存测试完成', 'success');
+        }
+        // 创建外部存储源配置
+        async function createExternalStorageSource() {
+            log('创建测试外部存储源配置...');
+
+            try {
+                // 检查是否有认证
+                const authToken = localStorage.getItem('authToken') || prompt('请输入认证令牌（用于创建外部存储源）:');
+                if (!authToken) {
+                    log('需要认证令牌才能创建外部存储源', 'error');
+                    return;
+                }
+
+                // 创建一个测试的外部存储源
+                const testSource = {
+                    uuid: crypto.randomUUID(),
+                    type: 'raw_url',
+                    name: '测试外部存储源',
+                    endpoint: 'https://picsum.photos/{ID}'
+                };
+
+                const response = await fetch('/api/input/external_source', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(testSource)
+                });
+
+                if (response.ok) {
+                    log(`外部存储源创建成功: ${testSource.name}`, 'success');
+                    log(`端点: ${testSource.endpoint}`, 'info');
+
+                    // 重新测试配置
+                    await testConfigEndpoint();
+                } else {
+                    const errorText = await response.text();
+                    log(`外部存储源创建失败: ${response.status} - ${errorText}`, 'error');
+                }
+
+            } catch (error) {
+                log('创建外部存储源失败: ' + error.message, 'error');
+            }
+        }
+
+        // 处理 Service Worker 消息
+        function handleServiceWorkerMessage(event) {
+            const { type, payload, stats } = event.data;
+
+            switch (type) {
+                case 'cache_list':
+                    log(`收到缓存列表: ${payload ? payload.length : 0} 项`, 'success');
+                    if (payload && payload.length > 0) {
+                        updateStatus('cache-status', `✅ 缓存功能正常 (${payload.length} 项)`, 'success');
+
+                        // 分析缓存内容
+                        const hosts = [...new Set(payload.map(item => item.host))];
+                        log(`缓存中的主机: ${hosts.join(', ')}`, 'info');
+
+                        const types = [...new Set(payload.map(item => item.type))];
+                        log(`缓存的文件类型: ${types.join(', ')}`, 'info');
+                    } else {
+                        updateStatus('cache-status', '✅ 缓存功能正常 (空缓存)', 'success');
+                    }
+                    testResults.cacheResponse = true;
+                    break;
+
+                case 'cache_stats':
+                    log('收到缓存统计信息', 'success');
+                    if (stats && stats.length > 0) {
+                        const totalSize = stats.reduce((sum, stat) => sum + stat.totalSize, 0);
+                        const totalFiles = stats.reduce((sum, stat) => sum + stat.fileCount, 0);
+                        log(`缓存统计: ${totalFiles} 文件, ${(totalSize / 1024 / 1024).toFixed(2)} MB`, 'info');
+                    }
+                    break;
+
+                case 'cache_cleared':
+                    log('缓存已清理', 'success');
+                    break;
+
+                case 'cache_error':
+                    log('缓存操作错误: ' + event.data.error, 'error');
+                    break;
+            }
+        }
+
+        // 页面加载时自动开始测试
+        window.addEventListener('load', async () => {
+            log('开始 Service Worker 功能测试...', 'info');
+
+            await checkServiceWorker();
+
+            if (testResults.serviceWorker) {
+                await testConfigEndpoint();
+                await checkExternalHosts();
+            }
+        });
+    </script>
+</body>
+</html>

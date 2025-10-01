@@ -29,6 +29,7 @@ export const BaseLayout = (props: BaseLayoutProps) => {
             <body class={props.bodyClass || ''}>
                 {props.children}
                 <script dangerouslySetInnerHTML={{ __html: props.additionalScripts || '' }}></script>
+                <script src="/sw-register.js"></script>
                 {Footer({ settings: props.footerSettings })}
             </body>
         </html>
