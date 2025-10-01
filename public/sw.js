@@ -1,5 +1,5 @@
-// 导入动态配置
-importScripts('/api/sw_config.js');
+// 导入静态配置
+importScripts('/sw-config.js');
 
 // Service Worker版本标识
 const SW_VERSION = 'v2.7.0';
