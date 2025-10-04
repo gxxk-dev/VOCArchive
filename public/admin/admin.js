@@ -90,11 +90,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             const config = await apiFetch('/config/public');
             if (config.admin_title) {
                 setAdminTitleTemplate(config.admin_title);
-                // Set initial title for the current tab (default is 'work')
-                updatePageTitle('work');
+                // Set initial title for the current tab (use INITIAL_ACTIVE_TAB from URL)
+                const initialTab = window.INITIAL_ACTIVE_TAB || 'work';
+                updatePageTitle(initialTab);
+                // 设置当前标签，但不更新URL（因为已经在URL中了）
+                setCurrentTab(initialTab, false);
             }
         } catch (e) {
             console.warn('Failed to load initial title config:', e);
+            // 如果配置加载失败，仍然设置初始标签
+            const initialTab = window.INITIAL_ACTIVE_TAB || 'work';
+            setCurrentTab(initialTab, false);
         }
     }
 
@@ -120,9 +126,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (e.target.classList.contains('tab-button')) {
                 document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
                 e.target.classList.add('active');
-                const currentTab = e.target.dataset.target;
-                setCurrentTab(currentTab);
-                loadContent(currentTab);
+                const targetTab = e.target.dataset.target;
+
+                // 更新URL但不重新加载页面
+                const url = new URL(window.location);
+                url.searchParams.set('tab', targetTab);
+                history.pushState({tab: targetTab}, '', url);
+
+                // 设置当前标签并加载内容
+                setCurrentTab(targetTab);
+                loadContent(targetTab, true); // 强制重新加载内容
+            }
+        });
+
+        // 处理浏览器前进后退
+        window.addEventListener('popstate', (event) => {
+            if (event.state && event.state.tab) {
+                // 更新标签状态
+                const targetTab = event.state.tab;
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.target === targetTab);
+                });
+                setCurrentTab(targetTab);
+                loadContent(targetTab, true);
             }
         });
 

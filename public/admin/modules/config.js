@@ -40,8 +40,9 @@ export function setJwtToken(token) {
     }
 }
 
-export function setCurrentTab(tab) {
+export function setCurrentTab(tab, updateUrl = true) {
     currentTab = tab;
+    // updateUrl 参数控制是否更新URL，用于避免在某些场景下的循环更新
 }
 
 export function setCurrentEditUUID(uuid) {

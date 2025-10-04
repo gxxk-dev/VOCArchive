@@ -33,9 +33,9 @@ export async function showAdminPanel() {
         adminPanel.classList.remove('hidden');
     }
 
-    const activeTab = document.querySelector('.tab-button.active');
-    const currentTab = activeTab ? activeTab.dataset.target : 'work';
-    setCurrentTab(currentTab);
+    // 使用初始标签或默认为work
+    const initialTab = window.INITIAL_ACTIVE_TAB || 'work';
+    setCurrentTab(initialTab, false); // 不更新URL，因为已经在URL中了
 
     // Load external sources and objects for reference in other tables
     await loadExternalSources();
@@ -53,11 +53,10 @@ export async function showAdminPanel() {
 
     // 加载配置后更新页面标题
     const { updatePageTitle } = await import('./utils.js');
-    updatePageTitle(currentTab);
+    updatePageTitle(initialTab);
 
-    // Load content for the current tab
-    const { loadContent } = await import('./crud-handlers.js');
-    loadContent(currentTab);
+    // 设置当前标签状态
+    setCurrentTab(initialTab);
 }
 
 async function loadExternalSources() {

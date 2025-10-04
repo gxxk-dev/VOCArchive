@@ -21,6 +21,7 @@ import { TagsCategoriesPage } from './pages/tags-categories'
 import { AdminPage } from './pages/admin'
 import { MigrationPage } from './pages/migration'
 import { TestToolsPage } from './pages/test-tools'
+import { loadAdminData, isValidAdminType } from './admin/data-loader'
 import { createDrizzleClient } from './db/client'
 import { getFooterSettings, initializeDatabaseWithMigrations, isDatabaseInitialized } from './db/operations/admin'
 import { getPublicSiteConfig, getSiteConfig } from './db/operations/config'
@@ -267,9 +268,20 @@ app.get('/tags-categories', async (c) => {
 })
 
 app.get('/admin', async (c) => {
+    const { tab } = c.req.query()
+    const activeTab = tab && isValidAdminType(tab) ? tab : 'work';
+
     const db = createDrizzleClient(c.env.DB);
     const footerSettings = await getFooterSettings(db)
-    return c.html(<AdminPage footerSettings={footerSettings} />)
+
+    // 预加载当前标签的数据
+    const contentData = await loadAdminData(db, activeTab);
+
+    return c.html(<AdminPage
+        footerSettings={footerSettings}
+        activeTab={activeTab}
+        contentData={contentData}
+    />)
 })
 
 app.get('/migration', async (c) => {

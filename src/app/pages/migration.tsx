@@ -606,7 +606,7 @@ export const MigrationPage = (props: MigrationPageProps) => {
                             id="authCode"
                             class="auth-input"
                             placeholder="输入6位认证代码"
-                            maxlength="6"
+                            maxLength="6"
                         />
                         <button class="btn btn-primary" onclick="authenticate()">
                             <i class="fas fa-sign-in-alt"></i> 登录

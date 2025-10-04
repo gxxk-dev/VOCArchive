@@ -13,9 +13,70 @@ export function initializeCrudElements() {
 }
 
 // --- Content Loading ---
-export async function loadContent(target) {
+export async function loadContent(target, forceReload = false) {
     // 更新页面标题
     updatePageTitle(target);
+
+    // 如果不是强制重新加载，检查是否已有SSR内容
+    if (!forceReload) {
+        const hasSSRContent = content.children.length > 0 &&
+                             !content.innerHTML.includes('Loading...') &&
+                             !content.innerHTML.includes('Data tables will be loaded here');
+
+        // 检查当前content是否已经显示了目标类型的内容
+        let isCurrentTargetContent = false;
+        if (hasSSRContent) {
+            switch (target) {
+                case 'work':
+                    isCurrentTargetContent = content.querySelector('.work-card') !== null ||
+                                           content.querySelector('#work-grid') !== null;
+                    break;
+                case 'tag':
+                    isCurrentTargetContent = content.innerHTML.includes('标签 (Tags)');
+                    break;
+                case 'creator':
+                    isCurrentTargetContent = content.innerHTML.includes('作者 (Creators)');
+                    break;
+                case 'category':
+                    isCurrentTargetContent = content.innerHTML.includes('分类 (Categories)');
+                    break;
+                case 'media':
+                    isCurrentTargetContent = content.innerHTML.includes('媒体 (Media)');
+                    break;
+                case 'asset':
+                    isCurrentTargetContent = content.innerHTML.includes('资产 (Asset)');
+                    break;
+                case 'external_source':
+                    isCurrentTargetContent = content.innerHTML.includes('存储源 (Storage)');
+                    break;
+                case 'external_object':
+                    isCurrentTargetContent = content.innerHTML.includes('外部对象 (External)');
+                    break;
+                case 'footer':
+                    isCurrentTargetContent = content.innerHTML.includes('页脚 (Footer)');
+                    break;
+                case 'site_config':
+                    isCurrentTargetContent = content.innerHTML.includes('系统配置 (Config)');
+                    break;
+                case 'wiki_platform':
+                    isCurrentTargetContent = content.innerHTML.includes('Wiki平台 (Wiki)');
+                    break;
+                case 'migration':
+                    isCurrentTargetContent = content.innerHTML.includes('迁移管理 (Migration)');
+                    break;
+                default:
+                    isCurrentTargetContent = false;
+            }
+        }
+
+        // 如果已有正确的SSR内容，则不需要重新加载
+        if (isCurrentTargetContent) {
+            console.log('Correct SSR content already exists for', target, ', skipping client-side load');
+            return;
+        }
+    }
+
+    console.log('Loading content for', target, ', forceReload:', forceReload);
 
     content.innerHTML = '<h2>Loading...</h2>';
     try {
