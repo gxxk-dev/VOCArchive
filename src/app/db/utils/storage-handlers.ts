@@ -1,4 +1,5 @@
 import type { ExternalSource, ExternalSourceApiInput } from '../types';
+import type { DrizzleDB } from '../client';
 
 /**
  * 存储源类型处理器接口
@@ -89,7 +90,13 @@ export class RawUrlHandler implements StorageHandler {
  */
 export class IpfsHandler implements StorageHandler {
     buildURL(source: ExternalSource, fileId: string): string {
-        // 支持 {ID} 占位符
+        // 如果启用了IPFS负载均衡，则直接返回fileId（CID）
+        // 实际的URL构建将由buildStorageURLWithLoadBalancing处理
+        if (source.isIPFS) {
+            return fileId; // 直接返回CID，让上层处理网关选择
+        }
+
+        // 传统IPFS模式：使用endpoint模板
         let url = source.endpoint;
         if (url.includes('{ID}')) {
             url = url.replace('{ID}', fileId);
@@ -97,22 +104,27 @@ export class IpfsHandler implements StorageHandler {
             // 如果没有占位符，直接返回 fileId
             return fileId;
         }
-        
+
         console.log(`Built IPFS URL: ${source.endpoint} + ${fileId} = ${url}`);
         return url;
     }
     
     validateConfig(source: ExternalSourceApiInput): boolean {
-        // 验证端点格式
+        // 如果启用了IPFS负载均衡，则不需要endpoint格式验证
+        if (source.isIPFS) {
+            return true;
+        }
+
+        // 传统IPFS模式的验证逻辑
         if (!source.endpoint) {
             return false;
         }
-        
+
         // 必须包含 {ID} 占位符
         if (!source.endpoint.includes('{ID}')) {
             return false;
         }
-        
+
         // 验证是否为有效的 URL 格式（如果不是直接替换）
         if (source.endpoint !== '{ID}') {
             try {
@@ -123,7 +135,7 @@ export class IpfsHandler implements StorageHandler {
                 return false;
             }
         }
-        
+
         return true;
     }
     
@@ -181,16 +193,133 @@ export function buildStorageURL(source: ExternalSource, fileId: string): string 
         console.error(`Unsupported storage type: ${source.type}`);
         return null;
     }
-    
+
     if (!handler.validateConfig(source)) {
         console.error(`Invalid configuration for storage type: ${source.type}`);
         return null;
     }
-    
+
     try {
         return handler.buildURL(source, fileId);
     } catch (error) {
         console.error(`Error building URL for storage type ${source.type}:`, error);
+        return null;
+    }
+}
+
+/**
+ * 异步版本：使用存储处理器构建URL，支持IPFS负载均衡
+ * @param db 数据库连接
+ * @param source 外部存储源
+ * @param fileId 文件ID
+ * @returns 构建的URL，如果失败返回null
+ */
+export async function buildStorageURLWithLoadBalancing(
+    db: DrizzleDB,
+    source: ExternalSource,
+    fileId: string
+): Promise<string | null> {
+    // 如果是IPFS且启用了负载均衡
+    if (source.isIPFS) {
+        return await buildIPFSURLWithLoadBalancing(db, source, fileId);
+    }
+
+    // 对于非IPFS源，使用原有逻辑
+    return buildStorageURL(source, fileId);
+}
+
+/**
+ * IPFS负载均衡URL构建
+ * @param db 数据库连接
+ * @param source 外部存储源
+ * @param fileId IPFS CID
+ * @returns 构建的URL，如果失败返回null
+ */
+async function buildIPFSURLWithLoadBalancing(
+    db: DrizzleDB,
+    source: ExternalSource,
+    fileId: string
+): Promise<string | null> {
+    try {
+        // 动态导入避免循环依赖
+        const { getIPFSGateways } = await import('../operations/config');
+
+        // 获取IPFS网关列表
+        const gateways = await getIPFSGateways(db);
+
+        if (gateways.length === 0) {
+            console.error('No IPFS gateways configured');
+            return null;
+        }
+
+        // 返回第一个网关的URL
+        // 故障转移逻辑将在文件访问层面实现
+        const gateway = gateways[0];
+        const url = gateway + fileId;
+
+        console.log(`Built IPFS URL with load balancing: ${url} (${gateways.length} gateways available)`);
+        return url;
+
+    } catch (error) {
+        console.error('Error building IPFS URL with load balancing:', error);
+        return null;
+    }
+}
+
+/**
+ * 尝试所有IPFS网关获取文件URL（带故障转移）
+ * @param db 数据库连接
+ * @param source 外部存储源
+ * @param fileId IPFS CID
+ * @param timeout 网关响应超时时间（毫秒）
+ * @returns 可用的URL，如果全部失败返回null
+ */
+export async function tryAllIPFSGateways(
+    db: DrizzleDB,
+    source: ExternalSource,
+    fileId: string,
+    timeout: number = 5000
+): Promise<string | null> {
+    try {
+        // 动态导入避免循环依赖
+        const { getIPFSGateways } = await import('../operations/config');
+
+        // 获取IPFS网关列表
+        const gateways = await getIPFSGateways(db);
+
+        if (gateways.length === 0) {
+            console.error('No IPFS gateways configured');
+            return null;
+        }
+
+        // 尝试每个网关
+        for (const gateway of gateways) {
+            const url = gateway + fileId;
+
+            try {
+                // 简单的URL可用性检查（通过HEAD请求）
+                const response = await Promise.race([
+                    fetch(url, { method: 'HEAD' }),
+                    new Promise<Response>((_, reject) =>
+                        setTimeout(() => reject(new Error('Timeout')), timeout)
+                    )
+                ]);
+
+                if (response.ok) {
+                    console.log(`IPFS gateway success: ${url}`);
+                    return url;
+                }
+            } catch (error) {
+                console.warn(`IPFS gateway failed: ${url} - ${error}`);
+                continue;
+            }
+        }
+
+        console.error(`All IPFS gateways failed for CID: ${fileId}`);
+        return null;
+
+    } catch (error) {
+        console.error('Error trying IPFS gateways:', error);
         return null;
     }
 }

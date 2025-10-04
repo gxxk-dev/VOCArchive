@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { externalSource } from '../schema';
 import type { ExternalSource, NewExternalSource, ExternalSourceApiInput } from '../types';
@@ -13,7 +13,7 @@ export function validateUUID(uuid: string): boolean {
  * Get external source by UUID
  */
 export async function getExternalSourceByUUID(
-    db: DrizzleDB, 
+    db: DrizzleDB,
     sourceUuid: string
 ): Promise<ExternalSource | null> {
     if (!validateUUID(sourceUuid)) {
@@ -27,6 +27,7 @@ export async function getExternalSourceByUUID(
             type: externalSource.type,
             name: externalSource.name,
             endpoint: externalSource.endpoint,
+            isIPFS: externalSource.isIPFS,
         })
         .from(externalSource)
         .where(eq(externalSource.uuid, sourceUuid))
@@ -39,8 +40,8 @@ export async function getExternalSourceByUUID(
  * Get paginated list of external sources
  */
 export async function listExternalSources(
-    db: DrizzleDB, 
-    page: number, 
+    db: DrizzleDB,
+    page: number,
     pageSize: number
 ): Promise<ExternalSource[]> {
     if (page < 1 || pageSize < 1) {
@@ -48,7 +49,7 @@ export async function listExternalSources(
     }
 
     const offset = (page - 1) * pageSize;
-    
+
     const sources = await db
         .select({
             id: externalSource.id,
@@ -56,6 +57,7 @@ export async function listExternalSources(
             type: externalSource.type,
             name: externalSource.name,
             endpoint: externalSource.endpoint,
+            isIPFS: externalSource.isIPFS,
         })
         .from(externalSource)
         .limit(pageSize)
@@ -76,6 +78,7 @@ export async function inputExternalSource(
         type: sourceData.type,
         name: sourceData.name,
         endpoint: sourceData.endpoint,
+        isIPFS: sourceData.isIPFS,
     });
 }
 
@@ -96,6 +99,7 @@ export async function updateExternalSource(
                 type: sourceData.type,
                 name: sourceData.name,
                 endpoint: sourceData.endpoint,
+                isIPFS: sourceData.isIPFS,
             })
             .where(eq(externalSource.uuid, sourceUuid));
 
@@ -133,5 +137,32 @@ export async function getExternalSourceCount(db: DrizzleDB): Promise<number> {
     } catch (error) {
         console.error('Error getting external source count:', error);
         return 0;
+    }
+}
+
+/**
+ * Get all IPFS sources with the same name for load balancing
+ */
+export async function getIPFSSourcesByName(
+    db: DrizzleDB,
+    sourceName: string
+): Promise<ExternalSource[]> {
+    try {
+        const sources = await db
+            .select({
+                id: externalSource.id,
+                uuid: externalSource.uuid,
+                type: externalSource.type,
+                name: externalSource.name,
+                endpoint: externalSource.endpoint,
+                isIPFS: externalSource.isIPFS,
+            })
+            .from(externalSource)
+            .where(and(eq(externalSource.name, sourceName), eq(externalSource.isIPFS, true)));
+
+        return sources;
+    } catch (error) {
+        console.error('Error getting IPFS sources by name:', error);
+        return [];
     }
 }

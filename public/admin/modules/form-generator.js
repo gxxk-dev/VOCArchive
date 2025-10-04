@@ -214,8 +214,13 @@ export function generateFormFields(target, data = null, options = {}) {
                 { value: 'ipfs', text: 'IPFS' }
             ], data?.type, true)}
             <label for="name">存储源名称:</label><input type="text" id="name" name="name" required value="${data?.name || ''}" placeholder="例如: 主要存储, 备份存储">
-            <label for="endpoint">访问端点:</label><input type="text" id="endpoint" name="endpoint" required value="${data?.endpoint || ''}" placeholder="例如: https://example.com/{ID} 或 https://ipfs.io/ipfs/{ID}">
-            <small>使用 {ID} 标记文件标识符位置</small>
+            <label for="endpoint">访问端点:</label><input type="text" id="endpoint" name="endpoint" value="${data?.endpoint || ''}" placeholder="例如: https://example.com/{ID} 或 https://ipfs.io/ipfs/{ID}">
+            <small class="form-info">使用 {ID} 标记文件标识符位置。启用IPFS负载均衡时此字段可留空</small>
+            <div class="checkbox-field">
+                <input type="checkbox" id="isIPFS" name="isIPFS" ${data?.isIPFS ? 'checked' : ''}>
+                <label for="isIPFS">启用IPFS负载均衡 (使用全局网关配置)</label>
+            </div>
+            <small class="form-info">启用后将使用系统配置的IPFS网关列表，支持自动故障转移</small>
         `,
         external_object: `
             <input type="hidden" name="external_object_uuid" value="${data?.uuid || ''}">
@@ -241,10 +246,11 @@ export function generateFormFields(target, data = null, options = {}) {
                 { value: 'totp_secret', text: 'TOTP 密钥 (totp_secret)' },
                 { value: 'jwt_secret', text: 'JWT 密钥 (jwt_secret)' },
                 { value: 'db_version', text: '数据库版本 (db_version)' },
+                { value: 'ipfs_gateways', text: 'IPFS 网关列表 (ipfs_gateways)' },
             ], data?.key, true)}
-            ${data ? '<div style="margin-top: 8px;"><small>配置键不可修改</small></div>' : ''}
+            ${data ? '<small class="form-info readonly-hint">配置键不可修改</small>' : ''}
             ${data?.key?.includes('title') ? `
-                <div class="placeholder-help" style="margin: 10px 0; padding: 10px; border-radius: 4px; font-size: 0.9em;">
+                <div class="placeholder-help">
                     <strong>💡 可用占位符：</strong><br>
                     ${data.key === 'home_title' || data.key === 'site_title' ?
                         '• {TAG_NAME} - 当前标签名称<br>• {CATEGORY_NAME} - 当前分类名称<br>• {SEARCH_QUERY} - 搜索关键词<br>• {PAGE_NUMBER} - 当前页码<br>• {TOTAL_COUNT} - 总数量<br><strong>条件占位符:</strong> {TAG_NAME? - 标签: {TAG_NAME}} (仅在有值时显示)' :
@@ -255,13 +261,26 @@ export function generateFormFields(target, data = null, options = {}) {
                     }
                 </div>
             ` : ''}
+            ${data?.key === 'ipfs_gateways' ? `
+                <div class="placeholder-help">
+                    <strong>🌐 IPFS 网关配置：</strong><br>
+                    格式：JSON 数组，每个元素为网关URL<br>
+                    <strong>示例：</strong><br>
+                    ["https://ipfs.io/ipfs/", "https://gateway.pinata.cloud/ipfs/", "https://cf-ipfs.com/ipfs/"]<br>
+                    <br>
+                    <strong>💡 功能：</strong><br>
+                    • 自动故障转移：当某个网关不可用时自动切换<br>
+                    • 负载均衡：分散流量到多个网关<br>
+                    • 提高可用性：避免单点故障
+                </div>
+            ` : ''}
             <label for="value">配置值:</label>
             <input type="text" id="value" name="value" required value="${data?.value || ''}" placeholder="请输入配置值">
             <label for="description">描述 (可选):</label>
             <input type="text" id="description" name="description" value="${data?.description || ''}" placeholder="配置项的描述信息">
             ${data?.key === 'totp_secret' || data?.key === 'jwt_secret' ?
                 '<small class="security-warning">⚠️ 敏感配置，请妥善保管</small>' :
-                '<small>配置修改后立即生效</small>'}
+                '<small class="form-info">配置修改后立即生效</small>'}
         `,
         wiki_platform: `
             <label for="platform_key">平台键 *:</label>
@@ -270,7 +289,7 @@ export function generateFormFields(target, data = null, options = {}) {
             <input type="text" id="platform_name" name="platform_name" required value="${data?.platform_name || ''}" placeholder="例如: 维基百科(中文), VocaDB">
             <label for="url_template">URL模板 *:</label>
             <input type="text" id="url_template" name="url_template" required value="${data?.url_template || ''}" placeholder="例如: https://zh.wikipedia.org/wiki/{ENCODED_ID}">
-            <div class="placeholder-help" style="margin: 10px 0; padding: 10px; border-radius: 4px; background: #f5f5f5; font-size: 0.9em;">
+            <div class="placeholder-help">
                 <strong>💡 可用占位符：</strong><br>
                 • {ID} - 直接替换为identifier<br>
                 • {ENCODED_ID} - URL编码后的identifier<br>

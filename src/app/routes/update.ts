@@ -126,7 +126,8 @@ const updateHandlers = {
         const sourceData = {
             type: body.type,
             name: body.name,
-            endpoint: body.endpoint
+            endpoint: body.endpoint,
+            isIPFS: body.isIPFS
         };
         return await updateExternalSource(db, body.uuid, sourceData);
     },

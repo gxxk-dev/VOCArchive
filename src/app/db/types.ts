@@ -140,6 +140,7 @@ export type ExternalSourceApiInput = Omit<NewExternalSource, 'id'> & {
     type: 'raw_url' | 'ipfs';
     name: string;
     endpoint: string;
+    isIPFS: boolean;
 };
 
 export type ExternalObject = InferSelectModel<typeof externalObject>;
@@ -177,7 +178,8 @@ export type SiteConfigKey =
     | 'migration_title'       // 迁移页面标题
     | 'totp_secret'           // TOTP 密钥
     | 'jwt_secret'            // JWT 密钥
-    | 'db_version';           // 数据库版本号
+    | 'db_version'            // 数据库版本号
+    | 'ipfs_gateways';        // IPFS 网关列表（JSON 格式）
 
 // Composite types for complex queries (matching existing interfaces)
 

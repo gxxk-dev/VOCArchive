@@ -119,6 +119,9 @@ export async function initializeDefaultConfig(db: DrizzleDB): Promise<void> {
 
     // 初始化默认Wiki平台配置
     await initializeDefaultWikiPlatforms(db);
+
+    // 初始化默认IPFS网关配置
+    await initializeDefaultIPFSGateways(db);
 }
 
 /**
@@ -191,7 +194,7 @@ export async function getPublicSiteConfig(db: DrizzleDB): Promise<Record<string,
 export function isValidConfigKey(key: string): key is SiteConfigKey {
     const validKeys: SiteConfigKey[] = [
         'site_title', 'home_title', 'player_title', 'admin_title', 'tags_categories_title', 'migration_title',
-        'totp_secret', 'jwt_secret', 'db_version'
+        'totp_secret', 'jwt_secret', 'db_version', 'ipfs_gateways'
     ];
     return validKeys.includes(key as SiteConfigKey);
 }
@@ -229,4 +232,72 @@ export async function updateDbVersion(db: DrizzleDB, newVersion: number): Promis
  */
 export async function getDbVersionConfig(db: DrizzleDB): Promise<SiteConfig | null> {
     return await getSiteConfig(db, 'db_version');
+}
+
+/**
+ * 获取IPFS网关列表
+ */
+export async function getIPFSGateways(db: DrizzleDB): Promise<string[]> {
+    const config = await getSiteConfig(db, 'ipfs_gateways');
+    if (!config) {
+        // 返回默认的IPFS网关列表
+        return [
+            'https://ipfs.io/ipfs/',
+            'https://gateway.pinata.cloud/ipfs/',
+            'https://cf-ipfs.com/ipfs/',
+        ];
+    }
+
+    try {
+        const gateways = JSON.parse(config.value);
+        return Array.isArray(gateways) ? gateways : [];
+    } catch (error) {
+        console.error('Error parsing IPFS gateways config:', error);
+        return [];
+    }
+}
+
+/**
+ * 更新IPFS网关列表
+ */
+export async function updateIPFSGateways(db: DrizzleDB, gateways: string[]): Promise<void> {
+    const gatewaysJson = JSON.stringify(gateways);
+    await upsertSiteConfig(db, 'ipfs_gateways', gatewaysJson, 'IPFS网关列表');
+}
+
+/**
+ * 添加IPFS网关
+ */
+export async function addIPFSGateway(db: DrizzleDB, gateway: string): Promise<void> {
+    const currentGateways = await getIPFSGateways(db);
+    if (!currentGateways.includes(gateway)) {
+        currentGateways.push(gateway);
+        await updateIPFSGateways(db, currentGateways);
+    }
+}
+
+/**
+ * 移除IPFS网关
+ */
+export async function removeIPFSGateway(db: DrizzleDB, gateway: string): Promise<void> {
+    const currentGateways = await getIPFSGateways(db);
+    const filteredGateways = currentGateways.filter(g => g !== gateway);
+    if (filteredGateways.length !== currentGateways.length) {
+        await updateIPFSGateways(db, filteredGateways);
+    }
+}
+
+/**
+ * 初始化默认IPFS网关配置（如果不存在）
+ */
+export async function initializeDefaultIPFSGateways(db: DrizzleDB): Promise<void> {
+    const existing = await getSiteConfig(db, 'ipfs_gateways');
+    if (!existing) {
+        const defaultGateways = [
+            'https://ipfs.io/ipfs/',
+            'https://gateway.pinata.cloud/ipfs/',
+            'https://cf-ipfs.com/ipfs/',
+        ];
+        await updateIPFSGateways(db, defaultGateways);
+    }
 }

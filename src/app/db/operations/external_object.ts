@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { externalObject, externalSource } from '../schema';
 import type { ExternalObject, NewExternalObject, ExternalSource as ExternalSourceType, ExternalObjectApiInput } from '../types';
-import { buildStorageURL } from '../utils/storage-handlers';
+import { buildStorageURL, buildStorageURLWithLoadBalancing } from '../utils/storage-handlers';
 import { externalSourceUuidToId } from '../utils/uuid-id-converter';
 
 // UUID validation
@@ -43,6 +43,7 @@ export async function getExternalObjectByUUID(
             source_type: externalSource.type,
             source_name: externalSource.name,
             source_endpoint: externalSource.endpoint,
+            source_isIPFS: externalSource.isIPFS,
         })
         .from(externalObject)
         .innerJoin(externalSource, eq(externalObject.external_source_id, externalSource.id))
@@ -66,6 +67,7 @@ export async function getExternalObjectByUUID(
             type: row.source_type,
             name: row.source_name,
             endpoint: row.source_endpoint,
+            isIPFS: row.source_isIPFS,
         }
     };
 }
@@ -98,6 +100,7 @@ export async function listExternalObjects(
             source_type: externalSource.type,
             source_name: externalSource.name,
             source_endpoint: externalSource.endpoint,
+            source_isIPFS: externalSource.isIPFS,
         })
         .from(externalObject)
         .innerJoin(externalSource, eq(externalObject.external_source_id, externalSource.id))
@@ -116,6 +119,7 @@ export async function listExternalObjects(
             type: row.source_type,
             name: row.source_name,
             endpoint: row.source_endpoint,
+            isIPFS: row.source_isIPFS,
         }
     }));
 }
@@ -260,12 +264,31 @@ export async function getExternalObjectsByMediaSource(
 export function buildExternalObjectURL(externalObj: ExternalObjectWithSource): string {
     // Use storage handlers for more robust URL building
     const url = buildStorageURL(externalObj.source, externalObj.file_id);
-    
+
     if (url) {
         return url;
     }
-    
+
     // Fallback to simple replacement if storage handler fails
     console.warn(`Storage handler failed for type ${externalObj.source.type}, using fallback method`);
     return externalObj.source.endpoint.replace('{id}', externalObj.file_id);
+}
+
+/**
+ * Async version: Build download URL with load balancing support
+ */
+export async function buildExternalObjectURLWithLoadBalancing(
+    db: DrizzleDB,
+    externalObj: ExternalObjectWithSource
+): Promise<string | null> {
+    // Use async storage handler with load balancing
+    const url = await buildStorageURLWithLoadBalancing(db, externalObj.source, externalObj.file_id);
+
+    if (url) {
+        return url;
+    }
+
+    // Fallback to sync version
+    console.warn(`Load balancing failed for ${externalObj.source.type}, falling back to basic URL building`);
+    return buildExternalObjectURL(externalObj);
 }

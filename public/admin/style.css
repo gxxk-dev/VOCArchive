@@ -382,6 +382,10 @@ body {
     background-color: #e7f3ff;
     border: 1px solid #b3d9ff;
     color: #004085;
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 0.9em;
 }
 
 /* Category相关的所有提示文本 */
@@ -751,6 +755,15 @@ body {
     background-color: #2d1b1b;
     border-color: #5a2c2c;
     border-left-color: #ff6b6b;
+}
+
+/* Dark theme form info styles */
+[data-theme="dark"] .form-info {
+    color: #ccc;
+}
+
+[data-theme="dark"] .form-info.readonly-hint {
+    color: #888;
 }
 
 [data-theme="dark"] .external-object-details .source-name {
@@ -2309,6 +2322,19 @@ select#type option[value="ipfs"] {
     display: block;
 }
 
+/* Form information hints */
+.form-info {
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 8px;
+    display: block;
+}
+
+.form-info.readonly-hint {
+    color: #888;
+    font-style: italic;
+}
+
 select#key {
     background-color: white;
     border: 1px solid #ccc;
@@ -2459,4 +2485,36 @@ select#key option[value*="title"] {
 [data-theme="dark"] .migration-params input:focus {
     border-color: #007bff;
 }
+
+/* 层次缩进类 */
+.indent-level-0 { margin-left: 0px; }
+.indent-level-1 { margin-left: 20px; }
+.indent-level-2 { margin-left: 40px; }
+.indent-level-3 { margin-left: 60px; }
+.indent-level-4 { margin-left: 80px; }
+.indent-level-5 { margin-left: 100px; }
+.indent-level-6 { margin-left: 120px; }
+.indent-level-7 { margin-left: 140px; }
+.indent-level-8 { margin-left: 160px; }
+.indent-level-9 { margin-left: 180px; }
+.indent-level-10 { margin-left: 200px; }
+
+/* 配置说明文本 */
+.config-notice {
+    margin-top: 8px;
+}
+
+.config-notice small {
+    color: #666;
+    font-size: 0.85em;
+}
+
+[data-theme="dark"] .config-notice small {
+    color: #999;
+}
+
+/* 显示控制工具类 */
+.hidden { display: none !important; }
+.visible { display: block !important; }
+.flex-visible { display: flex !important; }
 

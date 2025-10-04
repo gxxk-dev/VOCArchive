@@ -14,6 +14,7 @@ export * as CategoryOperations from './operations/category';
 export * as WorkTitleOperations from './operations/work-title';
 export * as SearchOperations from './operations/search';
 export * as AdminOperations from './operations/admin';
+export * as ConfigOperations from './operations/config';
 export * as ExternalSourceOperations from './operations/external_source';
 export * as ExternalObjectOperations from './operations/external_object';
 
@@ -114,13 +115,27 @@ export {
 } from './operations/admin';
 
 export {
+    // Config operations
+    getSiteConfig,
+    getPublicSiteConfig,
+    upsertSiteConfig,
+    getIPFSGateways,
+    updateIPFSGateways,
+    addIPFSGateway,
+    removeIPFSGateway,
+    initializeDefaultIPFSGateways,
+    initializeDefaultConfig
+} from './operations/config';
+
+export {
     // External source operations
     getExternalSourceByUUID,
     listExternalSources,
     inputExternalSource,
     updateExternalSource,
     deleteExternalSource,
-    getExternalSourceCount
+    getExternalSourceCount,
+    getIPFSSourcesByName
 } from './operations/external_source';
 
 export {
@@ -132,5 +147,6 @@ export {
     updateExternalObject,
     deleteExternalObject,
     getExternalObjectCount,
-    buildExternalObjectURL
+    buildExternalObjectURL,
+    buildExternalObjectURLWithLoadBalancing
 } from './operations/external_object';

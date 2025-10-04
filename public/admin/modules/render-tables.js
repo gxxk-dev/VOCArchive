@@ -150,7 +150,7 @@ export function renderCategoryTree(categories, level = 0) {
     return categories.map(category => {
         const hasChildren = category.children && category.children.length > 0;
         return `
-            <div class="category-node" style="margin-left: ${level * 20}px;" data-uuid="${category.uuid}">
+            <div class="category-node indent-level-${Math.min(level, 10)}" data-uuid="${category.uuid}">
                 <div class="category-item">
                     <span class="category-name">${category.name}</span>
                     <span class="uuid" title="${category.uuid}">${category.uuid.substring(0, 8)}...</span>
@@ -234,7 +234,7 @@ export function renderExternalSourcesTable(data) {
                         <tr data-uuid="${source.uuid}">
                             <td><span class="uuid" title="${source.uuid}">${source.uuid.substring(0, 8)}...</span></td>
                             <td class="source-name">${source.name}</td>
-                            <td><span class="storage-type-badge ${source.type}">${source.type === 'raw_url' ? '直接 URL' : 'Backblaze B2'}</span></td>
+                            <td><span class="storage-type-badge ${source.type}">${source.type === 'raw_url' ? '直接 URL' : 'IPFS'}</span></td>
                             <td class="endpoint-template">${source.endpoint}</td>
                             <td>
                                 <button class="edit-button" data-uuid="${source.uuid}" data-target="external_source">编辑</button>

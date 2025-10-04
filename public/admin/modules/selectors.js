@@ -212,7 +212,7 @@ export class MultiSelector {
             const indent = '　'.repeat(level);
 
             result += `
-                <label class="${this.config.itemClassName}" style="margin-left: ${level * 20}px;">
+                <label class="${this.config.itemClassName} indent-level-${Math.min(level, 10)}">
                     <input type="checkbox" name="selected_${this.type}" value="${value}" ${isChecked}>
                     <span class="${chipClass}">${indent}${display}</span>
                 </label>

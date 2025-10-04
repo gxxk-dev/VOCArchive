@@ -109,9 +109,9 @@ export async function showFormModal(target, data = null) {
 
         const toggleLicenseField = () => {
             if (copyrightBasisSelect.value === 'license') {
-                licenseContainer.style.display = ''; // Or 'block', depending on CSS
+                licenseContainer.classList.remove('hidden');
             } else {
-                licenseContainer.style.display = 'none';
+                licenseContainer.classList.add('hidden');
             }
         };
 
@@ -295,6 +295,7 @@ export async function handleFormSubmit(e, target, isUpdate) {
                     type: formData.get('type'),
                     name: formData.get('name'),
                     endpoint: formData.get('endpoint'),
+                    isIPFS: formData.get('isIPFS') === 'on' || false,
                 };
                 if (isUpdate) {
                     body.external_source_uuid = formData.get('external_source_uuid');

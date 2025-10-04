@@ -48,6 +48,7 @@ export const externalSource = sqliteTable('external_source', {
     type: text('type', { enum: ['raw_url', 'ipfs'] }).notNull(),
     name: text('name').notNull(),
     endpoint: text('endpoint').notNull(),
+    isIPFS: integer('isIPFS', { mode: 'boolean' }).notNull().default(false),
 });
 
 export const siteConfig = sqliteTable('site_config', {

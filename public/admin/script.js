@@ -484,7 +484,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return categories.map(category => {
             const hasChildren = category.children && category.children.length > 0;
             return `
-                <div class="category-node" style="margin-left: ${level * 20}px;" data-uuid="${category.uuid}">
+                <div class="category-node indent-level-${Math.min(level, 10)}" data-uuid="${category.uuid}">
                     <div class="category-item">
                         <span class="category-name">${category.name}</span>
                         <span class="uuid" title="${category.uuid}">${category.uuid.substring(0, 8)}...</span>
@@ -568,7 +568,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <tr data-uuid="${source.uuid}">
                                 <td><span class="uuid" title="${source.uuid}">${source.uuid.substring(0, 8)}...</span></td>
                                 <td class="source-name">${source.name}</td>
-                                <td><span class="storage-type-badge ${source.type}">${source.type === 'raw_url' ? '直接 URL' : 'Backblaze B2'}</span></td>
+                                <td><span class="storage-type-badge ${source.type}">${source.type === 'raw_url' ? '直接 URL' : 'IPFS'}</span></td>
                                 <td class="endpoint-template">${source.endpoint}</td>
                                 <td>
                                     <button class="edit-button" data-uuid="${source.uuid}" data-target="external_source">编辑</button>
@@ -940,9 +940,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const toggleLicenseField = () => {
                 if (copyrightBasisSelect.value === 'license') {
-                    licenseContainer.style.display = ''; // Or 'block', depending on CSS
+                    licenseContainer.classList.remove('hidden');
                 } else {
-                    licenseContainer.style.display = 'none';
+                    licenseContainer.classList.add('hidden');
                 }
             };
 
@@ -1185,9 +1185,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     { value: 'jwt_secret', text: 'JWT 密钥 (jwt_secret)' },
                     { value: 'db_version', text: '数据库版本 (db_version)' },
                 ], data?.key, true)}
-                ${data ? '<div style="margin-top: 8px;"><small>配置键不可修改</small></div>' : ''}
+                ${data ? '<div class="config-notice"><small>配置键不可修改</small></div>' : ''}
                 ${data?.key?.includes('title') ? `
-                    <div class="placeholder-help" style="margin: 10px 0; padding: 10px; border-radius: 4px; font-size: 0.9em;">
+                    <div class="placeholder-help">
                         <strong>💡 可用占位符：</strong><br>
                         ${data.key === 'home_title' || data.key === 'site_title' ? 
                             '• {TAG_NAME} - 当前标签名称<br>• {CATEGORY_NAME} - 当前分类名称<br>• {SEARCH_QUERY} - 搜索关键词<br>• {PAGE_NUMBER} - 当前页码<br>• {TOTAL_COUNT} - 总数量<br><strong>条件占位符:</strong> {TAG_NAME? - 标签: {TAG_NAME}} (仅在有值时显示)' : 
@@ -1346,7 +1346,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const isChecked = selectedCategoryIds.includes(cat.uuid) ? 'checked' : '';
             const prefix = '　'.repeat(cat.level);
             return `
-                <label class="category-checkbox" style="margin-left: ${cat.level * 20}px;">
+                <label class="category-checkbox indent-level-${Math.min(cat.level, 10)}">
                     <input type="checkbox" name="selected_categories" value="${cat.uuid}" ${isChecked}>
                     <span class="category-name">${prefix}${cat.name}</span>
                 </label>
@@ -1752,7 +1752,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         checkboxes.forEach(checkbox => {
             const tagName = checkbox.querySelector('.tag-chip').textContent.toLowerCase();
             const matches = tagName.includes(searchTerm.toLowerCase());
-            checkbox.style.display = matches ? 'flex' : 'none';
+            checkbox.classList.toggle('hidden', !matches);
         });
     };
 
@@ -1761,7 +1761,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         checkboxes.forEach(checkbox => {
             const categoryName = checkbox.querySelector('.category-name').textContent.toLowerCase();
             const matches = categoryName.includes(searchTerm.toLowerCase());
-            checkbox.style.display = matches ? 'flex' : 'none';
+            checkbox.classList.toggle('hidden', !matches);
         });
     };
 

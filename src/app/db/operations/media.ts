@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { mediaSource, asset, mediaSourceExternalObject, assetExternalObject, externalObject, externalSource, work } from '../schema';
 import type { MediaSource, MediaSourceForApplication, MediaSourceWithExternalObjects, ExternalObject, MediaSourceApiInput } from '../types';
-import { getExternalObjectByUUID, buildExternalObjectURL } from './external_object';
+import { getExternalObjectByUUID, buildExternalObjectURL, buildExternalObjectURLWithLoadBalancing } from './external_object';
 import {
     workUuidToId,
     mediaSourceUuidToId,
@@ -255,7 +255,7 @@ export async function deleteMedia(db: DrizzleDB, mediaUuid: string): Promise<boo
  * graceful fallbacks without requiring ASSET_URL environment variable
  */
 export async function getFileURLByUUIDWithExternalStorage(
-    db: DrizzleDB, 
+    db: DrizzleDB,
     fileUuid: string
 ): Promise<string | null> {
     if (!validateUUID(fileUuid)) {
@@ -266,9 +266,10 @@ export async function getFileURLByUUIDWithExternalStorage(
         // Priority 1: Check external_object table first (new system)
         const externalObjectResult = await getExternalObjectByUUID(db, fileUuid);
         if (externalObjectResult) {
-            const url = buildExternalObjectURL(externalObjectResult);
+            // Use load balancing version for better IPFS support
+            const url = await buildExternalObjectURLWithLoadBalancing(db, externalObjectResult);
             if (url) {
-                console.log(`File access via external object: ${fileUuid} -> ${url}`);
+                console.log(`File access via external object with load balancing: ${fileUuid} -> ${url}`);
                 return url;
             }
         }
@@ -294,9 +295,10 @@ export async function getFileURLByUUIDWithExternalStorage(
                 // Media source is migrated, try to use external object instead
                 const migratedExternalObject = await getExternalObjectByUUID(db, mediaMigrationCheck[0].external_object_uuid);
                 if (migratedExternalObject) {
-                    const migratedUrl = buildExternalObjectURL(migratedExternalObject);
+                    // Use load balancing version for better IPFS support
+                    const migratedUrl = await buildExternalObjectURLWithLoadBalancing(db, migratedExternalObject);
                     if (migratedUrl) {
-                        console.log(`File access via migrated media source: ${fileUuid} -> ${migratedUrl}`);
+                        console.log(`File access via migrated media source with load balancing: ${fileUuid} -> ${migratedUrl}`);
                         return migratedUrl;
                     }
                 }
@@ -328,9 +330,10 @@ export async function getFileURLByUUIDWithExternalStorage(
                 // Asset is migrated, try to use external object instead
                 const migratedExternalObject = await getExternalObjectByUUID(db, assetMigrationCheck[0].external_object_uuid);
                 if (migratedExternalObject) {
-                    const migratedUrl = buildExternalObjectURL(migratedExternalObject);
+                    // Use load balancing version for better IPFS support
+                    const migratedUrl = await buildExternalObjectURLWithLoadBalancing(db, migratedExternalObject);
                     if (migratedUrl) {
-                        console.log(`File access via migrated asset: ${fileUuid} -> ${migratedUrl}`);
+                        console.log(`File access via migrated asset with load balancing: ${fileUuid} -> ${migratedUrl}`);
                         return migratedUrl;
                     }
                 }
