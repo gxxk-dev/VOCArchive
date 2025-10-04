@@ -10,6 +10,8 @@ export interface BaseLayoutProps {
     additionalScripts?: string
     bodyClass?: string
     cssFiles?: string[]
+    jsFiles?: string[]
+    moduleFiles?: string[]
 }
 
 export const BaseLayout = (props: BaseLayoutProps) => {
@@ -28,6 +30,12 @@ export const BaseLayout = (props: BaseLayoutProps) => {
             </head>
             <body class={props.bodyClass || ''}>
                 {props.children}
+                {props.jsFiles?.map(jsFile => (
+                    <script src={jsFile}></script>
+                ))}
+                {props.moduleFiles?.map(moduleFile => (
+                    <script type="module" src={moduleFile}></script>
+                ))}
                 <script dangerouslySetInnerHTML={{ __html: props.additionalScripts || '' }}></script>
                 <script src="/sw-register.js"></script>
                 {Footer({ settings: props.footerSettings })}

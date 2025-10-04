@@ -1,0 +1,84 @@
+import { jsx } from 'hono/jsx'
+import { BaseLayout } from './layouts/base-layout'
+import { FooterSetting } from '../db/operations/admin'
+
+export interface AdminPageProps {
+    footerSettings: FooterSetting[]
+}
+
+export const AdminPage = (props: AdminPageProps) => {
+    return (
+        <BaseLayout
+            title="VOCArchive - 管理后台"
+            footerSettings={props.footerSettings}
+            cssFiles={['/css/common.css', '/css/admin.css', '/admin/css/selectors.css']}
+            jsFiles={['/admin/md3-select.js']}
+            moduleFiles={['/admin/admin.js']}
+            additionalScripts={`
+                // Admin module will auto-initialize after loading
+                console.log('Admin page loaded');
+            `}
+        >
+            {/* Login Form */}
+            <div id="login-container">
+                <h2>登录</h2>
+                <form id="login-form">
+                    <input type="password" id="auth-code" placeholder="请输入授权码" required />
+                    <button type="submit">登录</button>
+                </form>
+                <p id="login-error" class="error-message"></p>
+            </div>
+
+            {/* Main Admin Panel */}
+            <div id="admin-panel" class="hidden">
+                <header>
+                    <h1 id="pageHeader">管理后台</h1>
+                    <div class="header-controls">
+                        <button id="theme-toggle" class="theme-toggle" title="切换深色模式">
+                            <i class="fas fa-moon" id="theme-icon"></i>
+                        </button>
+                        <button id="logout-button">登出</button>
+                    </div>
+                </header>
+                <nav id="tabs">
+                    <button class="tab-button active" data-target="work">作品 (work)</button>
+                    <button class="tab-button" data-target="creator">作者 (creator)</button>
+                    <button class="tab-button" data-target="media">媒体 (Media)</button>
+                    <button class="tab-button" data-target="asset">资产 (asset)</button>
+                    <button class="tab-button" data-target="relation">关系 (relation)</button>
+                    <button class="tab-button" data-target="tag">标签 (tag)</button>
+                    <button class="tab-button" data-target="category">分类 (category)</button>
+                    <button class="tab-button" data-target="external_source">存储源 (Storage)</button>
+                    <button class="tab-button" data-target="external_object">外部对象 (External)</button>
+                    <button class="tab-button" data-target="footer">页脚 (Footer)</button>
+                    <button class="tab-button" data-target="wiki_platform">Wiki平台 (Wiki)</button>
+                    <button class="tab-button" data-target="site_config">系统配置 (Config)</button>
+                    <button class="tab-button" data-target="migration">迁移管理 (Migration)</button>
+                </nav>
+                <main id="content">
+                    {/* Data tables will be loaded here */}
+                </main>
+
+                <div id="tool-zone">
+                    <h2>工具 (Tools)</h2>
+                    <div class="tool-item">
+                        <button id="generate-uuid-button">生成 UUID</button>
+                        <input type="text" id="generated-uuid-result" readonly placeholder="点击按钮生成..." />
+                    </div>
+                </div>
+            </div>
+
+            {/* Create/Edit Modal */}
+            <div id="form-modal" class="modal hidden">
+                <div class="modal-content">
+                    <span class="close-button">&times;</span>
+                    <h2 id="form-title"></h2>
+                    <form id="modal-form">
+                        {/* Form fields will be dynamically inserted here */}
+                    </form>
+                    <p id="form-error" class="error-message"></p>
+                </div>
+            </div>
+        </BaseLayout>
+    )
+}

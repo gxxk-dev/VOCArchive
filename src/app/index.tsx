@@ -18,6 +18,9 @@ import { IndexPage } from './pages/index'
 import { PlayerPage } from './pages/player'
 import { InitPage } from './pages/init'
 import { TagsCategoriesPage } from './pages/tags-categories'
+import { AdminPage } from './pages/admin'
+import { MigrationPage } from './pages/migration'
+import { TestToolsPage } from './pages/test-tools'
 import { createDrizzleClient } from './db/client'
 import { getFooterSettings, initializeDatabaseWithMigrations, isDatabaseInitialized } from './db/operations/admin'
 import { getPublicSiteConfig, getSiteConfig } from './db/operations/config'
@@ -261,6 +264,24 @@ app.get('/tags-categories', async (c) => {
         availableLanguages={availableLanguages}
         preferredLanguage={preferredLanguage}
     />)
+})
+
+app.get('/admin', async (c) => {
+    const db = createDrizzleClient(c.env.DB);
+    const footerSettings = await getFooterSettings(db)
+    return c.html(<AdminPage footerSettings={footerSettings} />)
+})
+
+app.get('/migration', async (c) => {
+    const db = createDrizzleClient(c.env.DB);
+    const footerSettings = await getFooterSettings(db)
+    return c.html(<MigrationPage footerSettings={footerSettings} />)
+})
+
+app.get('/test-tools', async (c) => {
+    const db = createDrizzleClient(c.env.DB);
+    const footerSettings = await getFooterSettings(db)
+    return c.html(<TestToolsPage footerSettings={footerSettings} />)
 })
 
 export default app
