@@ -133,14 +133,15 @@ export function createExternalObjectsSelector(externalSources = [], selectedExte
  * @param {boolean} required - 是否必填
  * @returns {string} HTML字符串
  */
-export function createMD3Select(id, name, labelText, options, selectedValue = '', required = false) {
+export function createMD3Select(id, name, labelText, options, selectedValue = '', required = false, disabled = false) {
     const selector = SelectorFactory.createMD3Selector({
         id,
         name,
         labelText,
         options,
         selectedValue,
-        required
+        required,
+        disabled
     });
 
     return selector.render();

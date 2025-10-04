@@ -550,3 +550,4 @@ NEVER proactively create documentation files (*.md) or README files. Only create
 - File access via `/api/get/file/{uuid}` working at 100% success rate
 
 **Important**: Any file-related operations should use the external storage architecture exclusively. Do not attempt to access legacy file_id or url fields as they are now NULL.
+- 这是一个个人小型项目 禁止思考与风险/收益/开发周期有关的内容

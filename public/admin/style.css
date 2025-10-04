@@ -1115,7 +1115,7 @@ pre {
     background-color: #f5f5f5;
     border: 1px solid #e0e0e0;
     transition: all 200ms ease-in-out;
-    overflow: hidden;
+    overflow:visible;
 }
 
 .md3-select-field:hover {
@@ -1247,6 +1247,30 @@ pre {
 
 .md3-select-field.error + .md3-helper-text {
     color: #ba1a1a;
+}
+
+/* MD3 Select disabled state */
+.md3-select-field.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.md3-select-field.disabled select {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+}
+
+.md3-select-field.disabled .md3-label {
+    color: #999 !important;
+}
+
+[data-theme="dark"] .md3-select-field.disabled select {
+    background-color: #2a2a2a;
+    color: #888;
+}
+
+[data-theme="dark"] .md3-select-field.disabled .md3-label {
+    color: #666 !important;
 }
 
 /* Removed automatic dark mode support - using manual theme toggle instead */

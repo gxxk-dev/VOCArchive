@@ -15,12 +15,35 @@ export const UUID_SELECTOR_CONFIG = {
         label: '作品',
         placeholder: '--选择作品--',
         displayFormatter: (item) => {
-            if (!item || !item.work_uuid) {
+            if (!item) {
                 return 'Invalid Item';
             }
-            const officialTitle = item.titles?.find(t => t.is_official);
-            const title = officialTitle ? officialTitle.title : item.titles?.[0]?.title || 'Untitled';
-            return `${title} (${item.work_uuid.substring(0, 8)}...)`;
+
+            // 优先使用 work_uuid，如果不存在则使用 uuid
+            const uuid = item.work_uuid || item.uuid;
+            if (!uuid) {
+                return 'Invalid Item';
+            }
+
+            let title = 'Untitled';
+
+            // 处理不同格式的标题数据
+            if (item.titles && Array.isArray(item.titles)) {
+                // 标准格式：titles 数组
+                const officialTitle = item.titles.find(t => t.is_official);
+                title = officialTitle ? officialTitle.title : item.titles[0]?.title || 'Untitled';
+            } else if (item.titles && typeof item.titles === 'object') {
+                // 如果 titles 是对象而不是数组
+                title = item.titles.title || item.titles.name || 'Untitled';
+            } else if (item.title) {
+                // 直接有 title 字段
+                title = item.title;
+            } else if (item.name) {
+                // 使用 name 字段作为备选
+                title = item.name;
+            }
+
+            return `${title} (${uuid.substring(0, 8)}...)`;
         }
     },
     creator: {

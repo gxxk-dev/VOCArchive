@@ -993,7 +993,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     { value: 'true', text: 'Yes' },
                     { value: 'false', text: 'No' }
                 ], data?.is_music ? 'true' : 'false', false)}
-                <label for="file_name">File Name:</label><input type="text" id="file_name" name="file_name" required value="${data?.file_name || ''}">
+                <label for="file_name">文件名:</label><input type="text" id="file_name" name="file_name" required value="${data?.file_name || ''}">
                 <!-- URL removed - using external objects for file management -->
                 <label for="mime_type">MIME Type:</label><input type="text" id="mime_type" name="mime_type" required value="${data?.mime_type || ''}">
                 <label for="info">Info:</label><input type="text" id="info" name="info" required value="${data?.info || ''}">
@@ -1014,16 +1014,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <input type="text" id="work_uuid_asset" name="work_uuid" required value="${data?.work_uuid || ''}" class="uuid">
                     ${createQuickSelect('work-quick-select-asset', 'work-quick-select-asset-name', options.works, 'work_uuid', 'titles', data?.work_uuid, 'work_uuid_asset')}
                 </div>
-                ${createMD3Select('asset_type', 'asset_type', 'Asset Type', [
-                    { value: 'lyrics', text: 'Lyrics' },
-                    { value: 'picture', text: 'Picture' }
+                ${createMD3Select('asset_type', 'asset_type', '资产类型', [
+                    { value: 'lyrics', text: '歌词' },
+                    { value: 'picture', text: '图片' }
                 ], data?.asset_type, false)}
-                <label for="file_name">File Name:</label><input type="text" id="file_name" name="file_name" required value="${data?.file_name || ''}">
-                ${createMD3Select('is_previewpic', 'is_previewpic', 'Is Preview Pic', [
-                    { value: 'false', text: 'No' },
-                    { value: 'true', text: 'Yes' }
+                <label for="file_name">文件名:</label><input type="text" id="file_name" name="file_name" required value="${data?.file_name || ''}">
+                ${createMD3Select('is_previewpic', 'is_previewpic', '是否预览图', [
+                    { value: 'false', text: '否' },
+                    { value: 'true', text: '是' }
                 ], data?.is_previewpic ? 'true' : 'false', false)}
-                <label for="language">Language:</label><input type="text" id="language" name="language" value="${data?.language || ''}">
+                <label for="language">语言:</label><input type="text" id="language" name="language" value="${data?.language || ''}">
                 
                 <div class="form-section">
                     <h4>外部对象 (External Objects)</h4>
@@ -1220,12 +1220,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             const selected = value === selectedValue ? 'selected' : '';
             return `<option value="${value}" ${selected}>${text}</option>`;
         }).join('');
-        
+
         return `
             <div class="md3-select-field">
                 <select id="${id}" name="${name}" ${requiredAttr}>
                     ${optionsHtml}
                 </select>
+                <label class="md3-label">${labelText}</label>
+                <div class="md3-state-layer"></div>
             </div>
         `;
     }

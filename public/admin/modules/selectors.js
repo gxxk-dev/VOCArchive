@@ -293,6 +293,7 @@ export class MD3Selector {
         this.options = options.options || [];
         this.selectedValue = options.selectedValue || '';
         this.required = options.required || false;
+        this.disabled = options.disabled || false;
         this.preset = options.preset || null;
     }
 
@@ -316,6 +317,7 @@ export class MD3Selector {
      */
     render() {
         const requiredAttr = this.required ? 'required' : '';
+        const disabledAttr = this.disabled ? 'disabled' : '';
         const options = this.preset ? this.preset.options : this.options;
 
         const optionsHtml = options.map(option => {
@@ -326,8 +328,8 @@ export class MD3Selector {
         }).join('');
 
         return `
-            <div class="md3-select-field">
-                <select id="${this.id}" name="${this.name}" ${requiredAttr}>
+            <div class="md3-select-field${this.disabled ? ' disabled' : ''}">
+                <select id="${this.id}" name="${this.name}" ${requiredAttr} ${disabledAttr}>
                     ${optionsHtml}
                 </select>
                 <label class="md3-label">${this.labelText}</label>
