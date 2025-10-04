@@ -96,6 +96,7 @@ export const AdminContentPage = (props: AdminContentPageProps) => {
                 <script type="module" src="/admin/modules/crud-handlers.js"></script>
                 <script type="module" src="/admin/modules/config.js"></script>
                 <script type="module" src="/admin/modules/utils.js"></script>
+                <script src="/admin/iframe-handler.js"></script>
                 <script type="module" dangerouslySetInnerHTML={{
                     __html: `
                     // Initialize necessary modules for iframe content

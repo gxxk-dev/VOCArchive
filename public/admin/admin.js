@@ -161,6 +161,86 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
+        // Listen for messages from iframe content
+        console.log('Setting up message listener in parent window...');
+        window.addEventListener('message', (event) => {
+            console.log('Parent window received message:', event.data);
+            // 验证消息来源（可以在生产环境中添加更严格的验证）
+            if (event.data && event.data.type) {
+                switch (event.data.type) {
+                    case 'edit-request':
+                        console.log('Received edit request from iframe:', event.data);
+                        // 模拟按钮点击事件
+                        const editEvent = {
+                            target: {
+                                dataset: {
+                                    target: event.data.target,
+                                    uuid: event.data.uuid
+                                }
+                            }
+                        };
+                        console.log('Calling handleEdit with:', editEvent);
+                        try {
+                            handleEdit(editEvent);
+                            console.log('handleEdit completed successfully');
+                        } catch (error) {
+                            console.error('Error in handleEdit:', error);
+                        }
+                        break;
+
+                    case 'delete-request':
+                        console.log('Received delete request from iframe:', event.data);
+                        // 创建一个模拟的删除事件
+                        const deleteEvent = {
+                            target: {
+                                dataset: {
+                                    target: event.data.target
+                                },
+                                closest: () => ({
+                                    dataset: {
+                                        uuid: event.data.uuid
+                                    },
+                                    remove: () => {
+                                        // 通知 iframe 移除元素
+                                        content.contentWindow?.postMessage({
+                                            type: 'remove-row',
+                                            uuid: event.data.uuid
+                                        }, '*');
+                                    }
+                                })
+                            }
+                        };
+                        handleDelete(deleteEvent);
+                        break;
+
+                    case 'create-request':
+                        console.log('Received create request from iframe:', event.data);
+                        showFormModal(event.data.target);
+                        break;
+
+                    case 'iframe-ready':
+                        console.log('Iframe content is ready');
+                        // 发送当前主题给 iframe
+                        import('./modules/theme.js').then(({ getTheme }) => {
+                            const currentTheme = getTheme();
+                            content.contentWindow?.postMessage({
+                                type: 'theme-change',
+                                theme: currentTheme
+                            }, '*');
+                        });
+                        break;
+
+                    case 'test-message':
+                        console.log('Received test message from iframe:', event.data.message);
+                        break;
+
+                    default:
+                        console.log('Unknown message type from iframe:', event.data.type);
+                        break;
+                }
+            }
+        });
+
         // Modal management
         closeModalButton.addEventListener('click', () => modal.classList.add('hidden'));
         window.addEventListener('click', (e) => {
