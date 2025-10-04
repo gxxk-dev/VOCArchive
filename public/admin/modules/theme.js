@@ -17,6 +17,15 @@ export function setTheme(theme) {
     localStorage.setItem('theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
     updateThemeIcon(theme);
+
+    // Notify iframe about theme change
+    const iframe = document.getElementById('content');
+    if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+            type: 'theme-change',
+            theme: theme
+        }, '*');
+    }
 }
 
 export function updateThemeIcon(theme) {

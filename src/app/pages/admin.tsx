@@ -1,88 +1,14 @@
 import { jsx } from 'hono/jsx'
 import { BaseLayout } from './layouts/base-layout'
 import { FooterSetting } from '../db/operations/admin'
-import { AdminContentData } from '../admin/data-loader'
-import { WorkCard, DataTable, TagsTable, CategoriesTable, CreatorTable } from './components/admin'
 
 export interface AdminPageProps {
     footerSettings: FooterSetting[]
     activeTab?: string
-    contentData?: AdminContentData
 }
 
 export const AdminPage = (props: AdminPageProps) => {
     const activeTab = props.activeTab || 'work';
-    const { contentData } = props;
-
-    // 渲染内容的辅助函数
-    const renderContent = () => {
-        if (!contentData) {
-            return <div><h2>Loading...</h2></div>;
-        }
-
-        if (contentData.error) {
-            return (
-                <div>
-                    <p class="error-message">Failed to load {contentData.type}: {contentData.error}</p>
-                </div>
-            );
-        }
-
-        switch (contentData.type) {
-            case 'work':
-                return <WorkCard works={contentData.data} />;
-
-            case 'creator':
-                return <CreatorTable creators={contentData.data} />;
-
-            case 'tag':
-                return <TagsTable tags={contentData.data} />;
-
-            case 'category':
-                return <CategoriesTable categories={contentData.data} />;
-
-            case 'media':
-                return <DataTable target="media" data={contentData.data} title="媒体 (Media)" />;
-
-            case 'asset':
-                return <DataTable target="asset" data={contentData.data} title="资产 (Asset)" />;
-
-            case 'relation':
-                return <DataTable target="relation" data={contentData.data} title="关系 (Relation)" />;
-
-            case 'external_source':
-                return <DataTable target="external_source" data={contentData.data} title="存储源 (Storage)" />;
-
-            case 'external_object':
-                return <DataTable target="external_object" data={contentData.data} title="外部对象 (External)" />;
-
-            case 'footer':
-                return <DataTable target="footer" data={contentData.data} title="页脚 (Footer)" />;
-
-            case 'site_config':
-                return <DataTable target="site_config" data={contentData.data} title="系统配置 (Config)" />;
-
-            case 'wiki_platform':
-                return <DataTable target="wiki_platform" data={contentData.data} title="Wiki平台 (Wiki)" />;
-
-            case 'migration':
-                return (
-                    <div>
-                        <div class="controls">
-                            <h2>迁移管理 (Migration)</h2>
-                        </div>
-                        <p>迁移管理界面将在此渲染...</p>
-                    </div>
-                );
-
-            default:
-                return (
-                    <div>
-                        <p class="error-message">Unsupported content type: {contentData.type}</p>
-                    </div>
-                );
-        }
-    };
 
     return (
         <BaseLayout
@@ -134,17 +60,13 @@ export const AdminPage = (props: AdminPageProps) => {
                     <button class={`tab-button ${activeTab === 'site_config' ? 'active' : ''}`} data-target="site_config">系统配置 (Config)</button>
                     <button class={`tab-button ${activeTab === 'migration' ? 'active' : ''}`} data-target="migration">迁移管理 (Migration)</button>
                 </nav>
-                <main id="content">
-                    {renderContent()}
-                </main>
-
-                <div id="tool-zone">
-                    <h2>工具 (Tools)</h2>
-                    <div class="tool-item">
-                        <button id="generate-uuid-button">生成 UUID</button>
-                        <input type="text" id="generated-uuid-result" readonly placeholder="点击按钮生成..." />
-                    </div>
-                </div>
+                <iframe
+                    id="content"
+                    src=""
+                    frameborder="0"
+                    style="border: none; background: transparent; width: 100%; height: 100%;"
+                    data-initial-tab={activeTab}>
+                </iframe>
             </div>
 
             {/* Create/Edit Modal */}

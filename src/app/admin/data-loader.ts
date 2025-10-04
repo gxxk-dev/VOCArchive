@@ -25,6 +25,7 @@ export type AdminDataType =
     | 'site_config'
     | 'wiki_platform'
     | 'migration'
+    | 'unknown'
 
 export interface AdminContentData {
     type: AdminDataType

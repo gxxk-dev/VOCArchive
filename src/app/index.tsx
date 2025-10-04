@@ -21,6 +21,8 @@ import { TagsCategoriesPage } from './pages/tags-categories'
 import { AdminPage } from './pages/admin'
 import { MigrationPage } from './pages/migration'
 import { TestToolsPage } from './pages/test-tools'
+import { AdminContentPage } from './pages/admin-content'
+import { UnauthorizedPage } from './pages/unauthorized'
 import { loadAdminData, isValidAdminType } from './admin/data-loader'
 import { createDrizzleClient } from './db/client'
 import { getFooterSettings, initializeDatabaseWithMigrations, isDatabaseInitialized } from './db/operations/admin'
@@ -56,6 +58,46 @@ const middleware = async (c: any, next: any) => {
             secret: c.env.JWT_SECRET as string,
         });
         return jwtMiddleware(c, next);
+    }
+}
+
+// Admin content specific middleware with custom 401 page
+const adminContentMiddleware = async (c: any, next: any) => {
+    try {
+        const db = createDrizzleClient(c.env.DB);
+        const config = await getSiteConfig(db, 'jwt_secret');
+        const secretKey = config?.value || c.env.JWT_SECRET as string;
+
+        // Check for token in URL parameter first, then Authorization header
+        const tokenFromQuery = c.req.query('token');
+        let token = tokenFromQuery;
+
+        if (!token) {
+            // Fallback to Authorization header
+            const authHeader = c.req.header('Authorization');
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                token = authHeader.substring(7);
+            }
+        }
+
+        if (!token) {
+            return c.html(<UnauthorizedPage />, 401);
+        }
+
+        // Manually verify the JWT token
+        const { verify } = await import('hono/jwt');
+        try {
+            const payload = await verify(token, secretKey);
+            // Set the payload in context for downstream handlers
+            c.set('jwtPayload', payload);
+            return await next();
+        } catch (error) {
+            console.error('JWT verification failed:', error);
+            return c.html(<UnauthorizedPage />, 401);
+        }
+    } catch (error) {
+        console.error('JWT middleware error:', error);
+        return c.html(<UnauthorizedPage />, 401);
     }
 }
 
@@ -274,12 +316,27 @@ app.get('/admin', async (c) => {
     const db = createDrizzleClient(c.env.DB);
     const footerSettings = await getFooterSettings(db)
 
-    // 预加载当前标签的数据
-    const contentData = await loadAdminData(db, activeTab);
-
     return c.html(<AdminPage
         footerSettings={footerSettings}
         activeTab={activeTab}
+    />)
+})
+
+app.get('/admin/content/:type', adminContentMiddleware, async (c) => {
+    const type = c.req.param('type')
+
+    if (!type || !isValidAdminType(type)) {
+        return c.html(<AdminContentPage
+            type={'unknown'}
+            contentData={{ type: 'unknown', data: null, error: 'Invalid content type' }}
+        />)
+    }
+
+    const db = createDrizzleClient(c.env.DB);
+    const contentData = await loadAdminData(db, type);
+
+    return c.html(<AdminContentPage
+        type={type}
         contentData={contentData}
     />)
 })

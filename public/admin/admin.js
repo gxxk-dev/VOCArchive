@@ -10,9 +10,6 @@ import {
     initializeAuthElements
 } from './modules/auth.js';
 import {
-    initializeRenderElements
-} from './modules/render-tables.js';
-import {
     initializeFormElements,
     showFormModal,
     setupModalEventListeners
@@ -52,7 +49,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize all module DOM elements
     initializeAuthElements();
     initializeThemeElements();
-    initializeRenderElements();
     initializeFormElements();
     initializeCrudElements();
     initializeToolElements();

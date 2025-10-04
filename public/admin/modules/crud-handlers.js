@@ -2,7 +2,6 @@
 
 import { apiFetch } from './api.js';
 import { updatePageTitle } from './utils.js';
-import { renderTable } from './render-tables.js';
 import { showFormModal } from './form-handler.js';
 
 let content; // Global reference to content element
@@ -17,104 +16,42 @@ export async function loadContent(target, forceReload = false) {
     // 更新页面标题
     updatePageTitle(target);
 
-    // 如果不是强制重新加载，检查是否已有SSR内容
+    // 如果不是强制重新加载，检查当前iframe是否已经加载了正确的内容
     if (!forceReload) {
-        const hasSSRContent = content.children.length > 0 &&
-                             !content.innerHTML.includes('Loading...') &&
-                             !content.innerHTML.includes('Data tables will be loaded here');
+        const expectedSrc = `/admin/content/${target}`;
+        // 检查当前iframe的src是否已经是目标内容（忽略token参数）
+        if (content.src && content.src.includes(expectedSrc)) {
+            console.log('Correct iframe content already loaded for', target, ', skipping reload');
+            return;
+        }
+    }
 
-        // 检查当前content是否已经显示了目标类型的内容
-        let isCurrentTargetContent = false;
-        if (hasSSRContent) {
-            switch (target) {
-                case 'work':
-                    isCurrentTargetContent = content.querySelector('.work-card') !== null ||
-                                           content.querySelector('#work-grid') !== null;
-                    break;
-                case 'tag':
-                    isCurrentTargetContent = content.innerHTML.includes('标签 (Tags)');
-                    break;
-                case 'creator':
-                    isCurrentTargetContent = content.innerHTML.includes('作者 (Creators)');
-                    break;
-                case 'category':
-                    isCurrentTargetContent = content.innerHTML.includes('分类 (Categories)');
-                    break;
-                case 'media':
-                    isCurrentTargetContent = content.innerHTML.includes('媒体 (Media)');
-                    break;
-                case 'asset':
-                    isCurrentTargetContent = content.innerHTML.includes('资产 (Asset)');
-                    break;
-                case 'external_source':
-                    isCurrentTargetContent = content.innerHTML.includes('存储源 (Storage)');
-                    break;
-                case 'external_object':
-                    isCurrentTargetContent = content.innerHTML.includes('外部对象 (External)');
-                    break;
-                case 'footer':
-                    isCurrentTargetContent = content.innerHTML.includes('页脚 (Footer)');
-                    break;
-                case 'site_config':
-                    isCurrentTargetContent = content.innerHTML.includes('系统配置 (Config)');
-                    break;
-                case 'wiki_platform':
-                    isCurrentTargetContent = content.innerHTML.includes('Wiki平台 (Wiki)');
-                    break;
-                case 'migration':
-                    isCurrentTargetContent = content.innerHTML.includes('迁移管理 (Migration)');
-                    break;
-                default:
-                    isCurrentTargetContent = false;
+    console.log('Loading iframe content for', target, ', forceReload:', forceReload);
+
+    // 获取JWT token
+    const { jwtToken } = await import('./config.js');
+
+    // 设置iframe的src来加载新内容，包含token参数
+    let src = `/admin/content/${target}`;
+    if (jwtToken) {
+        src += `?token=${encodeURIComponent(jwtToken)}`;
+    }
+
+    content.src = src;
+
+    // 监听iframe加载完成，发送当前主题状态
+    content.onload = () => {
+        // Import theme module and send current theme to iframe
+        import('./theme.js').then(({ getTheme }) => {
+            const currentTheme = getTheme();
+            if (content.contentWindow) {
+                content.contentWindow.postMessage({
+                    type: 'theme-change',
+                    theme: currentTheme
+                }, '*');
             }
-        }
-
-        // 如果已有正确的SSR内容，则不需要重新加载
-        if (isCurrentTargetContent) {
-            console.log('Correct SSR content already exists for', target, ', skipping client-side load');
-            return;
-        }
-    }
-
-    console.log('Loading content for', target, ', forceReload:', forceReload);
-
-    content.innerHTML = '<h2>Loading...</h2>';
-    try {
-        let endpoint, data;
-        if (target === 'footer') {
-            endpoint = '/footer';
-            data = await apiFetch(endpoint);
-        } else if (target === 'tag') {
-            endpoint = '/list/tags';
-            data = await apiFetch(endpoint);
-        } else if (target === 'category') {
-            endpoint = '/list/categories';
-            data = await apiFetch(endpoint);
-        } else if (target === 'external_source') {
-            endpoint = '/list/external_sources';
-            data = await apiFetch(endpoint);
-        } else if (target === 'external_object') {
-            endpoint = '/list/external_objects/1/999';
-            data = await apiFetch(endpoint);
-        } else if (target === 'site_config') {
-            endpoint = '/config';
-            data = await apiFetch(endpoint);
-            console.log("Get Config:", data);
-        } else if (target === 'wiki_platform') {
-            endpoint = '/list/wiki_platforms';
-            data = await apiFetch(endpoint);
-        } else if (target === 'migration') {
-            // 迁移管理不需要数据，直接渲染界面
-            renderMigrationInterface();
-            return;
-        } else {
-            endpoint = `/list/${target}/1?pageSize=999`;
-            data = await apiFetch(endpoint);
-        }
-        renderTable(target, data);
-    } catch (error) {
-        content.innerHTML = `<p class="error-message">Failed to load ${target}: ${error.message}</p>`;
-    }
+        });
+    };
 }
 
 // --- Edit & Delete Logic ---
@@ -230,141 +167,4 @@ export async function handleDelete(e) {
     } catch (error) {
         alert(`Failed to delete item: ${error.message}`);
     }
-}
-
-// 渲染迁移管理界面
-function renderMigrationInterface() {
-    content.innerHTML = `
-        <div class="migration-container">
-            <h2>迁移管理</h2>
-
-            <!-- 迁移状态 -->
-            <div class="migration-section">
-                <h3>迁移状态</h3>
-                <button id="check-migration-status" class="migration-button">检查迁移状态</button>
-                <div id="migration-status-result" class="migration-status-result"></div>
-            </div>
-
-            <!-- 数据库迁移 -->
-            <div class="migration-section">
-                <h3>数据库迁移</h3>
-                <p>执行数据库架构迁移，应用新的表结构和数据变更。</p>
-                <button id="execute-migration" class="migration-button">执行迁移</button>
-                <div id="migration-result" class="migration-status-result"></div>
-            </div>
-
-            <!-- 验证迁移 -->
-            <div class="migration-section">
-                <h3>验证迁移</h3>
-                <p>验证迁移后的数据完整性和一致性。</p>
-                <button id="validate-migration" class="migration-button">验证迁移</button>
-                <div id="validation-result" class="migration-status-result"></div>
-            </div>
-
-            <!-- 外部存储迁移 -->
-            <div class="migration-section danger-section">
-                <h3>外部存储迁移</h3>
-                <p>⚠️ 将旧的文件存储迁移到外部存储架构。<strong>执行前请备份数据库！</strong></p>
-                <div class="migration-params">
-                    <label for="asset-url">资源基础URL *:</label>
-                    <input type="url" id="asset-url" placeholder="https://assets.example.com" required>
-                    <label for="batch-size">批处理大小:</label>
-                    <input type="number" id="batch-size" value="50" min="1" max="1000">
-                </div>
-                <button id="execute-storage-migration" class="migration-button danger-button">执行存储迁移</button>
-                <div id="storage-migration-result" class="migration-status-result"></div>
-            </div>
-        </div>
-    `;
-
-    // 绑定事件监听器
-    bindMigrationEventListeners();
-}
-
-// 绑定迁移功能的事件监听器
-function bindMigrationEventListeners() {
-    // 检查迁移状态
-    document.getElementById('check-migration-status').addEventListener('click', async () => {
-        const resultDiv = document.getElementById('migration-status-result');
-        resultDiv.textContent = '正在检查迁移状态...';
-        resultDiv.className = 'migration-status-result show';
-
-        try {
-            const response = await apiFetch('/migration/status');
-            resultDiv.textContent = JSON.stringify(response, null, 2);
-            resultDiv.className = 'migration-status-result show success';
-        } catch (error) {
-            resultDiv.textContent = `错误: ${error.message}`;
-            resultDiv.className = 'migration-status-result show error';
-        }
-    });
-
-    // 执行数据库迁移
-    document.getElementById('execute-migration').addEventListener('click', async () => {
-        if (!confirm('确定要执行数据库迁移吗？这将应用所有待执行的迁移。')) return;
-
-        const resultDiv = document.getElementById('migration-result');
-        resultDiv.textContent = '正在执行迁移...';
-        resultDiv.className = 'migration-status-result show';
-
-        try {
-            const response = await apiFetch('/migration/execute', {
-                method: 'POST',
-                body: JSON.stringify({})
-            });
-            resultDiv.textContent = JSON.stringify(response, null, 2);
-            resultDiv.className = 'migration-status-result show success';
-        } catch (error) {
-            resultDiv.textContent = `迁移失败: ${error.message}`;
-            resultDiv.className = 'migration-status-result show error';
-        }
-    });
-
-    // 验证迁移
-    document.getElementById('validate-migration').addEventListener('click', async () => {
-        const resultDiv = document.getElementById('validation-result');
-        resultDiv.textContent = '正在验证迁移...';
-        resultDiv.className = 'migration-status-result show';
-
-        try {
-            const response = await apiFetch('/migration/validate', { method: 'POST' });
-            resultDiv.textContent = JSON.stringify(response, null, 2);
-            resultDiv.className = 'migration-status-result show success';
-        } catch (error) {
-            resultDiv.textContent = `验证失败: ${error.message}`;
-            resultDiv.className = 'migration-status-result show error';
-        }
-    });
-
-    // 执行外部存储迁移
-    document.getElementById('execute-storage-migration').addEventListener('click', async () => {
-        const assetUrl = document.getElementById('asset-url').value;
-        const batchSize = parseInt(document.getElementById('batch-size').value) || 50;
-
-        if (!assetUrl) {
-            alert('请输入资源基础URL');
-            return;
-        }
-
-        if (!confirm('⚠️ 确定要执行外部存储迁移吗？\n\n执行前请确保：\n1. 已备份数据库\n2. 资源URL正确\n3. 了解迁移风险')) return;
-
-        const resultDiv = document.getElementById('storage-migration-result');
-        resultDiv.textContent = '正在执行外部存储迁移...';
-        resultDiv.className = 'migration-status-result show';
-
-        try {
-            const response = await apiFetch('/migration/external-storage', {
-                method: 'POST',
-                body: JSON.stringify({
-                    asset_url: assetUrl,
-                    batch_size: batchSize
-                })
-            });
-            resultDiv.textContent = JSON.stringify(response, null, 2);
-            resultDiv.className = 'migration-status-result show success';
-        } catch (error) {
-            resultDiv.textContent = `存储迁移失败: ${error.message}`;
-            resultDiv.className = 'migration-status-result show error';
-        }
-    });
 }

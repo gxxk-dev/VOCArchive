@@ -57,6 +57,22 @@ export async function showAdminPanel() {
 
     // 设置当前标签状态
     setCurrentTab(initialTab);
+
+    // 更新iframe src以包含JWT token
+    await updateIframeWithToken(initialTab);
+}
+
+// 更新iframe的src以包含JWT token
+async function updateIframeWithToken(tab) {
+    const iframe = document.getElementById('content');
+    if (iframe) {
+        const { jwtToken } = await import('./config.js');
+        let src = `/admin/content/${tab}`;
+        if (jwtToken) {
+            src += `?token=${encodeURIComponent(jwtToken)}`;
+        }
+        iframe.src = src;
+    }
 }
 
 async function loadExternalSources() {

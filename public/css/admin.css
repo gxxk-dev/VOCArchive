@@ -2,9 +2,11 @@
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     margin: 0;
-    padding: 20px;
+    padding: 0;
     background-color: #f4f7f9;
     color: #333;
+    height: 100vh;
+    overflow: auto;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -38,6 +40,11 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     text-align: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
 }
 
 #login-container h2 {
@@ -71,19 +78,22 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Admin Panel */
 #admin-panel {
-    max-width: 1200px;
+    max-width: 80%;
+    height: 100vh;
     margin: 0 auto;
     background-color: #ffffff;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 #admin-panel header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    flex-shrink: 0;
 }
 
 .header-controls {
@@ -137,9 +147,21 @@ h1, h2, h3, h4, h5, h6 {
     background-color: #1a1a1a;
 }
 
+[data-theme="dark"] #admin-panel header {
+    border-bottom-color: #333;
+}
+
+[data-theme="dark"] #tabs {
+    border-bottom-color: #333;
+}
+
 [data-theme="dark"] #content {
-    background-color: #2d2d2d;
+    background-color: #1a1a1a;
     color: #e0e0e0;
+}
+
+[data-theme="dark"] #content iframe {
+    background-color: transparent;
 }
 
 [data-theme="dark"] .theme-toggle {
@@ -218,23 +240,7 @@ h1, h2, h3, h4, h5, h6 {
     border-color: #c82333;
 }
 
-[data-theme="dark"] .danger-button {
-    background-color: #dc3545;
-    color: white;
-}
 
-[data-theme="dark"] .danger-button:hover {
-    background-color: #c82333;
-}
-
-[data-theme="dark"] .tool-item button {
-    background-color: #007bff;
-    color: white;
-}
-
-[data-theme="dark"] .tool-item button:hover {
-    background-color: #0056b3;
-}
 
 [data-theme="dark"] .pagination-btn {
     background-color: #333;
@@ -471,16 +477,6 @@ h1, h2, h3, h4, h5, h6 {
 [data-theme="dark"] .work-card-actions {
     background-color: #333;
     border-color: #444;
-}
-
-[data-theme="dark"] #danger-zone {
-    background-color: #2d1a1a;
-    border-color: #5a2c2c;
-}
-
-[data-theme="dark"] #tool-zone {
-    background-color: #1a2d3d;
-    border-color: #2c5a7a;
 }
 
 [data-theme="dark"] .modal-content {
@@ -798,25 +794,30 @@ h1, h2, h3, h4, h5, h6 {
     color: #4caf50 !important;
 }
 
+[data-theme="dark"] .external-object-details .file-id:hover {
+    background-color: rgba(76, 175, 80, 0.2);
+}
+
+[data-theme="dark"] .external-object-details .file-id.expanded {
+    background-color: rgba(76, 175, 80, 0.1);
+    border-color: rgba(76, 175, 80, 0.3);
+}
+
+[data-theme="dark"] .external-object-details .file-id.truncated::before {
+    background: linear-gradient(to right, transparent, #1a1a1a 50%);
+}
+
+[data-theme="dark"] .file-id-expandable.expanded {
+    background-color: rgba(76, 175, 80, 0.1);
+    border-color: rgba(76, 175, 80, 0.3);
+}
+
 [data-theme="dark"] .close-button {
     color: #ccc;
 }
 
 [data-theme="dark"] .close-button:hover {
     color: #fff;
-}
-
-[data-theme="dark"] #danger-zone h2,
-[data-theme="dark"] #tool-zone h2 {
-    color: #f0f0f0;
-}
-
-[data-theme="dark"] #danger-zone .danger-item small {
-    color: #ffcccb;
-}
-
-[data-theme="dark"] #tool-zone .tool-item {
-    color: #e0e0e0;
 }
 
 [data-theme="dark"] .migration-status-result,
@@ -970,8 +971,10 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Tabs */
 #tabs {
-    margin-bottom: 20px;
+    margin-bottom: 0;
     border-bottom: 1px solid #ccc;
+    flex-shrink: 0;
+    padding: 0 20px;
 }
 
 .tab-button {
@@ -992,16 +995,76 @@ h1, h2, h3, h4, h5, h6 {
 /* Content & Table */
 #content {
     background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 15px;
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 确保内容容器适应可视区域 */
+.content-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: auto;
+}
+
+.content-main {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 针对iframe内容的全局布局优化 */
+html, body {
+    height: 100%;
+    /* 不要全局禁用overflow，让子元素自己控制滚动 */
+}
+
+/* 确保页面内容适应iframe */
+.page-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: auto;
+}
+
+/* 特别针对外部对象页面的布局优化 */
+.external-object-page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: auto;
+}
+
+.external-object-page .controls {
+    flex-shrink: 0;
+}
+
+.external-object-page .table-wrapper {
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+}
+
+/* Iframe specific styles */
+#content iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background-color: transparent;
+    flex: 1;
+    overflow: hidden;
 }
 
 .controls {
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     display: flex;
     gap: 10px;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .create-button {
@@ -1028,6 +1091,55 @@ th, td {
     text-align: left;
     border-bottom: 1px solid #ddd;
     vertical-align: top;
+}
+
+/* 特殊处理文件ID列 */
+td.file-id-column {
+    max-width: 250px;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+td.file-id-column .file-id {
+    display: inline-block;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #4caf50;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+td.file-id-column .file-id:hover {
+    background-color: rgba(76, 175, 80, 0.1);
+    transform: scale(1.02);
+}
+
+td.file-id-column .file-id.long-id::after {
+    content: "🔍";
+    opacity: 0;
+    position: absolute;
+    right: -15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    transition: opacity 0.2s ease;
+}
+
+td.file-id-column .file-id.long-id:hover::after {
+    opacity: 0.6;
+}
+
+[data-theme="dark"] td.file-id-column .file-id {
+    color: #4caf50 !important;
+}
+
+[data-theme="dark"] td.file-id-column .file-id:hover {
+    background-color: rgba(76, 175, 80, 0.2);
 }
 
 th {
@@ -1314,41 +1426,6 @@ pre {
     background-color: #0056b3;
 }
 
-/* Danger Zone */
-#danger-zone {
-    margin-top: 40px;
-    padding: 20px;
-    border: 1px solid #dc3545;
-    border-radius: 8px;
-    background-color: #f8d7da;
-}
-
-#danger-zone h2 {
-    color: #721c24;
-    margin-top: 0;
-}
-
-.danger-item {
-    margin-bottom: 15px;
-}
-
-.danger-button {
-    padding: 8px 16px;
-    background-color: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-right: 10px;
-}
-
-.danger-button:hover {
-    background-color: #c82333;
-}
-
-.danger-item small {
-    color: #721c24;
-}
 
 /* Migration and Config specific styles */
 .migration-status-result, .validation-result, .config-status-result, .config-init-result {
@@ -1378,41 +1455,33 @@ pre {
     color: #721c24;
 }
 
-.danger-item input[type="text"], .danger-item input[type="number"] {
-    padding: 6px 10px;
-    margin: 5px;
-    border: 1px solid #dc3545;
-    border-radius: 4px;
-    width: 200px;
-}
-
-.danger-item label {
-    display: inline-block;
-    margin-right: 10px;
-    font-weight: bold;
-}
 
 /* External objects list styles */
 .external-objects-list {
-    margin: 15px 0;
-    padding: 15px;
+    margin: 5px 0;
+    padding: 10px;
     border: 1px solid #e0e0e0;
     border-radius: 12px;
     background-color: #f8f9fa;
     backdrop-filter: blur(10px);
+    max-height: 50vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .external-objects-info {
-    margin-bottom: 15px;
-    padding: 12px;
+    margin-bottom: 8px;
+    padding: 8px;
     background-color: #e7f3ff;
     border: 1px solid #b3d9ff;
     border-radius: 8px;
     border-left: 4px solid #007bff;
+    flex-shrink: 0;
 }
 
 .external-objects-info p {
-    margin: 0 0 10px 0;
+    margin: 0 0 5px 0;
     color: #004085;
     font-size: 0.9em;
 }
@@ -1445,7 +1514,8 @@ pre {
 
 /* Visual Table Enhancements */
 .table-wrapper {
-    overflow-x: auto; /* Add horizontal scroll for very wide tables */
+    overflow: auto;
+    flex: 1;
 }
 
 .null-value {
@@ -1490,6 +1560,8 @@ td .string-value[title] {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 20px;
     padding-top: 20px;
+    overflow: auto;
+    flex: 1;
 }
 
 .work-card {
@@ -1641,124 +1713,6 @@ td .string-value[title] {
     background-color: #1e88e5;
 }
 
-/* Tool Zone */
-#tool-zone {
-    margin-top: 40px;
-    padding: 20px;
-    border: 1px solid #007bff;
-    border-radius: 8px;
-    background-color: #e7f3ff;
-}
-
-#tool-zone h2 {
-    color: #004085;
-    margin-top: 0;
-}
-
-.tool-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.tool-item button {
-    padding: 8px 16px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.tool-item button:hover {
-    background-color: #0056b3;
-}
-
-.tool-item input[readonly] {
-    flex-grow: 1;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: #e9ecef;
-    font-family: monospace;
-}
-
-
-#reset-container {
-    margin-top: 20px;
-    border-top: 1px solid #eee;
-    padding-top: 20px;
-}
-
-#reset-button {
-    background-color: #6c757d;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-#reset-button:hover {
-    background-color: #5a6268;
-}
-
-#qrcode-container {
-    margin-top: 15px;
-    text-align: center;
-}
-
-#qrcode {
-    margin: 10px auto;
-    padding: 10px;
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-#totp-url-container {
-    margin-top: 10px;
-    text-align: left;
-}
-
-#totp-url-container summary {
-    cursor: pointer;
-    font-weight: bold;
-    color: #007bff;
-    margin-bottom: 5px;
-}
-
-#totp-url-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background-color: #f0f0f0;
-    padding: 8px;
-    border-radius: 4px;
-}
-
-#totp-url {
-    word-break: break-all;
-    font-size: 0.8em;
-    color: #666;
-    margin: 0;
-    flex-grow: 1;
-}
-
-#copy-url-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.2em;
-    padding: 5px;
-}
-
-#copy-url-button:hover {
-    opacity: 0.7;
-}
 
 /* UUID Click-to-Copy Styles */
 .uuid {
@@ -1862,7 +1816,7 @@ input.copied {
     border: 1px solid #ddd;
     border-radius: 4px;
     padding: 15px;
-    max-height: 500px;
+    max-height: 50vh;
     overflow-y: auto;
 }
 
@@ -1908,7 +1862,7 @@ input.copied {
     border: 1px solid #ddd;
     border-radius: 4px;
     padding: 10px;
-    max-height: 200px;
+    max-height: 40vh;
     overflow-y: auto;
 }
 
@@ -2058,7 +2012,7 @@ input.copied {
     border: 1px solid #ddd;
     border-radius: 4px;
     padding: 10px;
-    max-height: 300px;
+    max-height: 45vh;
     overflow-y: auto;
 }
 
@@ -2125,14 +2079,20 @@ input.copied {
 .external-objects-selector {
     border: 1px solid #ddd;
     border-radius: 4px;
-    padding: 15px;
+    padding: 10px;
     background-color: #fdfdfd;
+    max-height: 55vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .external-objects-list {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    flex: 1;
+    overflow-y: auto;
 }
 
 .external-objects-info {
@@ -2144,7 +2104,7 @@ input.copied {
 }
 
 .external-objects-info p {
-    margin: 0 0 10px 0;
+    margin: 0 0 5px 0;
     color: #004085;
     font-size: 0.9em;
 }
@@ -2164,12 +2124,14 @@ input.copied {
 }
 
 #external-objects-container {
-    max-height: 200px;
+    max-height: 50vh;
     overflow-y: auto;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
-    padding: 10px;
+    padding: 8px;
     background-color: #fff;
+    display: flex;
+    flex-direction: column;
 }
 
 .external-object-details {
@@ -2196,6 +2158,136 @@ input.copied {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    cursor: pointer;
+    position: relative;
+    max-width: 200px;
+    transition: all 0.3s ease;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.external-object-details .file-id:hover {
+    background-color: rgba(76, 175, 80, 0.1);
+    transform: scale(1.02);
+}
+
+.external-object-details .file-id.expanded {
+    white-space: normal;
+    word-break: break-all;
+    max-width: none;
+    background-color: rgba(76, 175, 80, 0.05);
+    border: 1px solid rgba(76, 175, 80, 0.2);
+    padding: 4px 8px;
+    border-radius: 4px;
+    z-index: 10;
+    position: relative;
+}
+
+.external-object-details .file-id::after {
+    content: "📋";
+    opacity: 0;
+    position: absolute;
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: opacity 0.2s ease;
+    font-size: 12px;
+}
+
+.external-object-details .file-id:hover::after {
+    opacity: 0.6;
+}
+
+.external-object-details .file-id.truncated::before {
+    content: "…";
+    position: absolute;
+    right: 0;
+    background: linear-gradient(to right, transparent, #fff 50%);
+    padding-left: 10px;
+}
+
+/* Tooltip for file-id */
+.external-object-details .file-id[title]:hover::before {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    background-color: #333;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    max-width: 300px;
+    word-break: break-all;
+    white-space: normal;
+}
+
+[data-theme="dark"] .external-object-details .file-id[title]:hover::before {
+    background-color: #555;
+    color: #fff;
+}
+
+/* 改善文件ID在表格中的显示 */
+.file-id-cell {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: monospace;
+    font-size: 0.9em;
+    color: #4caf50;
+    cursor: pointer;
+    position: relative;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+}
+
+.file-id-cell:hover {
+    background-color: rgba(76, 175, 80, 0.1);
+    transform: scale(1.02);
+}
+
+[data-theme="dark"] .file-id-cell {
+    color: #4caf50 !important;
+}
+
+[data-theme="dark"] .file-id-cell:hover {
+    background-color: rgba(76, 175, 80, 0.2);
+}
+
+/* 长文件ID的展开效果 */
+.file-id-expandable {
+    position: relative;
+    cursor: pointer;
+}
+
+.file-id-expandable::after {
+    content: "👁️";
+    opacity: 0;
+    position: absolute;
+    right: -18px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: opacity 0.2s ease;
+    font-size: 10px;
+}
+
+.file-id-expandable:hover::after {
+    opacity: 0.7;
+}
+
+.file-id-expandable.expanded {
+    white-space: normal;
+    word-break: break-all;
+    max-width: none;
+    background-color: rgba(76, 175, 80, 0.05);
+    border: 1px solid rgba(76, 175, 80, 0.2);
+    padding: 4px 6px;
+    border-radius: 4px;
+    z-index: 5;
 }
 
 /* MD3 Filter input for external objects */
@@ -2336,6 +2428,8 @@ input.copied {
     background-color: #f8f9fa;
     border: 1px solid #e0e0e0;
     border-radius: 12px;
+    max-height: 45vh;
+    overflow-y: auto;
 }
 
 /* Storage type selector styling */
@@ -2426,10 +2520,6 @@ select#key option[value*="title"] {
     background-color: #f8f9fa;
 }
 
-.migration-section.danger-section {
-    border-color: #dc3545;
-    background-color: #f8d7da;
-}
 
 .migration-section h3 {
     margin-top: 0;
@@ -2437,18 +2527,12 @@ select#key option[value*="title"] {
     color: #333;
 }
 
-.migration-section.danger-section h3 {
-    color: #721c24;
-}
 
 .migration-section p {
     margin-bottom: 15px;
     color: #666;
 }
 
-.migration-section.danger-section p {
-    color: #721c24;
-}
 
 .migration-button {
     padding: 10px 20px;
@@ -2465,13 +2549,6 @@ select#key option[value*="title"] {
     background-color: #0056b3;
 }
 
-.migration-button.danger-button {
-    background-color: #dc3545;
-}
-
-.migration-button.danger-button:hover {
-    background-color: #c82333;
-}
 
 .migration-params {
     margin: 15px 0;
@@ -2499,26 +2576,16 @@ select#key option[value*="title"] {
     color: #e0e0e0;
 }
 
-[data-theme="dark"] .migration-section.danger-section {
-    background-color: #2d1a1a;
-    border-color: #5a2c2c;
-}
 
 [data-theme="dark"] .migration-section h3 {
     color: #f0f0f0;
 }
 
-[data-theme="dark"] .migration-section.danger-section h3 {
-    color: #ff6b6b;
-}
 
 [data-theme="dark"] .migration-section p {
     color: #ccc;
 }
 
-[data-theme="dark"] .migration-section.danger-section p {
-    color: #ffcccb;
-}
 
 [data-theme="dark"] .migration-params input {
     background-color: #333;
@@ -2555,6 +2622,69 @@ select#key option[value*="title"] {
 
 [data-theme="dark"] .config-notice small {
     color: #999;
+}
+
+/* 通用的长文本折叠样式 */
+.long-text-collapsible {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.long-text-collapsible:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    transform: scale(1.01);
+}
+
+.long-text-collapsible::after {
+    content: "📖";
+    opacity: 0;
+    position: absolute;
+    right: -16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    transition: opacity 0.2s ease;
+}
+
+.long-text-collapsible:hover::after {
+    opacity: 0.5;
+}
+
+.long-text-collapsible.expanded {
+    white-space: normal;
+    word-break: break-word;
+    max-width: none;
+    background-color: rgba(0, 123, 255, 0.02);
+    border: 1px solid rgba(0, 123, 255, 0.1);
+    padding: 4px 6px;
+    z-index: 2;
+}
+
+/* 特别为文件ID优化的样式 */
+.file-id-text {
+    font-family: monospace;
+    color: #4caf50;
+    font-weight: 500;
+}
+
+[data-theme="dark"] .long-text-collapsible:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+[data-theme="dark"] .long-text-collapsible.expanded {
+    background-color: rgba(0, 123, 255, 0.05);
+    border-color: rgba(0, 123, 255, 0.2);
+}
+
+[data-theme="dark"] .file-id-text {
+    color: #4caf50 !important;
 }
 
 /* 显示控制工具类 */
