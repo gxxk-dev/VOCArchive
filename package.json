@@ -10,7 +10,8 @@
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
 		"build:migrations": "node scripts/generate-migration-registry.js",
-		"prebuild": "npm run build:migrations"
+		"build:version": "node scripts/generate-version-info.js",
+		"prebuild": "npm run build:migrations && npm run build:version"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20250812.0",

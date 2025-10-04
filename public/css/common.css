@@ -169,6 +169,37 @@ body {
     font-size: 0.85rem;
 }
 
+.footer-version {
+    margin-top: var(--spacing-sm);
+    display: flex;
+    justify-content: center;
+}
+
+.version-info {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    padding: 2px 8px;
+    border-radius: 12px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    letter-spacing: 0.3px;
+    cursor: help;
+    transition: all 0.2s ease;
+}
+
+.version-info:hover {
+    background-color: var(--bg-tertiary);
+    border-color: var(--text-tertiary);
+    transform: translateY(-1px);
+}
+
+.dev-indicator {
+    color: var(--text-warning, #f59e0b);
+    font-weight: 600;
+    margin-left: 4px;
+}
+
 /* Material Design 3 Select Styles for Frontend */
 .md3-select-field {
     position: relative;

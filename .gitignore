@@ -179,3 +179,4 @@ wrangler.toml
 
 testdata.sql
 migration-registry.ts
+version-info.ts
