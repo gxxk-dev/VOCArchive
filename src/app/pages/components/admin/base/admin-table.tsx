@@ -12,7 +12,7 @@ export interface AdminTableProps {
     createButtonText?: string
     emptyMessage?: string
     getUuidFromRow?: (row: any) => string
-    renderCustomCell?: (data: any, columnName: string, row: any) => JSX.Element | null
+    renderCustomCell?: (data: any, columnName: string, row: any) => any
 }
 
 // 默认获取UUID的函数

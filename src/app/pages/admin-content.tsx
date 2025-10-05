@@ -1,6 +1,16 @@
 import { jsx } from 'hono/jsx'
 import { AdminContentData } from '../admin/data-loader'
-import { WorkCard, DataTable, TagsTable, CategoriesTable, CreatorTable } from './components/admin'
+import {
+    WorkCard,
+    DataTable,
+    TagsTable,
+    CategoriesTable,
+    CreatorTable,
+    ExternalSourcesTable,
+    ExternalObjectsTable,
+    AssetsTable,
+    MediaSourcesTable
+} from './components/admin'
 
 export interface AdminContentPageProps {
     type: string
@@ -37,20 +47,20 @@ export const AdminContentPage = (props: AdminContentPageProps) => {
             case 'category':
                 return <CategoriesTable categories={contentData.data} />;
 
-            case 'media':
-                return <DataTable target="media" data={contentData.data} title="媒体 (Media)" />;
+            case 'external_source':
+                return <ExternalSourcesTable sources={contentData.data} />;
+
+            case 'external_object':
+                return <ExternalObjectsTable objects={contentData.data} />;
 
             case 'asset':
-                return <DataTable target="asset" data={contentData.data} title="资产 (Asset)" />;
+                return <AssetsTable assets={contentData.data} />;
+
+            case 'media':
+                return <MediaSourcesTable media={contentData.data} />;
 
             case 'relation':
                 return <DataTable target="relation" data={contentData.data} title="关系 (Relation)" />;
-
-            case 'external_source':
-                return <DataTable target="external_source" data={contentData.data} title="存储源 (Storage)" />;
-
-            case 'external_object':
-                return <DataTable target="external_object" data={contentData.data} title="外部对象 (External)" />;
 
             case 'footer':
                 return <DataTable target="footer" data={contentData.data} title="页脚 (Footer)" />;
@@ -92,26 +102,69 @@ export const AdminContentPage = (props: AdminContentPageProps) => {
                 <script type="module" src="/admin/md3-select.js"></script>
                 <script type="module" src="/admin/modules/api.js"></script>
                 <script type="module" src="/admin/modules/theme.js"></script>
-                <script type="module" src="/admin/modules/form-handler.js"></script>
-                <script type="module" src="/admin/modules/crud-handlers.js"></script>
-                <script type="module" src="/admin/modules/config.js"></script>
-                <script type="module" src="/admin/modules/utils.js"></script>
                 <script src="/admin/iframe-handler.js"></script>
                 <script type="module" dangerouslySetInnerHTML={{
                     __html: `
                     // Initialize necessary modules for iframe content
                     import { initializeTheme } from '/admin/modules/theme.js';
-                    import { initializeCrudElements } from '/admin/modules/crud-handlers.js';
-                    import { initializeFormElements, setupModalEventListeners } from '/admin/modules/form-handler.js';
 
                     document.addEventListener('DOMContentLoaded', () => {
-                        // Initialize theme first
+                        // Initialize theme
                         initializeTheme();
 
-                        // Initialize other modules
-                        initializeCrudElements();
-                        initializeFormElements();
-                        setupModalEventListeners();
+                        // Set up CRUD operation event handlers for server-side rendered buttons
+                        document.addEventListener('click', (e) => {
+                            const target = e.target;
+
+                            // Handle edit button clicks
+                            if (target.classList.contains('edit-button')) {
+                                e.preventDefault();
+                                const itemTarget = target.dataset.target;
+                                const uuid = target.dataset.uuid;
+
+                                if (itemTarget && uuid && window.parent) {
+                                    window.parent.postMessage({
+                                        type: 'edit-request',
+                                        target: itemTarget,
+                                        uuid: uuid
+                                    }, '*');
+                                }
+                                return;
+                            }
+
+                            // Handle delete button clicks
+                            if (target.classList.contains('delete-button')) {
+                                e.preventDefault();
+                                const itemTarget = target.dataset.target;
+                                const row = target.closest('.work-card') || target.closest('tr');
+                                const uuid = row?.dataset.uuid;
+
+                                if (itemTarget && uuid && window.parent) {
+                                    if (confirm(\`确定要删除这个 \${itemTarget} 吗？\`)) {
+                                        window.parent.postMessage({
+                                            type: 'delete-request',
+                                            target: itemTarget,
+                                            uuid: uuid
+                                        }, '*');
+                                    }
+                                }
+                                return;
+                            }
+
+                            // Handle create button clicks
+                            if (target.classList.contains('create-button')) {
+                                e.preventDefault();
+                                const itemTarget = target.dataset.target;
+
+                                if (itemTarget && window.parent) {
+                                    window.parent.postMessage({
+                                        type: 'create-request',
+                                        target: itemTarget
+                                    }, '*');
+                                }
+                                return;
+                            }
+                        });
 
                         // Listen for theme changes from parent window
                         window.addEventListener('message', (event) => {
@@ -119,6 +172,13 @@ export const AdminContentPage = (props: AdminContentPageProps) => {
                                 document.documentElement.setAttribute('data-theme', event.data.theme);
                             }
                         });
+
+                        // Notify parent that iframe is ready
+                        if (window.parent) {
+                            window.parent.postMessage({
+                                type: 'iframe-ready'
+                            }, '*');
+                        }
                     });
                     `
                 }}></script>
@@ -126,18 +186,6 @@ export const AdminContentPage = (props: AdminContentPageProps) => {
             <body>
                 <div id="content">
                     {renderContent()}
-                </div>
-
-                {/* Include modal for iframe content */}
-                <div id="form-modal" class="modal hidden">
-                    <div class="modal-content">
-                        <span class="close-button">&times;</span>
-                        <h2 id="form-title"></h2>
-                        <form id="modal-form">
-                            {/* Form fields will be dynamically inserted here */}
-                        </form>
-                        <p id="form-error" class="error-message"></p>
-                    </div>
                 </div>
             </body>
         </html>

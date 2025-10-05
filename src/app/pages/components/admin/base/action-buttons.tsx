@@ -16,7 +16,7 @@ export const ActionButtons = (props: ActionButtonsProps) => {
             <button class="edit-button" data-target={target} data-uuid={uuid}>
                 {editText}
             </button>
-            <button class="delete-button" data-target={target}>
+            <button class="delete-button" data-target={target} data-uuid={uuid}>
                 {deleteText}
             </button>
         </div>
@@ -30,7 +30,7 @@ export const TableActionButtons = (props: ActionButtonsProps) => {
             <button class="edit-button" data-target={props.target} data-uuid={props.uuid}>
                 {props.editText || 'Edit'}
             </button>
-            <button class="delete-button" data-target={props.target}>
+            <button class="delete-button" data-target={props.target} data-uuid={props.uuid}>
                 {props.deleteText || 'Delete'}
             </button>
         </td>

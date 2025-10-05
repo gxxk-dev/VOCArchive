@@ -27,7 +27,7 @@ export async function showFormModal(target, data = null) {
     if (data) {
         switch (target) {
             case 'work':
-                setCurrentEditUUID(data.work?.uuid);
+                setCurrentEditUUID(data.work_uuid || data.uuid);
                 break;
             case 'creator':
             case 'asset':

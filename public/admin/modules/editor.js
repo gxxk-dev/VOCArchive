@@ -108,8 +108,17 @@ async function loadEditorContent(type, uuid) {
             itemData = await apiFetch(`/get/${type}/${uuid}`);
         }
 
+        // Prepare options with all necessary data
+        const options = {
+            creators: [], // TODO: 加载创建者数据
+            tags: [], // TODO: 加载标签数据
+            categories: [], // TODO: 加载分类数据
+            works: [], // TODO: 加载作品数据
+            allExternalSources: [] // TODO: 加载外部源数据
+        };
+
         // Generate form fields
-        const formHtml = await generateFormFields(type, itemData);
+        const formHtml = generateFormFields(type, itemData, options);
 
         if (editorForm) {
             editorForm.innerHTML = formHtml;

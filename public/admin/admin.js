@@ -1,6 +1,6 @@
 // Main admin application entry point
 
-// Import all modules
+// Import required modules only
 import { jwtToken, setCurrentTab, allExternalObjects, setAllExternalObjects } from './modules/config.js';
 import { initializeTheme, initializeThemeElements, toggleTheme } from './modules/theme.js';
 import {
@@ -10,26 +10,14 @@ import {
     initializeAuthElements
 } from './modules/auth.js';
 import {
-    initializeFormElements,
-    showFormModal,
-    setupModalEventListeners
-} from './modules/form-handler.js';
-import {
-    initializeCrudElements,
-    loadContent,
-    handleEdit,
-    handleDelete
+    loadContent
 } from './modules/crud-handlers.js';
-import {
-    initializeToolElements,
-    setupUuidGeneration
-} from './modules/tools.js';
+import { initializeCrudElements } from './modules/crud-handlers.js';
 import {
     copyToClipboard,
     renderExternalObjectsList
 } from './modules/utils.js';
 import { updatePageTitle } from './modules/utils.js';
-import { initializeLegacySelectors } from './modules/form-generator-legacy.js';
 
 // Application initialization
 document.addEventListener('DOMContentLoaded', async () => {
@@ -45,15 +33,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const content = document.getElementById('content');
     const editor = document.getElementById('editor');
     const editorModal = document.getElementById('editor-modal');
-    const modal = document.getElementById('form-modal');
-    const closeModalButton = document.querySelector('.close-button');
 
-    // Initialize all module DOM elements
+    // Initialize module DOM elements
     initializeAuthElements();
     initializeThemeElements();
-    initializeFormElements();
     initializeCrudElements();
-    initializeToolElements();
 
     // Load initial page title configuration
     await loadInitialPageTitle();
@@ -63,15 +47,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Set up all event listeners
     setupEventListeners();
-
-    // Setup modal event listeners for dynamic lists
-    setupModalEventListeners();
-
-    // Setup tool functionalities
-    setupUuidGeneration();
-
-    // Initialize legacy selectors for backward compatibility
-    initializeLegacySelectors();
 
     // === IFRAME MANAGEMENT FUNCTIONS ===
     // 定义函数在使用之前
@@ -164,6 +139,59 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (editor) {
             editor.src = '';
+        }
+    }
+
+    /**
+     * Handle backend delete operation and refresh content
+     * @param {string} target - Item type to delete
+     * @param {string} uuid - Item UUID to delete
+     */
+    async function handleBackendDelete(target, uuid) {
+        try {
+            console.log('Deleting item:', { target, uuid });
+
+            // Import API module dynamically
+            const { apiFetch } = await import('./modules/api.js');
+
+            // Handle special cases for delete endpoints
+            if (target === 'footer') {
+                await apiFetch(`/footer/settings/${uuid}`, { method: 'DELETE' });
+            } else if (target === 'wiki_platform') {
+                await apiFetch(`/delete/wiki_platform`, {
+                    method: 'POST',
+                    body: JSON.stringify({ platform_key: uuid }),
+                });
+            } else {
+                // Standard delete endpoint
+                const uuidKeyMap = {
+                    work: 'work_uuid',
+                    creator: 'creator_uuid',
+                    media: 'media_uuid',
+                    asset: 'asset_uuid',
+                    tag: 'tag_uuid',
+                    category: 'category_uuid',
+                    external_source: 'uuid',
+                    external_object: 'uuid',
+                    relation: 'relation_uuid'
+                };
+
+                const uuidKey = uuidKeyMap[target] || 'uuid';
+                await apiFetch(`/delete/${target}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ [uuidKey]: uuid }),
+                });
+            }
+
+            console.log('Delete successful, refreshing content');
+
+            // Refresh the content iframe to show updated data
+            const currentTab = new URLSearchParams(window.location.search).get('tab') || 'work';
+            loadContent(currentTab, true);
+
+        } catch (error) {
+            console.error('Delete failed:', error);
+            alert(`删除失败: ${error.message}`);
         }
     }
 
@@ -269,29 +297,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
-        // Content area clicks (for CRUD operations and forms)
-        content.addEventListener('click', (e) => {
-            if (e.target.classList.contains('delete-button')) {
-                handleDelete(e);
-            }
-            if (e.target.classList.contains('create-button')) {
-                const target = e.target.dataset.target;
-                // 使用编辑器iframe而不是modal
-                loadEditorForCreate(target);
-            }
-            if (e.target.classList.contains('edit-button')) {
-                const target = e.target.dataset.target;
-                const uuid = e.target.dataset.uuid;
-                // 使用编辑器iframe而不是handleEdit
-                if (target && uuid) {
-                    loadEditorForEdit(target, uuid);
-                } else {
-                    // 回退到原来的handleEdit逻辑
-                    handleEdit(e);
-                }
-            }
-        });
-
         // Listen for messages from both iframes
         console.log('Setting up message listener in parent window...');
         window.addEventListener('message', (event) => {
@@ -313,29 +318,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     case 'delete-request':
                         console.log('Received delete request from content iframe:', event.data);
-                        // 删除操作只能来自content iframe，结果也应该发送给content iframe
-                        const deleteEvent = {
-                            target: {
-                                dataset: {
-                                    target: event.data.target
-                                },
-                                closest: () => ({
-                                    dataset: {
-                                        uuid: event.data.uuid
-                                    },
-                                    remove: () => {
-                                        // 通知content iframe移除元素
-                                        if (content && content.contentWindow) {
-                                            content.contentWindow.postMessage({
-                                                type: 'remove-row',
-                                                uuid: event.data.uuid
-                                            }, '*');
-                                        }
-                                    }
-                                })
-                            }
-                        };
-                        handleDelete(deleteEvent);
+                        // Handle delete operation directly and refresh iframe content
+                        handleBackendDelete(event.data.target, event.data.uuid);
                         break;
 
                     case 'create-request':
@@ -400,14 +384,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         console.log('Unknown message type:', event.data.type);
                         break;
                 }
-            }
-        });
-
-        // Modal management
-        closeModalButton.addEventListener('click', () => modal.classList.add('hidden'));
-        window.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.classList.add('hidden');
             }
         });
 
