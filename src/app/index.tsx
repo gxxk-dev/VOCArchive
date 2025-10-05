@@ -344,10 +344,196 @@ app.get('/admin/content/:type', adminContentMiddleware, async (c) => {
 
 app.get('/admin/editor', adminContentMiddleware, async (c) => {
     const { type, uuid } = c.req.query()
+    const db = createDrizzleClient(c.env.DB);
+
+    let data = undefined;
+    let options = {
+        creators: [],
+        tags: [],
+        categories: [],
+        works: [],
+        allExternalSources: [],
+        allExternalObjects: []
+    };
+
+    try {
+        // 根据type和uuid获取数据
+        if (uuid && type) {
+            console.log(`Loading data for ${type} with UUID: ${uuid}`);
+
+            switch (type) {
+                case 'work':
+                    const workData = await getWorkByUUID(db, uuid);
+                    console.log('Loaded work data:', workData);
+                    data = workData ? { work: workData } : undefined;
+                    break;
+                case 'creator':
+                    const { getCreatorByUUID } = await import('./db/operations/creator');
+                    const creatorData = await getCreatorByUUID(db, uuid);
+                    console.log('Loaded creator data:', creatorData);
+                    data = creatorData ? { creator: creatorData } : undefined;
+                    break;
+                case 'tag':
+                    const tagData = await getTagByUUID(db, uuid);
+                    console.log('Loaded tag data:', tagData);
+                    data = tagData ? { tag: tagData } : undefined;
+                    break;
+                case 'category':
+                    const categoryData = await getCategoryByUUID(db, uuid);
+                    console.log('Loaded category data:', categoryData);
+                    data = categoryData ? { category: categoryData } : undefined;
+                    break;
+                case 'asset':
+                    const { getAssetByUUID } = await import('./db/operations/asset');
+                    const assetData = await getAssetByUUID(db, uuid);
+                    console.log('Loaded asset data:', assetData);
+                    data = assetData ? { asset: assetData } : undefined;
+                    break;
+                case 'media':
+                    const { getMediaByUUID } = await import('./db/operations/media');
+                    const mediaData = await getMediaByUUID(db, uuid);
+                    console.log('Loaded media data:', mediaData);
+                    data = mediaData ? { media: mediaData } : undefined;
+                    break;
+                case 'external_source':
+                    const { getExternalSourceByUUID } = await import('./db/operations/external_source');
+                    const externalSourceData = await getExternalSourceByUUID(db, uuid);
+                    console.log('Loaded external_source data:', externalSourceData);
+                    data = externalSourceData ? { external_source: externalSourceData } : undefined;
+                    break;
+                case 'external_object':
+                    const { getExternalObjectByUUID } = await import('./db/operations/external_object');
+                    const externalObjectData = await getExternalObjectByUUID(db, uuid);
+                    console.log('Loaded external_object data:', externalObjectData);
+                    data = externalObjectData ? { external_object: externalObjectData } : undefined;
+                    break;
+                case 'site_config':
+                    // Site config使用key而不是UUID
+                    try {
+                        const configData = await getSiteConfig(db, uuid);
+                        console.log('Loaded site_config data:', configData);
+                        data = configData ? { site_config: configData } : undefined;
+                    } catch (error) {
+                        console.error('Error loading site_config:', error);
+                        data = undefined;
+                    }
+                    break;
+                case 'wiki_platform':
+                    // Wiki platform使用platform_key而不是UUID
+                    try {
+                        const { getWikiPlatformByKey } = await import('./db/operations/wiki-platforms');
+                        const wikiData = await getWikiPlatformByKey(db, uuid);
+                        console.log('Loaded wiki_platform data:', wikiData);
+                        data = wikiData ? { wiki_platform: wikiData } : undefined;
+                    } catch (error) {
+                        console.error('Error loading wiki_platform:', error);
+                        data = undefined;
+                    }
+                    break;
+                default:
+                    console.warn(`Unsupported type for data loading: ${type}`);
+            }
+        } else {
+            console.log(`New item creation for type: ${type}`);
+        }
+
+        // 加载通用选项数据（用于下拉框等）
+        console.log(`Loading options for type: ${type}`);
+
+        // 根据表单类型加载相应的选项数据
+        if (['work', 'asset'].includes(type)) {
+            // 加载所有创作者
+            try {
+                const { listCreators } = await import('./db/operations/creator');
+                const allCreators = await listCreators(db, 1, 999);
+                options.creators = allCreators || [];
+                console.log(`Loaded ${options.creators.length} creators`);
+            } catch (error) {
+                console.error('Error loading creators:', error);
+                options.creators = [];
+            }
+        }
+
+        if (['media', 'asset', 'relation'].includes(type)) {
+            // 加载所有作品
+            try {
+                const allWorks = await getWorkListWithPagination(db, 1, 999);
+                options.works = allWorks || [];
+                console.log(`Loaded ${options.works.length} works`);
+            } catch (error) {
+                console.error('Error loading works:', error);
+                options.works = [];
+            }
+        }
+
+        if (type === 'work') {
+            // 为work表单加载标签和分类
+            try {
+                const tags = await listTagsWithCounts(db);
+                options.tags = tags || [];
+                console.log(`Loaded ${options.tags.length} tags`);
+
+                const categories = await listCategoriesWithCounts(db);
+                options.categories = categories || [];
+                console.log(`Loaded ${options.categories.length} categories`);
+            } catch (error) {
+                console.error('Error loading tags/categories:', error);
+                options.tags = [];
+                options.categories = [];
+            }
+        }
+
+        if (type === 'category') {
+            // 为category表单加载分类（用于父分类选择）
+            try {
+                const categories = await listCategoriesWithCounts(db);
+                options.categories = categories || [];
+                console.log(`Loaded ${options.categories.length} categories for parent selection`);
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                options.categories = [];
+            }
+        }
+
+        // 加载外部存储源（所有表单都可能需要）
+        try {
+            const externalSources = await listExternalSources(db);
+            options.allExternalSources = externalSources || [];
+            console.log(`Loaded ${options.allExternalSources.length} external sources`);
+        } catch (error) {
+            console.error('Error loading external sources:', error);
+            options.allExternalSources = [];
+        }
+
+        // 加载外部对象（用于media和asset表单）
+        try {
+            const { listExternalObjects } = await import('./db/operations/external_object');
+            const externalObjects = await listExternalObjects(db);
+            options.allExternalObjects = externalObjects || [];
+            console.log(`Loaded ${options.allExternalObjects.length} external objects`);
+        } catch (error) {
+            console.error('Error loading external objects:', error);
+            options.allExternalObjects = [];
+        }
+
+    } catch (error) {
+        console.error('Error loading editor data:', error);
+        // 数据加载失败时仍然显示表单，但不填充数据
+    }
+
+    console.log(`Final data being passed to AdminEditorPage:`, {
+        type,
+        uuid,
+        hasData: !!data,
+        dataKeys: data ? Object.keys(data) : [],
+        data: data ? JSON.stringify(data, null, 2) : 'undefined'
+    });
 
     return c.html(<AdminEditorPage
         type={type}
         uuid={uuid}
+        data={data}
+        options={options}
     />)
 })
 
