@@ -86,7 +86,7 @@ export function getFullVersionString(): string {
     let parts = [\`v\${info.version}\`];
 
     if (info.gitCommit) {
-        parts.push(\`commit \${info.gitCommit.substring(0, 7)}\`);
+        parts.push(\`commit \${info.gitCommit}\`);
     }
 
     if (info.gitBranch) {
@@ -95,7 +95,7 @@ export function getFullVersionString(): string {
 
     if (info.buildTime) {
         const buildDate = new Date(info.buildTime);
-        parts.push(\`built \${buildDate.toLocaleDateString()}\`);
+        parts.push(\`built \${buildDate.toLocaleString()}\`);
     }
 
     return parts.join(' • ');
