@@ -196,7 +196,13 @@ body {
 }
 
 .dev-indicator {
-    color: var(--text-warning, #f59e0b) !important; 
+    color: var(--text-warning, #f59e0b) !important;
+    font-weight: 600;
+    margin-left: 4px;
+}
+
+.prod-indicator {
+    color: #3b82f6 !important;
     font-weight: 600;
     margin-left: 4px;
 }

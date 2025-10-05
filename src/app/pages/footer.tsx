@@ -1,6 +1,6 @@
 import { jsx } from 'hono/jsx'
 import { FooterSetting } from '../db/operations/admin'
-import { getVersionString, getFullVersionString, isDevelopment } from '../utils/version-info'
+import { getVersionString, getFullVersionString, isDevelopment, isProduction } from '../utils/version-info'
 
 export const Footer = (props: { settings: FooterSetting[] }) => {
     const links = props.settings.filter(s => s.item_type === 'link');
@@ -29,6 +29,7 @@ export const Footer = (props: { settings: FooterSetting[] }) => {
                     <span class="version-info" title={getFullVersionString()}>
                         Powered By VOCArchive {getVersionString()}
                         {isDevelopment() && <span class="dev-indicator">• DEV</span>}
+                        {isProduction() && <span class="prod-indicator">• PROD</span>}
                     </span>
                 </div>
             </div>
