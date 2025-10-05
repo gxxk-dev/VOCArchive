@@ -2,14 +2,9 @@ import { eq, and } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { workTitle, work } from '../schema';
 import { workUuidToId, workIdToUuid } from '../utils/uuid-id-converter';
+import { validateUUID } from '../utils';
 
 import { WorkTitle, WorkTitleApi, WorkTitleInput, WorkTitleUpdate } from '../types';
-
-// UUID validation
-const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export function validateUUID(uuid: string): boolean {
-    return UUID_PATTERNS.test(uuid);
-}
 
 /**
  * Get a single work title by UUID

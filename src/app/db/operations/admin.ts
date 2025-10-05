@@ -9,6 +9,7 @@ import {
 } from '../schema';
 import { initializeDefaultConfig, initializeSecrets, generateSecretKey } from './config';
 import { assetUuidToId, externalSourceUuidToId, externalObjectUuidToId, mediaSourceUuidToId } from '../utils/uuid-id-converter';
+import { validateUUID } from '../utils';
 
 // Types
 export interface FooterSetting {
@@ -17,12 +18,6 @@ export interface FooterSetting {
     text: string;
     url?: string;
     icon_class?: string;
-}
-
-// UUID validation
-const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export function validateUUID(uuid: string): boolean {
-    return UUID_PATTERNS.test(uuid);
 }
 
 export interface MigrationStatus {

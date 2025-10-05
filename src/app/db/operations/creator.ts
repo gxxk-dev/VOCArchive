@@ -3,14 +3,9 @@ import type { DrizzleDB } from '../client';
 import { creator, creatorWiki, workCreator, work } from '../schema';
 import { creatorUuidToId } from '../utils/uuid-id-converter';
 import { enrichWikiReferences } from './wiki-platforms';
+import { validateUUID } from '../utils';
 
 import { Creator, CreatorApi, WikiRef } from '../types';
-
-// UUID validation
-const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export function validateUUID(uuid: string): boolean {
-    return UUID_PATTERNS.test(uuid);
-}
 
 /**
  * Convert Creator (DB layer) to CreatorApi (API layer)

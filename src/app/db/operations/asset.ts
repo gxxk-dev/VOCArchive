@@ -1,15 +1,9 @@
 import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { asset, assetCreator, creator, assetExternalObject, externalObject, externalSource, work } from '../schema';
-import { convertAssetData } from '../utils';
+import { convertAssetData, validateUUID } from '../utils';
 import { assetUuidToId, workUuidToId, creatorUuidToId, externalObjectUuidToId, externalSourceUuidToId } from '../utils/uuid-id-converter';
 import type { Asset, AssetForApplication, CreatorWithRole, AssetWithCreators, ExternalObject, AssetApiInput } from '../types';
-
-// UUID validation
-const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export function validateUUID(uuid: string): boolean {
-    return UUID_PATTERNS.test(uuid);
-}
 
 /**
  * Get asset by UUID with creator information and external objects

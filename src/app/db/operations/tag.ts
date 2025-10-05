@@ -9,16 +9,10 @@ import {
     creator,
     asset
 } from '../schema';
-import { convertAssetData, convertCreatorData } from '../utils';
+import { convertAssetData, convertCreatorData, validateUUID } from '../utils';
 import { workUuidToId, tagUuidToId } from '../utils/uuid-id-converter';
 
 import { Tag, TagApi, WorkTitleApi, CreatorWithRole, AssetApi, CategoryApi, WorkListItem, TagWithCount, WorkTitle } from '../types';
-
-// UUID validation
-const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export function validateUUID(uuid: string): boolean {
-    return UUID_PATTERNS.test(uuid);
-}
 
 /**
  * Get work titles for API layer (complete with all fields)

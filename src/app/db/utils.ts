@@ -63,11 +63,19 @@ export function convertCreatorData(creator: {
     if (!creator.creator_type || !creator.role) {
         return null;
     }
-    
+
     return {
         creator_uuid: creator.creator_uuid,
         creator_name: nullToUndefined(creator.creator_name),
         creator_type: creator.creator_type,
         role: creator.role,
     };
+}
+
+/**
+ * Validate UUID format
+ */
+const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export function validateUUID(uuid: string): boolean {
+    return UUID_PATTERNS.test(uuid);
 }

@@ -3,6 +3,7 @@ import type { DrizzleDB } from '../client';
 import { workRelation, work } from '../schema';
 import type { WorkRelationApiInput } from '../types';
 import { workUuidToId, workIdToUuid } from '../utils/uuid-id-converter';
+import { validateUUID } from '../utils';
 
 // Types for API compatibility
 export interface WorkRelation {
@@ -10,12 +11,6 @@ export interface WorkRelation {
     from_work_uuid: string;
     to_work_uuid: string;
     relation_type: 'original' | 'remix' | 'cover' | 'remake' | 'picture' | 'lyrics';
-}
-
-// UUID validation
-const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export function validateUUID(uuid: string): boolean {
-    return UUID_PATTERNS.test(uuid);
 }
 
 /**

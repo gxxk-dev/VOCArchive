@@ -4,12 +4,7 @@ import { externalObject, externalSource } from '../schema';
 import type { ExternalObject, NewExternalObject, ExternalSource as ExternalSourceType, ExternalObjectApiInput } from '../types';
 import { buildStorageURL, buildStorageURLWithLoadBalancing } from '../utils/storage-handlers';
 import { externalSourceUuidToId } from '../utils/uuid-id-converter';
-
-// UUID validation
-const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export function validateUUID(uuid: string): boolean {
-    return UUID_PATTERNS.test(uuid);
-}
+import { validateUUID } from '../utils';
 
 /**
  * Extended external object interface with source information

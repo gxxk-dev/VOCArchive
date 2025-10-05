@@ -17,7 +17,7 @@ import {
     tag,
     category
 } from '../schema';
-import { convertAssetData, convertCategoryData } from '../utils';
+import { convertAssetData, convertCategoryData, validateUUID } from '../utils';
 import {
     workUuidToId,
     creatorUuidToId,
@@ -53,12 +53,6 @@ interface CreatorWithRoleBuilder {
     creator_type: 'human' | 'virtual';
     role: string;
     wikis?: WikiRef[];
-}
-
-// UUID validation
-const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export function validateUUID(uuid: string): boolean {
-    return UUID_PATTERNS.test(uuid);
 }
 
 /**
