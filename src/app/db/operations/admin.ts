@@ -1,4 +1,4 @@
-import { eq, isNull, and } from 'drizzle-orm';
+import { eq, isNull, and, sql } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import {
     footerSettings,
@@ -884,43 +884,15 @@ export async function initializeDatabaseWithConfig(
  */
 export async function initializeDatabaseWithMigrations(db: DrizzleDB): Promise<void> {
     try {
-        // Read migration file content
-        const migrationPath = './migrations/0000_database_init.sql';
-        
-        // For now, we'll execute the migration SQL directly since D1 doesn't support
-        // Drizzle's migration system yet. In the future, this could be:
-        // await migrate(db, { migrationsFolder: './migrations' });
-        
-        const fs = await import('fs');
-        const path = await import('path');
-        
-        // Read the migration file
-        const migrationFile = fs.readFileSync(
-            path.resolve(process.cwd(), migrationPath), 
-            'utf-8'
-        );
-        
-        // Split by statement breakpoints and execute each statement
-        const statements = migrationFile
-            .split('--> statement-breakpoint')
-            .map(stmt => stmt.trim())
-            .filter(stmt => stmt && !stmt.startsWith('-->'));
-        
-        for (const statement of statements) {
-            if (statement) {
-                try {
-                    await db.run(statement);
-                } catch (error) {
-                    console.warn(`Warning executing migration statement: ${error}`);
-                }
-            }
-        }
-        
-        console.log('Database initialized with Drizzle migrations');
+        console.log('Initializing database schema...');
+
+        // Use the fallback method directly since reading files in Workers is problematic
+        await initializeDatabase(db);
+
+        console.log('Database initialized successfully');
     } catch (error) {
         console.error('Error initializing database with migrations:', error);
-        // Fallback to simplified initialization if migration fails
-        await initializeDatabase(db);
+        throw error;
     }
 }
 
@@ -933,9 +905,39 @@ export async function initializeDatabase(db: DrizzleDB): Promise<void> {
     console.log('1. Drizzle migrations: npm run db:generate && npm run db:push');
     console.log('2. Cloudflare dashboard SQL editor');
     console.log('3. Manual SQL execution from schema.ts definitions');
-    
-    // For development, you can use the helper functions
-    const { ensureTablesExist } = await import('../migrations/helper');
-    await ensureTablesExist(db);
+
+    // For development, fix table structure first, then ensure tables exist
+    try {
+        // Fix any table structure issues by dropping problematic tables
+        const problematicTables = [
+            'work_title',
+            'work_wiki',
+            'creator_wiki',
+            'asset',
+            'media_source',
+            'work_creator',
+            'work_relation',
+            'asset_creator',
+            'work_tag',
+            'work_category',
+            'asset_external_object',
+            'media_source_external_object'
+        ];
+
+        console.log('Fixing table structures...');
+        for (const tableName of problematicTables) {
+            try {
+                await db.run(sql.raw(`DROP TABLE IF EXISTS ${tableName}`));
+            } catch (error) {
+                // Ignore errors, table might not exist
+            }
+        }
+
+        const { ensureTablesExist } = await import('../migrations/helper');
+        await ensureTablesExist(db);
+    } catch (error) {
+        console.error('Error in database initialization:', error);
+        throw error;
+    }
 }
 

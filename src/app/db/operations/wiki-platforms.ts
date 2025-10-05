@@ -222,9 +222,13 @@ export async function initializeDefaultWikiPlatforms(db: DrizzleDB): Promise<voi
 
     // 检查每个平台是否已存在，如果不存在则插入
     for (const platform of defaultPlatforms) {
-        const existing = await getWikiPlatformByKey(db, platform.platform_key);
-        if (!existing) {
-            await insertWikiPlatform(db, platform);
+        try {
+            const existing = await getWikiPlatformByKey(db, platform.platform_key);
+            if (!existing) {
+                await insertWikiPlatform(db, platform);
+            }
+        } catch (error) {
+            console.warn(`Failed to initialize wiki platform ${platform.platform_key}:`, error);
         }
     }
 }

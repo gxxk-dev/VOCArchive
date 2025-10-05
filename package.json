@@ -9,6 +9,8 @@
 		"db:generate": "drizzle-kit generate",
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
+		"db:export": "wrangler d1 export DB --output database.sql",
+		"db:export:prod": "wrangler d1 export DB --output database.sql --remote",
 		"build:migrations": "node scripts/generate-migration-registry.js",
 		"build:version": "node scripts/generate-version-info.js",
 		"build:version:prod": "cross-env NODE_ENV=production node scripts/generate-version-info.js"

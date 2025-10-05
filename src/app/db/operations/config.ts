@@ -16,34 +16,45 @@ export async function getAllSiteConfig(db: DrizzleDB): Promise<SiteConfig[]> {
  * 获取单个配置项
  */
 export async function getSiteConfig(db: DrizzleDB, key: string): Promise<SiteConfig | null> {
-    const result = await db.select().from(siteConfig).where(eq(siteConfig.key, key)).limit(1);
-    return result[0] || null;
+    try {
+        const result = await db.select().from(siteConfig).where(eq(siteConfig.key, key)).limit(1);
+        return result[0] || null;
+    } catch (error) {
+        // If table doesn't exist, return null
+        console.log(`getSiteConfig: Table might not exist for key ${key}:`, error);
+        return null;
+    }
 }
 
 /**
  * 更新或插入配置项（upsert）
  */
 export async function upsertSiteConfig(
-    db: DrizzleDB, 
-    key: string, 
-    value: string, 
+    db: DrizzleDB,
+    key: string,
+    value: string,
     description?: string
 ): Promise<void> {
-    const existing = await getSiteConfig(db, key);
-    
-    if (existing) {
-        await db.update(siteConfig)
-            .set({
+    try {
+        const existing = await getSiteConfig(db, key);
+
+        if (existing) {
+            await db.update(siteConfig)
+                .set({
+                    value,
+                    description: description || existing.description,
+                })
+                .where(eq(siteConfig.key, key));
+        } else {
+            await db.insert(siteConfig).values({
+                key,
                 value,
-                description: description || existing.description,
-            })
-            .where(eq(siteConfig.key, key));
-    } else {
-        await db.insert(siteConfig).values({
-            key,
-            value,
-            description,
-        });
+                description,
+            });
+        }
+    } catch (error) {
+        console.warn(`upsertSiteConfig: Failed to upsert config ${key}:`, error);
+        // Don't throw, let initialization continue
     }
 }
 
@@ -111,9 +122,13 @@ export async function initializeDefaultConfig(db: DrizzleDB): Promise<void> {
     ];
 
     for (const config of defaultConfigs) {
-        const existing = await getSiteConfig(db, config.key);
-        if (!existing) {
-            await upsertSiteConfig(db, config.key, config.value, config.description);
+        try {
+            const existing = await getSiteConfig(db, config.key);
+            if (!existing) {
+                await upsertSiteConfig(db, config.key, config.value, config.description);
+            }
+        } catch (error) {
+            console.warn(`Failed to initialize config ${config.key}:`, error);
         }
     }
 
@@ -291,13 +306,18 @@ export async function removeIPFSGateway(db: DrizzleDB, gateway: string): Promise
  * 初始化默认IPFS网关配置（如果不存在）
  */
 export async function initializeDefaultIPFSGateways(db: DrizzleDB): Promise<void> {
-    const existing = await getSiteConfig(db, 'ipfs_gateways');
-    if (!existing) {
-        const defaultGateways = [
-            'https://ipfs.io/ipfs/',
-            'https://gateway.pinata.cloud/ipfs/',
-            'https://cf-ipfs.com/ipfs/',
-        ];
-        await updateIPFSGateways(db, defaultGateways);
+    try {
+        const existing = await getSiteConfig(db, 'ipfs_gateways');
+        if (!existing) {
+            const defaultGateways = [
+                'https://ipfs.io/ipfs/',
+                'https://gateway.pinata.cloud/ipfs/',
+                'https://cf-ipfs.com/ipfs/',
+            ];
+            await updateIPFSGateways(db, defaultGateways);
+        }
+    } catch (error) {
+        console.warn('initializeDefaultIPFSGateways: Failed to initialize IPFS gateways:', error);
+        // Don't throw, let initialization continue
     }
 }

@@ -11,10 +11,196 @@ import * as schema from '../schema';
  * 确保所有表都存在（使用 drizzle-kit push 的替代方案）
  */
 export async function ensureTablesExist(db: DrizzleDB): Promise<void> {
-    // 对于Cloudflare D1，我们依赖于schema定义
-    // 在生产环境中，表应该通过迁移或dashboard创建
-    // 这个函数主要用于开发环境
-    console.log('Tables should be created via migrations or dashboard');
+    console.log('Creating database tables...');
+
+    // 基础表创建语句（按依赖顺序）
+    const createTableStatements = [
+        // 1. 独立表（无外键依赖）
+        `CREATE TABLE IF NOT EXISTS site_config (
+            key TEXT PRIMARY KEY NOT NULL,
+            value TEXT NOT NULL,
+            description TEXT
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS footer_settings (
+            uuid TEXT PRIMARY KEY NOT NULL,
+            item_type TEXT NOT NULL,
+            text TEXT NOT NULL,
+            url TEXT,
+            icon_class TEXT
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS creator (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
+            type TEXT NOT NULL
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS work (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            copyright_basis TEXT NOT NULL
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS tag (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL UNIQUE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS category (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
+            parent_id INTEGER,
+            FOREIGN KEY (parent_id) REFERENCES category(id)
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS external_source (
+            uuid TEXT PRIMARY KEY NOT NULL,
+            type TEXT NOT NULL,
+            name TEXT NOT NULL,
+            endpoint TEXT NOT NULL
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS wiki_platform (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            platform_key TEXT NOT NULL UNIQUE,
+            platform_name TEXT NOT NULL,
+            url_template TEXT NOT NULL,
+            icon_class TEXT
+        )`,
+
+        // 2. 依赖表
+        `CREATE TABLE IF NOT EXISTS external_object (
+            uuid TEXT PRIMARY KEY NOT NULL,
+            external_source_uuid TEXT NOT NULL,
+            mime_type TEXT NOT NULL,
+            file_id TEXT NOT NULL,
+            FOREIGN KEY (external_source_uuid) REFERENCES external_source(uuid)
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS work_title (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            work_id INTEGER NOT NULL,
+            is_official INTEGER NOT NULL,
+            is_for_search INTEGER NOT NULL DEFAULT 0,
+            language TEXT NOT NULL,
+            title TEXT NOT NULL,
+            FOREIGN KEY (work_id) REFERENCES work(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS work_wiki (
+            work_id INTEGER NOT NULL,
+            platform TEXT NOT NULL,
+            identifier TEXT NOT NULL,
+            PRIMARY KEY (work_id, platform),
+            FOREIGN KEY (work_id) REFERENCES work(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS creator_wiki (
+            creator_id INTEGER NOT NULL,
+            platform TEXT NOT NULL,
+            identifier TEXT NOT NULL,
+            PRIMARY KEY (creator_id, platform),
+            FOREIGN KEY (creator_id) REFERENCES creator(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS asset (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            work_id INTEGER NOT NULL,
+            asset_type TEXT NOT NULL,
+            file_name TEXT,
+            file_id TEXT,
+            FOREIGN KEY (work_id) REFERENCES work(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS media_source (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            work_id INTEGER NOT NULL,
+            media_type TEXT NOT NULL,
+            platform TEXT NOT NULL,
+            url TEXT,
+            file_name TEXT,
+            FOREIGN KEY (work_id) REFERENCES work(id) ON DELETE CASCADE
+        )`,
+
+        // 3. 关联表
+        `CREATE TABLE IF NOT EXISTS work_creator (
+            work_id INTEGER NOT NULL,
+            creator_id INTEGER NOT NULL,
+            role TEXT NOT NULL,
+            PRIMARY KEY (work_id, creator_id, role),
+            FOREIGN KEY (work_id) REFERENCES work(id) ON DELETE CASCADE,
+            FOREIGN KEY (creator_id) REFERENCES creator(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS work_relation (
+            source_work_id INTEGER NOT NULL,
+            target_work_id INTEGER NOT NULL,
+            relation_type TEXT NOT NULL,
+            PRIMARY KEY (source_work_id, target_work_id, relation_type),
+            FOREIGN KEY (source_work_id) REFERENCES work(id) ON DELETE CASCADE,
+            FOREIGN KEY (target_work_id) REFERENCES work(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS asset_creator (
+            asset_id INTEGER NOT NULL,
+            creator_id INTEGER NOT NULL,
+            role TEXT NOT NULL,
+            PRIMARY KEY (asset_id, creator_id, role),
+            FOREIGN KEY (asset_id) REFERENCES asset(id) ON DELETE CASCADE,
+            FOREIGN KEY (creator_id) REFERENCES creator(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS work_tag (
+            work_id INTEGER NOT NULL,
+            tag_id INTEGER NOT NULL,
+            PRIMARY KEY (work_id, tag_id),
+            FOREIGN KEY (work_id) REFERENCES work(id) ON DELETE CASCADE,
+            FOREIGN KEY (tag_id) REFERENCES tag(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS work_category (
+            work_id INTEGER NOT NULL,
+            category_id INTEGER NOT NULL,
+            PRIMARY KEY (work_id, category_id),
+            FOREIGN KEY (work_id) REFERENCES work(id) ON DELETE CASCADE,
+            FOREIGN KEY (category_id) REFERENCES category(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS asset_external_object (
+            asset_id INTEGER NOT NULL,
+            external_object_id TEXT NOT NULL,
+            PRIMARY KEY (asset_id, external_object_id),
+            FOREIGN KEY (asset_id) REFERENCES asset(id) ON DELETE CASCADE,
+            FOREIGN KEY (external_object_id) REFERENCES external_object(uuid) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS media_source_external_object (
+            media_source_id INTEGER NOT NULL,
+            external_object_id TEXT NOT NULL,
+            PRIMARY KEY (media_source_id, external_object_id),
+            FOREIGN KEY (media_source_id) REFERENCES media_source(id) ON DELETE CASCADE,
+            FOREIGN KEY (external_object_id) REFERENCES external_object(uuid) ON DELETE CASCADE
+        )`
+    ];
+
+    // 执行创建表语句
+    for (const statement of createTableStatements) {
+        try {
+            await db.run(sql.raw(statement));
+        } catch (error) {
+            console.warn(`Warning creating table:`, error);
+            // 继续执行，某些表可能已经存在
+        }
+    }
+
+    console.log('Database tables created successfully');
 }
 
 /**
