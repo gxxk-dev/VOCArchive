@@ -12,6 +12,9 @@ body {
     padding: var(--spacing-xl);
     transition: all 0.5s ease;
     animation: fadeInUp 0.8s ease-out;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 /* 浮动搜索 */
