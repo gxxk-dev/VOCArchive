@@ -65,10 +65,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg,
-        rgba(0, 0, 0, 0.75) 0%,
-        rgba(0, 0, 0, 0.6) 50%,
-        rgba(0, 0, 0, 0.8) 100%);
+    background: #000000;
     transition: opacity 0.8s ease-in-out;
 }
 
@@ -145,13 +142,13 @@ body {
 }
 
 .footer-links a {
-    color: #495057; /* Light theme link color */
+    color: #ebf0f5b6; /* Light theme link color */
     text-decoration: none;
     transition: color 0.3s ease;
 }
 
 .footer-links a:hover {
-    color: #0056b3; /* Light theme link hover color */
+    color: #ebf0f5b6; /* Light theme link hover color */
     text-decoration: underline;
 }
 
@@ -161,20 +158,21 @@ body {
 }
 
 .footer-social a {
-    color: #495057; /* Light theme social icon color */
+    color: #ebf0f5b6; /* Light theme social icon color */
     font-size: 1.4rem;
     transition: color 0.3s ease, transform 0.3s ease;
     display: inline-block;
 }
 
 .footer-social a:hover {
-    color: #0056b3; /* Light theme social icon hover color */
+    color: #ebf0f5b6; /* Light theme social icon hover color */
     transform: translateY(-2px);
 }
 
 .footer-copyright p {
     margin: 0;
     font-size: 0.85rem;
+    color: #ebf0f5b6;
 }
 
 .footer-version {

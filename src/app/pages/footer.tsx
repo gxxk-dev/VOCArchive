@@ -25,7 +25,7 @@ export const Footer = (props: { settings: FooterSetting[] }) => {
             </div>
             <div class="footer-copyright">
                 <p>{copyright ? copyright.text : ''}</p>
-                <div class="footer-version">
+                <div class="footer-version" onclick="window.location.href='https://vocarchive.com'">
                     <span class="version-info" title={getFullVersionString()}>
                         Powered By VOCArchive {getVersionString()}
                         {isDevelopment() && <span class="dev-indicator">• DEV</span>}
