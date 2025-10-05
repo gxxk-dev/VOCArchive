@@ -43,6 +43,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const themeToggle = document.getElementById('theme-toggle');
     const tabs = document.getElementById('tabs');
     const content = document.getElementById('content');
+    const editor = document.getElementById('editor');
+    const editorModal = document.getElementById('editor-modal');
     const modal = document.getElementById('form-modal');
     const closeModalButton = document.querySelector('.close-button');
 
@@ -71,9 +73,105 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize legacy selectors for backward compatibility
     initializeLegacySelectors();
 
+    // === IFRAME MANAGEMENT FUNCTIONS ===
+    // 定义函数在使用之前
+
+    /*
+     * 管理后台系统使用两个独立的iframe：
+     *
+     * 1. Content Iframe (#content):
+     *    - 用于显示数据列表和内容
+     *    - 连接到 /admin/content/:type 路由
+     *    - 处理数据展示、搜索、分页等功能
+     *    - 发送 edit-request, delete-request, create-request 消息
+     *
+     * 2. Editor Iframe (#editor):
+     *    - 用于编辑和创建数据项，以modal形式显示
+     *    - 连接到 /admin/editor 路由
+     *    - 处理表单编辑、保存、取消等功能
+     *    - 发送 editor-save-success, editor-cancel 消息
+     *    - 以modal弹窗形式覆盖在content iframe之上
+     *
+     * 两个iframe通过postMessage API与父窗口通信，
+     * 父窗口负责协调它们之间的交互和状态管理。
+     */
+
+    /**
+     * Show editor modal
+     */
+    function showEditorModal() {
+        if (editorModal) {
+            editorModal.classList.remove('hidden');
+        }
+    }
+
+    /**
+     * Hide editor modal
+     */
+    function hideEditorModal() {
+        if (editorModal) {
+            editorModal.classList.add('hidden');
+        }
+    }
+
+    /**
+     * Load editor for creating new item
+     * @param {string} type - Item type to create
+     */
+    async function loadEditorForCreate(type) {
+        console.log('Loading editor for create:', type);
+
+        if (!editor || !editorModal) {
+            console.error('Editor iframe or modal not found');
+            return;
+        }
+
+        // Get JWT token for editor authorization
+        const { jwtToken } = await import('./modules/config.js');
+        const editorUrl = `/admin/editor?type=${encodeURIComponent(type)}&token=${encodeURIComponent(jwtToken)}`;
+
+        editor.src = editorUrl;
+        showEditorModal();
+    }
+
+    /**
+     * Load editor for editing existing item
+     * @param {string} type - Item type
+     * @param {string} uuid - Item UUID
+     */
+    async function loadEditorForEdit(type, uuid) {
+        console.log('Loading editor for edit:', { type, uuid });
+
+        if (!editor || !editorModal) {
+            console.error('Editor iframe or modal not found');
+            return;
+        }
+
+        // Get JWT token for editor authorization
+        const { jwtToken } = await import('./modules/config.js');
+        const editorUrl = `/admin/editor?type=${encodeURIComponent(type)}&uuid=${encodeURIComponent(uuid)}&token=${encodeURIComponent(jwtToken)}`;
+
+        editor.src = editorUrl;
+        showEditorModal();
+    }
+
+    /**
+     * Close editor modal
+     */
+    function closeEditor() {
+        console.log('Closing editor modal');
+        hideEditorModal();
+
+        if (editor) {
+            editor.src = '';
+        }
+    }
+
     // --- Initial Check ---
     if (jwtToken) {
         showAdminPanel();
+        // 确保初始时隐藏editor modal
+        hideEditorModal();
     } else {
         showLogin();
     }
@@ -114,7 +212,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Theme toggle
         if (themeToggle) {
-            themeToggle.addEventListener('click', toggleTheme);
+            themeToggle.addEventListener('click', () => {
+                toggleTheme();
+                // 向两个iframe都发送主题变更消息
+                import('./modules/theme.js').then(({ getTheme }) => {
+                    const currentTheme = getTheme();
+
+                    // 向content iframe发送主题消息
+                    if (content && content.contentWindow) {
+                        content.contentWindow.postMessage({
+                            type: 'theme-change',
+                            theme: currentTheme
+                        }, '*');
+                    }
+
+                    // 向editor iframe发送主题消息
+                    if (editor && editor.contentWindow) {
+                        editor.contentWindow.postMessage({
+                            type: 'theme-change',
+                            theme: currentTheme
+                        }, '*');
+                    }
+                });
+            });
         }
 
         // Tab navigation
@@ -143,6 +263,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.querySelectorAll('.tab-button').forEach(btn => {
                     btn.classList.toggle('active', btn.dataset.target === targetTab);
                 });
+
                 setCurrentTab(targetTab);
                 loadContent(targetTab, true);
             }
@@ -154,43 +275,45 @@ document.addEventListener('DOMContentLoaded', async () => {
                 handleDelete(e);
             }
             if (e.target.classList.contains('create-button')) {
-                showFormModal(e.target.dataset.target);
+                const target = e.target.dataset.target;
+                // 使用编辑器iframe而不是modal
+                loadEditorForCreate(target);
             }
             if (e.target.classList.contains('edit-button')) {
-                handleEdit(e);
+                const target = e.target.dataset.target;
+                const uuid = e.target.dataset.uuid;
+                // 使用编辑器iframe而不是handleEdit
+                if (target && uuid) {
+                    loadEditorForEdit(target, uuid);
+                } else {
+                    // 回退到原来的handleEdit逻辑
+                    handleEdit(e);
+                }
             }
         });
 
-        // Listen for messages from iframe content
+        // Listen for messages from both iframes
         console.log('Setting up message listener in parent window...');
         window.addEventListener('message', (event) => {
             console.log('Parent window received message:', event.data);
             // 验证消息来源（可以在生产环境中添加更严格的验证）
             if (event.data && event.data.type) {
                 switch (event.data.type) {
+                    // === CONTENT IFRAME MESSAGES ===
+                    // 这些消息来自content iframe（数据展示页面）
                     case 'edit-request':
-                        console.log('Received edit request from iframe:', event.data);
-                        // 模拟按钮点击事件
-                        const editEvent = {
-                            target: {
-                                dataset: {
-                                    target: event.data.target,
-                                    uuid: event.data.uuid
-                                }
-                            }
-                        };
-                        console.log('Calling handleEdit with:', editEvent);
-                        try {
-                            handleEdit(editEvent);
-                            console.log('handleEdit completed successfully');
-                        } catch (error) {
-                            console.error('Error in handleEdit:', error);
+                        console.log('Received edit request from content iframe:', event.data);
+                        // 使用编辑器iframe处理编辑请求
+                        if (event.data.target && event.data.uuid) {
+                            loadEditorForEdit(event.data.target, event.data.uuid);
+                        } else {
+                            console.error('Invalid edit request data:', event.data);
                         }
                         break;
 
                     case 'delete-request':
-                        console.log('Received delete request from iframe:', event.data);
-                        // 创建一个模拟的删除事件
+                        console.log('Received delete request from content iframe:', event.data);
+                        // 删除操作只能来自content iframe，结果也应该发送给content iframe
                         const deleteEvent = {
                             target: {
                                 dataset: {
@@ -201,11 +324,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                                         uuid: event.data.uuid
                                     },
                                     remove: () => {
-                                        // 通知 iframe 移除元素
-                                        content.contentWindow?.postMessage({
-                                            type: 'remove-row',
-                                            uuid: event.data.uuid
-                                        }, '*');
+                                        // 通知content iframe移除元素
+                                        if (content && content.contentWindow) {
+                                            content.contentWindow.postMessage({
+                                                type: 'remove-row',
+                                                uuid: event.data.uuid
+                                            }, '*');
+                                        }
                                     }
                                 })
                             }
@@ -214,28 +339,65 @@ document.addEventListener('DOMContentLoaded', async () => {
                         break;
 
                     case 'create-request':
-                        console.log('Received create request from iframe:', event.data);
-                        showFormModal(event.data.target);
+                        console.log('Received create request from content iframe:', event.data);
+                        // 使用编辑器iframe处理创建请求
+                        if (event.data.target) {
+                            loadEditorForCreate(event.data.target);
+                        } else {
+                            console.error('Invalid create request data:', event.data);
+                        }
                         break;
 
                     case 'iframe-ready':
-                        console.log('Iframe content is ready');
-                        // 发送当前主题给 iframe
+                        console.log('Content iframe is ready');
+                        // 发送当前主题给content iframe
                         import('./modules/theme.js').then(({ getTheme }) => {
                             const currentTheme = getTheme();
-                            content.contentWindow?.postMessage({
-                                type: 'theme-change',
-                                theme: currentTheme
-                            }, '*');
+                            if (content && content.contentWindow) {
+                                content.contentWindow.postMessage({
+                                    type: 'theme-change',
+                                    theme: currentTheme
+                                }, '*');
+                            }
                         });
                         break;
 
                     case 'test-message':
-                        console.log('Received test message from iframe:', event.data.message);
+                        console.log('Received test message from content iframe:', event.data.message);
+                        break;
+
+                    // === EDITOR IFRAME MESSAGES ===
+                    // 这些消息来自editor iframe（编辑器页面）
+                    case 'editor-iframe-ready':
+                        console.log('Editor iframe is ready');
+                        // 发送当前主题给编辑器 iframe
+                        import('./modules/theme.js').then(({ getTheme }) => {
+                            const currentTheme = getTheme();
+                            if (editor && editor.contentWindow) {
+                                editor.contentWindow.postMessage({
+                                    type: 'theme-change',
+                                    theme: currentTheme
+                                }, '*');
+                            }
+                        });
+                        break;
+
+                    case 'editor-save-success':
+                        console.log('Editor save successful:', event.data);
+                        // 关闭编辑器并刷新内容
+                        closeEditor();
+                        // 刷新content iframe以显示更新后的数据
+                        const currentTab = new URLSearchParams(window.location.search).get('tab') || 'work';
+                        loadContent(currentTab, true);
+                        break;
+
+                    case 'editor-cancel':
+                        console.log('Editor cancelled');
+                        closeEditor();
                         break;
 
                     default:
-                        console.log('Unknown message type from iframe:', event.data.type);
+                        console.log('Unknown message type:', event.data.type);
                         break;
                 }
             }
@@ -248,6 +410,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 modal.classList.add('hidden');
             }
         });
+
+        // 点击editor modal背景关闭modal
+        if (editorModal) {
+            editorModal.addEventListener('click', (e) => {
+                if (e.target === editorModal) {
+                    closeEditor();
+                }
+            });
+        }
 
         // Global document click handler for various features
         document.addEventListener('click', (e) => {

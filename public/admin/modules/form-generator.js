@@ -324,7 +324,7 @@ export function generateFormFields(target, data = null, options = {}) {
             <input type="text" id="icon_class" name="icon_class" value="${data?.icon_class || ''}" placeholder="例如: fa-wikipedia-w, fa-music">
         `
     };
-    return (fields[target] || '<p>Form not implemented for this type.</p>') + '<button type="submit">Submit</button>';
+    return (fields[target] || '<p>Form not implemented for this type.</p>');
 }
 
 // --- Dynamic Row Creators ---

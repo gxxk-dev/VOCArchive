@@ -10,6 +10,7 @@
     --text-primary: #ffffff;
     --text-secondary: #888;
     --text-accent: #b0b0b0;
+    --text-warning: #f59e0b;
 
     /* 尺寸变量 */
     --card-radius: 24px;
@@ -195,7 +196,7 @@ body {
 }
 
 .dev-indicator {
-    color: var(--text-warning, #f59e0b);
+    color: var(--text-warning, #f59e0b) !important; 
     font-weight: 600;
     margin-left: 4px;
 }

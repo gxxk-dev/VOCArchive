@@ -60,6 +60,8 @@ export const AdminPage = (props: AdminPageProps) => {
                     <button class={`tab-button ${activeTab === 'site_config' ? 'active' : ''}`} data-target="site_config">系统配置 (Config)</button>
                     <button class={`tab-button ${activeTab === 'migration' ? 'active' : ''}`} data-target="migration">迁移管理 (Migration)</button>
                 </nav>
+
+                {/* Content iframe for displaying lists and data */}
                 <iframe
                     id="content"
                     src=""
@@ -67,6 +69,18 @@ export const AdminPage = (props: AdminPageProps) => {
                     style="border: none; background: transparent; width: 100%; height: 100%;"
                     data-initial-tab={activeTab}>
                 </iframe>
+            </div>
+
+            {/* Editor iframe modal for editing items */}
+            <div id="editor-modal" class="modal hidden">
+                <div class="editor-modal-content">
+                    <iframe
+                        id="editor"
+                        src=""
+                        frameborder="0"
+                        style="border: none; background: transparent; width: 100%; height: 100%;">
+                    </iframe>
+                </div>
             </div>
 
             {/* Create/Edit Modal */}

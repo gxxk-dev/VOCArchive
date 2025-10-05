@@ -22,6 +22,7 @@ import { AdminPage } from './pages/admin'
 import { MigrationPage } from './pages/migration'
 import { TestToolsPage } from './pages/test-tools'
 import { AdminContentPage } from './pages/admin-content'
+import { AdminEditorPage } from './pages/admin-editor'
 import { UnauthorizedPage } from './pages/unauthorized'
 import { loadAdminData, isValidAdminType } from './admin/data-loader'
 import { createDrizzleClient } from './db/client'
@@ -338,6 +339,15 @@ app.get('/admin/content/:type', adminContentMiddleware, async (c) => {
     return c.html(<AdminContentPage
         type={type}
         contentData={contentData}
+    />)
+})
+
+app.get('/admin/editor', adminContentMiddleware, async (c) => {
+    const { type, uuid } = c.req.query()
+
+    return c.html(<AdminEditorPage
+        type={type}
+        uuid={uuid}
     />)
 })
 
