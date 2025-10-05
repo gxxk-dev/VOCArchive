@@ -1,22 +1,23 @@
 {
 	"name": "vocarchive",
-	"version": "0.0.0",
+	"version": "0.0.1",
 	"private": true,
 	"scripts": {
-		"deploy": "wrangler deploy --minify --keep-vars",
-		"dev": "wrangler dev",
+		"deploy": "cross-env NODE_ENV=production npm run build:version && wrangler deploy --minify --keep-vars",
+		"dev": "npm run build:version && wrangler dev",
 		"cf-typegen": "wrangler types --env-interface CloudflareBindings",
 		"db:generate": "drizzle-kit generate",
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
 		"build:migrations": "node scripts/generate-migration-registry.js",
 		"build:version": "node scripts/generate-version-info.js",
-		"prebuild": "npm run build:migrations && npm run build:version"
+		"build:version:prod": "cross-env NODE_ENV=production node scripts/generate-version-info.js"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20250812.0",
 		"@types/node": "^24.2.0",
 		"@types/uuid": "^10.0.0",
+		"cross-env": "^7.0.3",
 		"drizzle-kit": "^0.31.4",
 		"typescript": "^5.5.2",
 		"wrangler": "^4.25.1"
