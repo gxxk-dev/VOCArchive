@@ -7,6 +7,7 @@ export { ExternalSourcesTable } from './external-sources-table'
 export { ExternalObjectsTable } from './external-objects-table'
 export { AssetsTable } from './assets-table'
 export { MediaSourcesTable } from './media-sources-table'
+export { MigrationTable } from './migration-table'
 
 // Base admin UI components
 export {
@@ -29,6 +30,7 @@ export type { ExternalSourcesTableProps } from './external-sources-table'
 export type { ExternalObjectsTableProps } from './external-objects-table'
 export type { AssetsTableProps } from './assets-table'
 export type { MediaSourcesTableProps } from './media-sources-table'
+export type { MigrationTableProps } from './migration-table'
 
 // Base component types
 export type {

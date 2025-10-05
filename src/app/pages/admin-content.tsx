@@ -9,7 +9,8 @@ import {
     ExternalSourcesTable,
     ExternalObjectsTable,
     AssetsTable,
-    MediaSourcesTable
+    MediaSourcesTable,
+    MigrationTable
 } from './components/admin'
 
 export interface AdminContentPageProps {
@@ -72,14 +73,7 @@ export const AdminContentPage = (props: AdminContentPageProps) => {
                 return <DataTable target="wiki_platform" data={contentData.data} title="Wiki平台 (Wiki)" />;
 
             case 'migration':
-                return (
-                    <div>
-                        <div class="controls">
-                            <h2>迁移管理 (Migration)</h2>
-                        </div>
-                        <p>迁移管理界面将在此渲染...</p>
-                    </div>
-                );
+                return <MigrationTable />;
 
             default:
                 return (
@@ -98,6 +92,7 @@ export const AdminContentPage = (props: AdminContentPageProps) => {
                 <title>Admin Content - {type}</title>
                 <link rel="stylesheet" href="/css/common.css" />
                 <link rel="stylesheet" href="/css/admin.css" />
+                <link rel="stylesheet" href="/css/migration.css" />
                 <link rel="stylesheet" href="/admin/css/selectors.css" />
                 <script type="module" src="/admin/md3-select.js"></script>
                 <script type="module" src="/admin/modules/api.js"></script>

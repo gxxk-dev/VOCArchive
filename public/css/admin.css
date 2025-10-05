@@ -565,11 +565,12 @@ h1, h2, h3, h4, h5, h6 {
     color: #f0f0f0;
 }
 
+/* 这里会影响migration下的页面样式 似乎禁用了也没啥副作用 先就搁置在这吧
 [data-theme="dark"] p,
 [data-theme="dark"] span,
 [data-theme="dark"] div {
     color: #e0e0e0;
-}
+} */
 
 [data-theme="dark"] label {
     color: #e0e0e0;
