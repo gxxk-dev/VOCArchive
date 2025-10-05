@@ -1,5 +1,6 @@
 import { jsx } from 'hono/jsx'
 import { WorkListItem } from '../../../db/types'
+import { AdminHeader, EmptyState, ActionButtons } from './base'
 
 export interface WorkCardProps {
     works: WorkListItem[]
@@ -8,20 +9,22 @@ export interface WorkCardProps {
 export const WorkCard = (props: WorkCardProps) => {
     if (!props.works || props.works.length === 0) {
         return (
-            <div class="controls">
-                <h2>Work</h2>
-                <button class="create-button" data-target="work">Create New Work</button>
-                <p>No work found.</p>
-            </div>
+            <EmptyState
+                title="Work"
+                target="work"
+                createButtonText="Create New Work"
+                message="No work found."
+            />
         )
     }
 
     return (
         <div>
-            <div class="controls">
-                <h2>Work</h2>
-                <button class="create-button" data-target="work">Create New Work</button>
-            </div>
+            <AdminHeader
+                title="Work"
+                target="work"
+                createButtonText="Create New Work"
+            />
             <div id="work-grid">
                 {props.works.map(work => {
                     const title = work.titles.find(t => t.is_official)?.title || work.titles[0]?.title || 'Untitled';
@@ -36,10 +39,13 @@ export const WorkCard = (props: WorkCardProps) => {
                                 <h3 class="work-card-title">{title}</h3>
                                 <p class="work-card-uuid uuid">{work.work_uuid}</p>
                             </div>
-                            <div class="work-card-actions">
-                                <button class="edit-button" data-target="work" data-uuid={work.work_uuid}>Edit</button>
-                                <button class="delete-button" data-target="work">Delete</button>
-                            </div>
+                            <ActionButtons
+                                target="work"
+                                uuid={work.work_uuid}
+                                editText="Edit"
+                                deleteText="Delete"
+                                className="work-card-actions"
+                            />
                         </div>
                     );
                 })}

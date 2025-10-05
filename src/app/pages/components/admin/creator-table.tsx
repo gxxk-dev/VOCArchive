@@ -1,5 +1,6 @@
 import { jsx } from 'hono/jsx'
 import { Creator } from '../../../db/types'
+import { AdminHeader, EmptyState, UuidTableCell, TableActionButtons } from './base'
 
 export interface CreatorTableProps {
     creators: Creator[]
@@ -10,22 +11,22 @@ export const CreatorTable = (props: CreatorTableProps) => {
 
     if (!creators || creators.length === 0) {
         return (
-            <div>
-                <div class="controls">
-                    <h2>作者 (Creators)</h2>
-                    <button class="create-button" data-target="creator">创建新作者</button>
-                </div>
-                <p>暂无作者。</p>
-            </div>
+            <EmptyState
+                title="作者 (Creators)"
+                target="creator"
+                createButtonText="创建新作者"
+                message="暂无作者。"
+            />
         );
     }
 
     return (
         <div>
-            <div class="controls">
-                <h2>作者 (Creators)</h2>
-                <button class="create-button" data-target="creator">创建新作者</button>
-            </div>
+            <AdminHeader
+                title="作者 (Creators)"
+                target="creator"
+                createButtonText="创建新作者"
+            />
             <div class="table-wrapper">
                 <table>
                     <thead>
@@ -40,11 +41,7 @@ export const CreatorTable = (props: CreatorTableProps) => {
                         {creators.map(creator => {
                             return (
                                 <tr data-uuid={creator.uuid}>
-                                    <td>
-                                        <span class="uuid" title={creator.uuid}>
-                                            {creator.uuid.substring(0, 8)}...
-                                        </span>
-                                    </td>
+                                    <UuidTableCell uuid={creator.uuid} />
                                     <td class="creator-name">
                                         {creator.name ? (
                                             creator.name
@@ -53,10 +50,12 @@ export const CreatorTable = (props: CreatorTableProps) => {
                                         )}
                                     </td>
                                     <td class="creator-type">{creator.type}</td>
-                                    <td>
-                                        <button class="edit-button" data-uuid={creator.uuid} data-target="creator">编辑</button>
-                                        <button class="delete-button" data-uuid={creator.uuid} data-target="creator">删除</button>
-                                    </td>
+                                    <TableActionButtons
+                                        target="creator"
+                                        uuid={creator.uuid}
+                                        editText="编辑"
+                                        deleteText="删除"
+                                    />
                                 </tr>
                             );
                         })}

@@ -1,5 +1,6 @@
 import { jsx } from 'hono/jsx'
 import { TagApi, CategoryApi } from '../../../db/types'
+import { AdminHeader, EmptyState, UuidTableCell, TableActionButtons } from './base'
 
 export interface TagsTableProps {
     tags: TagApi[]
@@ -10,22 +11,22 @@ export const TagsTable = (props: TagsTableProps) => {
 
     if (!tags || tags.length === 0) {
         return (
-            <div>
-                <div class="controls">
-                    <h2>标签 (Tags)</h2>
-                    <button class="create-button" data-target="tag">创建新标签</button>
-                </div>
-                <p>暂无标签。</p>
-            </div>
+            <EmptyState
+                title="标签 (Tags)"
+                target="tag"
+                createButtonText="创建新标签"
+                message="暂无标签。"
+            />
         );
     }
 
     return (
         <div>
-            <div class="controls">
-                <h2>标签 (Tags)</h2>
-                <button class="create-button" data-target="tag">创建新标签</button>
-            </div>
+            <AdminHeader
+                title="标签 (Tags)"
+                target="tag"
+                createButtonText="创建新标签"
+            />
             <div class="table-wrapper">
                 <table>
                     <thead>
@@ -38,16 +39,14 @@ export const TagsTable = (props: TagsTableProps) => {
                     <tbody>
                         {tags.map(tag => (
                             <tr data-uuid={tag.uuid}>
-                                <td>
-                                    <span class="uuid" title={tag.uuid}>
-                                        {tag.uuid.substring(0, 8)}...
-                                    </span>
-                                </td>
+                                <UuidTableCell uuid={tag.uuid} />
                                 <td class="tag-name">{tag.name}</td>
-                                <td>
-                                    <button class="edit-button" data-uuid={tag.uuid} data-target="tag">编辑</button>
-                                    <button class="delete-button" data-uuid={tag.uuid} data-target="tag">删除</button>
-                                </td>
+                                <TableActionButtons
+                                    target="tag"
+                                    uuid={tag.uuid}
+                                    editText="编辑"
+                                    deleteText="删除"
+                                />
                             </tr>
                         ))}
                     </tbody>
@@ -66,34 +65,34 @@ export const CategoriesTable = (props: CategoriesTableProps) => {
 
     if (!categories) {
         return (
-            <div>
-                <div class="controls">
-                    <h2>分类 (Categories)</h2>
-                    <button class="create-button" data-target="category">创建新分类</button>
-                </div>
-                <p class="error-message">无法加载分类数据。</p>
-            </div>
+            <EmptyState
+                title="分类 (Categories)"
+                target="category"
+                createButtonText="创建新分类"
+                message="无法加载分类数据。"
+                isError={true}
+            />
         );
     }
 
     if (categories.length === 0) {
         return (
-            <div>
-                <div class="controls">
-                    <h2>分类 (Categories)</h2>
-                    <button class="create-button" data-target="category">创建新分类</button>
-                </div>
-                <p>暂无分类。</p>
-            </div>
+            <EmptyState
+                title="分类 (Categories)"
+                target="category"
+                createButtonText="创建新分类"
+                message="暂无分类。"
+            />
         );
     }
 
     return (
         <div>
-            <div class="controls">
-                <h2>分类 (Categories)</h2>
-                <button class="create-button" data-target="category">创建新分类</button>
-            </div>
+            <AdminHeader
+                title="分类 (Categories)"
+                target="category"
+                createButtonText="创建新分类"
+            />
             <div class="table-wrapper">
                 <table>
                     <thead>
@@ -107,25 +106,17 @@ export const CategoriesTable = (props: CategoriesTableProps) => {
                     <tbody>
                         {categories.map(category => (
                             <tr data-uuid={category.uuid}>
-                                <td>
-                                    <span class="uuid" title={category.uuid}>
-                                        {category.uuid.substring(0, 8)}...
-                                    </span>
-                                </td>
+                                <UuidTableCell uuid={category.uuid} />
                                 <td class="category-name">{category.name}</td>
                                 <td class="parent-category">
-                                    {category.parent_uuid ? (
-                                        <span class="uuid" title={category.parent_uuid}>
-                                            {category.parent_uuid.substring(0, 8)}...
-                                        </span>
-                                    ) : (
-                                        <span class="null-value">NULL</span>
-                                    )}
+                                    <UuidTableCell uuid={category.parent_uuid} />
                                 </td>
-                                <td>
-                                    <button class="edit-button" data-uuid={category.uuid} data-target="category">编辑</button>
-                                    <button class="delete-button" data-uuid={category.uuid} data-target="category">删除</button>
-                                </td>
+                                <TableActionButtons
+                                    target="category"
+                                    uuid={category.uuid}
+                                    editText="编辑"
+                                    deleteText="删除"
+                                />
                             </tr>
                         ))}
                     </tbody>
