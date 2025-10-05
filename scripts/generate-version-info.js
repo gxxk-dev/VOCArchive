@@ -95,7 +95,7 @@ export function getFullVersionString(): string {
 
     if (info.buildTime) {
         const buildDate = new Date(info.buildTime);
-        parts.push(\`built \${buildDate.toLocaleString()}\`);
+        parts.push(\`built \${buildDate.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}\`);
     }
 
     return parts.join(' • ');
