@@ -2715,3 +2715,40 @@ select#key option[value*="title"] {
     border: none;
     border-radius: 0 0 8px 8px;
 }
+
+/* 管理后台浅色模式下的Footer样式 */
+/* 默认浅色模式（非深色主题时）footer使用深色文字 */
+body:not([data-theme="dark"]) .site-footer {
+    color: #495057;
+}
+
+body:not([data-theme="dark"]) .footer-links a {
+    color: #495057;
+}
+
+body:not([data-theme="dark"]) .footer-links a:hover {
+    color: #212529;
+}
+
+body:not([data-theme="dark"]) .footer-social a {
+    color: #495057;
+}
+
+body:not([data-theme="dark"]) .footer-social a:hover {
+    color: #212529;
+}
+
+body:not([data-theme="dark"]) .footer-copyright p {
+    color: #6c757d;
+}
+
+body:not([data-theme="dark"]) .version-info {
+    color: #495057;
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
+}
+
+body:not([data-theme="dark"]) .version-info:hover {
+    background-color: #dee2e6;
+    border-color: #adb5bd;
+}

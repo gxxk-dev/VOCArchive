@@ -8,10 +8,11 @@ function getGitInfo() {
     try {
         const gitCommit = execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
         const gitBranch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim();
-        return { gitCommit, gitBranch };
+        const commitMessage = execSync('git log -1 --pretty=%s', { encoding: 'utf8' }).trim();
+        return { gitCommit, gitBranch, commitMessage };
     } catch (error) {
         console.warn('Warning: Could not get Git information:', error.message);
-        return { gitCommit: undefined, gitBranch: undefined };
+        return { gitCommit: undefined, gitBranch: undefined, commitMessage: undefined };
     }
 }
 
@@ -27,7 +28,7 @@ function getPackageVersion() {
 }
 
 function generateVersionInfo() {
-    const { gitCommit, gitBranch } = getGitInfo();
+    const { gitCommit, gitBranch, commitMessage } = getGitInfo();
     const version = getPackageVersion();
     const buildTime = new Date().toISOString();
     const buildEnv = process.env.NODE_ENV || 'development';
@@ -36,6 +37,7 @@ function generateVersionInfo() {
         version,
         gitCommit,
         gitBranch,
+        commitMessage,
         buildTime,
         buildEnv
     };
@@ -50,6 +52,7 @@ export interface VersionInfo {
     version: string;
     gitCommit?: string;
     gitBranch?: string;
+    commitMessage?: string;
     buildTime?: string;
     buildEnv?: string;
 }
@@ -84,6 +87,10 @@ export function getVersionString(): string {
 export function getFullVersionString(): string {
     const info = getVersionInfo();
     let parts = [\`v\${info.version}\`];
+
+    if (info.commitMessage) {
+        parts.push(info.commitMessage);
+    }
 
     if (info.gitCommit) {
         parts.push(\`commit \${info.gitCommit}\`);
