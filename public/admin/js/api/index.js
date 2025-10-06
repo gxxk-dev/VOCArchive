@@ -1,6 +1,6 @@
 // API communication layer module
 
-import { API_BASE_URL, jwtToken } from './config.js';
+import { API_BASE_URL, jwtToken } from '../core/config.js';
 
 // --- API Utilities ---
 export async function apiFetch(endpoint, options = {}) {
@@ -11,7 +11,7 @@ export async function apiFetch(endpoint, options = {}) {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
     if (response.status === 401) {
         // Import showLogin function from auth module
-        const { showLogin } = await import('./auth.js');
+        const { showLogin } = await import('../core/auth.js');
         showLogin();
         throw new Error('Unauthorized');
     }

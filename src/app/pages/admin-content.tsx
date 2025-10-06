@@ -94,14 +94,14 @@ export const AdminContentPage = (props: AdminContentPageProps) => {
                 <link rel="stylesheet" href="/css/admin.css" />
                 <link rel="stylesheet" href="/css/migration.css" />
                 <link rel="stylesheet" href="/admin/css/selectors.css" />
-                <script type="module" src="/admin/md3-select.js"></script>
-                <script type="module" src="/admin/modules/api.js"></script>
-                <script type="module" src="/admin/modules/theme.js"></script>
-                <script src="/admin/iframe-handler.js"></script>
+                <script type="module" src="/admin/js/ui/components/md3-select.js"></script>
+                <script type="module" src="/admin/js/api/index.js"></script>
+                <script type="module" src="/admin/js/ui/theme.js"></script>
+                <script src="/admin/js/iframe-client.js"></script>
                 <script type="module" dangerouslySetInnerHTML={{
                     __html: `
                     // Initialize necessary modules for iframe content
-                    import { initializeTheme } from '/admin/modules/theme.js';
+                    import { initializeTheme } from '/admin/js/ui/theme.js';
 
                     document.addEventListener('DOMContentLoaded', () => {
                         // Initialize theme

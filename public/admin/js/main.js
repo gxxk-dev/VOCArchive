@@ -1,23 +1,26 @@
 // Main admin application entry point
 
 // Import required modules only
-import { jwtToken, setCurrentTab, allExternalObjects, setAllExternalObjects } from './modules/config.js';
-import { initializeTheme, initializeThemeElements, toggleTheme } from './modules/theme.js';
+import { jwtToken, setCurrentTab, allExternalObjects, setAllExternalObjects } from './core/config.js';
+import { initializeTheme, initializeThemeElements, toggleTheme } from './ui/theme.js';
 import {
     showLogin,
     showAdminPanel,
     handleLogin,
     initializeAuthElements
-} from './modules/auth.js';
+} from './core/auth.js';
 import {
     loadContent,
-    initializeCrudElements
-} from './modules/crud-handlers.js';
+    initializeContentLoaderElements
+} from './ui/content-loader.js';
 import {
     copyToClipboard,
     renderExternalObjectsList,
     updatePageTitle
-} from './modules/utils.js';
+} from './utils/index.js';
+import { apiFetch } from './api/index.js';
+import { showEditorModal, hideEditorModal, loadEditorForCreate, loadEditorForEdit, closeEditor } from './ui/iframe-manager.js';
+
 // Application initialization
 document.addEventListener('DOMContentLoaded', async () => {
     // --- DOM Elements ---
@@ -36,7 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize module DOM elements
     initializeAuthElements();
     initializeThemeElements();
-    initializeCrudElements();
+    initializeContentLoaderElements();
 
     // Load initial page title configuration
     await loadInitialPageTitle();
@@ -48,98 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupEventListeners();
 
     // === IFRAME MANAGEMENT FUNCTIONS ===
-    // 定义函数在使用之前
-
-    /*
-     * 管理后台系统使用两个独立的iframe：
-     *
-     * 1. Content Iframe (#content):
-     *    - 用于显示数据列表和内容
-     *    - 连接到 /admin/content/:type 路由
-     *    - 处理数据展示、搜索、分页等功能
-     *    - 发送 edit-request, delete-request, create-request 消息
-     *
-     * 2. Editor Iframe (#editor):
-     *    - 用于编辑和创建数据项，以modal形式显示
-     *    - 连接到 /admin/editor 路由
-     *    - 处理表单编辑、保存、取消等功能
-     *    - 发送 editor-save-success, editor-cancel 消息
-     *    - 以modal弹窗形式覆盖在content iframe之上
-     *
-     * 两个iframe通过postMessage API与父窗口通信，
-     * 父窗口负责协调它们之间的交互和状态管理。
-     */
-
-    /**
-     * Show editor modal
-     */
-    function showEditorModal() {
-        if (editorModal) {
-            editorModal.classList.remove('hidden');
-        }
-    }
-
-    /**
-     * Hide editor modal
-     */
-    function hideEditorModal() {
-        if (editorModal) {
-            editorModal.classList.add('hidden');
-        }
-    }
-
-    /**
-     * Load editor for creating new item
-     * @param {string} type - Item type to create
-     */
-    async function loadEditorForCreate(type) {
-        console.log('Loading editor for create:', type);
-
-        if (!editor || !editorModal) {
-            console.error('Editor iframe or modal not found');
-            return;
-        }
-
-        // Get JWT token for editor authorization
-        const { jwtToken } = await import('./modules/config.js');
-        const editorUrl = `/admin/editor?type=${encodeURIComponent(type)}&token=${encodeURIComponent(jwtToken)}`;
-
-        editor.src = editorUrl;
-        showEditorModal();
-    }
-
-    /**
-     * Load editor for editing existing item
-     * @param {string} type - Item type
-     * @param {string} uuid - Item UUID
-     */
-    async function loadEditorForEdit(type, uuid) {
-        console.log('Loading editor for edit:', { type, uuid });
-
-        if (!editor || !editorModal) {
-            console.error('Editor iframe or modal not found');
-            return;
-        }
-
-        // Get JWT token for editor authorization
-        const { jwtToken } = await import('./modules/config.js');
-        const editorUrl = `/admin/editor?type=${encodeURIComponent(type)}&uuid=${encodeURIComponent(uuid)}&token=${encodeURIComponent(jwtToken)}`;
-
-        editor.src = editorUrl;
-        showEditorModal();
-    }
-
-    /**
-     * Close editor modal
-     */
-    function closeEditor() {
-        console.log('Closing editor modal');
-        hideEditorModal();
-
-        if (editor) {
-            editor.src = '';
-        }
-    }
+    // The implementation is now in iframe-manager.js
 
     /**
      * Handle backend delete operation and refresh content
@@ -149,9 +61,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function handleBackendDelete(target, uuid) {
         try {
             console.log('Deleting item:', { target, uuid });
-
-            // Import API module dynamically
-            const { apiFetch } = await import('./modules/api.js');
 
             // Handle special cases for delete endpoints
             if (target === 'footer') {
@@ -198,7 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (jwtToken) {
         showAdminPanel();
         // 确保初始时隐藏editor modal
-        hideEditorModal();
+        hideEditorModal(editorModal);
     } else {
         showLogin();
     }
@@ -206,8 +115,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load initial page title configuration
     async function loadInitialPageTitle() {
         try {
-            const { apiFetch } = await import('./modules/api.js');
-            const { setAdminTitleTemplate } = await import('./modules/config.js');
+            const { setAdminTitleTemplate } = await import('./core/config.js');
             const config = await apiFetch('/config/public');
             if (config.admin_title) {
                 setAdminTitleTemplate(config.admin_title);
@@ -242,7 +150,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             themeToggle.addEventListener('click', () => {
                 toggleTheme();
                 // 向两个iframe都发送主题变更消息
-                import('./modules/theme.js').then(({ getTheme }) => {
+                import('./ui/theme.js').then(({ getTheme }) => {
                     const currentTheme = getTheme();
 
                     // 向content iframe发送主题消息
@@ -309,7 +217,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         console.log('Received edit request from content iframe:', event.data);
                         // 使用编辑器iframe处理编辑请求
                         if (event.data.target && event.data.uuid) {
-                            loadEditorForEdit(event.data.target, event.data.uuid);
+                            loadEditorForEdit(editor, editorModal, event.data.target, event.data.uuid);
                         } else {
                             console.error('Invalid edit request data:', event.data);
                         }
@@ -325,7 +233,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         console.log('Received create request from content iframe:', event.data);
                         // 使用编辑器iframe处理创建请求
                         if (event.data.target) {
-                            loadEditorForCreate(event.data.target);
+                            loadEditorForCreate(editor, editorModal, event.data.target);
                         } else {
                             console.error('Invalid create request data:', event.data);
                         }
@@ -334,7 +242,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     case 'iframe-ready':
                         console.log('Content iframe is ready');
                         // 发送当前主题给content iframe
-                        import('./modules/theme.js').then(({ getTheme }) => {
+                        import('./ui/theme.js').then(({ getTheme }) => {
                             const currentTheme = getTheme();
                             if (content && content.contentWindow) {
                                 content.contentWindow.postMessage({
@@ -354,7 +262,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     case 'editor-iframe-ready':
                         console.log('Editor iframe is ready');
                         // 发送当前主题给编辑器 iframe
-                        import('./modules/theme.js').then(({ getTheme }) => {
+                        import('./ui/theme.js').then(({ getTheme }) => {
                             const currentTheme = getTheme();
                             if (editor && editor.contentWindow) {
                                 editor.contentWindow.postMessage({
@@ -368,7 +276,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     case 'editor-save-success':
                         console.log('Editor save successful:', event.data);
                         // 关闭编辑器并刷新内容
-                        closeEditor();
+                        closeEditor(editor, editorModal);
                         // 刷新content iframe以显示更新后的数据
                         const currentTab = new URLSearchParams(window.location.search).get('tab') || 'work';
                         loadContent(currentTab, true);
@@ -376,7 +284,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     case 'editor-cancel':
                         console.log('Editor cancelled');
-                        closeEditor();
+                        closeEditor(editor, editorModal);
                         break;
 
                     default:
@@ -390,7 +298,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (editorModal) {
             editorModal.addEventListener('click', (e) => {
                 if (e.target === editorModal) {
-                    closeEditor();
+                    closeEditor(editor, editorModal);
                 }
             });
         }
@@ -440,7 +348,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // External objects loading helper
     async function loadExternalObjects() {
         try {
-            const { apiFetch } = await import('./modules/api.js');
             const objects = await apiFetch('/list/external_objects');
             setAllExternalObjects(objects);
         } catch (error) {

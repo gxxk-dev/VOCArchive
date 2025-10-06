@@ -15,8 +15,8 @@ export const AdminPage = (props: AdminPageProps) => {
             title="VOCArchive - 管理后台"
             footerSettings={props.footerSettings}
             cssFiles={['/css/common.css', '/css/admin.css', '/admin/css/selectors.css']}
-            jsFiles={['/admin/md3-select.js']}
-            moduleFiles={['/admin/admin.js']}
+            jsFiles={['/admin/js/ui/components/md3-select.js']}
+            moduleFiles={['/admin/js/main.js']}
             additionalScripts={`
                 // 设置初始活跃标签
                 window.INITIAL_ACTIVE_TAB = '${activeTab}';

@@ -1,6 +1,6 @@
 // Authentication module
 
-import { apiFetch } from './api.js';
+import { apiFetch } from '../api/index.js';
 import {
     setJwtToken,
     setCurrentTab,
@@ -52,7 +52,7 @@ export async function showAdminPanel() {
     }
 
     // 加载配置后更新页面标题
-    const { updatePageTitle } = await import('./utils.js');
+    const { updatePageTitle } = await import('../utils/index.js');
     updatePageTitle(initialTab);
 
     // 设置当前标签状态

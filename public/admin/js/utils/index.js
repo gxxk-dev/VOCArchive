@@ -1,6 +1,25 @@
 // General utility functions module
 
-import { adminTitleTemplate, tabNames, allExternalSources, allExternalObjects } from './config.js';
+import { adminTitleTemplate, tabNames, allExternalSources, allExternalObjects } from '../core/config.js';
+import { apiFetch } from '../api/index.js';
+
+let generateUuidButton, generatedUuidResult;
+
+// Initialize DOM elements for tools
+export function initializeToolElements() {
+    // Tool Zone elements
+    generateUuidButton = document.getElementById('generate-uuid-button');
+    generatedUuidResult = document.getElementById('generated-uuid-result');
+}
+
+// --- UUID Generation ---
+export function setupUuidGeneration() {
+    if (generateUuidButton && generatedUuidResult) {
+        generateUuidButton.addEventListener('click', () => {
+            generatedUuidResult.value = crypto.randomUUID();
+        });
+    }
+}
 
 // --- Cell Content Rendering ---
 export function renderCellContent(data) {

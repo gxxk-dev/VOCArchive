@@ -1,12 +1,11 @@
-// CRUD operations handling module
+// UI > Content Loader
 
-import { apiFetch } from './api.js';
-import { updatePageTitle } from './utils.js';
+import { updatePageTitle } from '../utils/index.js';
 
 let content; // Global reference to content element
 
-// Initialize DOM elements for CRUD operations
-export function initializeCrudElements() {
+// Initialize DOM elements for the content loader
+export function initializeContentLoaderElements() {
     content = document.getElementById('content');
 }
 
@@ -28,7 +27,7 @@ export async function loadContent(target, forceReload = false) {
     console.log('Loading iframe content for', target, ', forceReload:', forceReload);
 
     // 获取JWT token
-    const { jwtToken } = await import('./config.js');
+    const { jwtToken } = await import('../core/config.js');
 
     // 设置iframe的src来加载新内容，包含token参数
     let src = `/admin/content/${target}`;
