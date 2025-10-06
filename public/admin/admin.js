@@ -10,15 +10,14 @@ import {
     initializeAuthElements
 } from './modules/auth.js';
 import {
-    loadContent
+    loadContent,
+    initializeCrudElements
 } from './modules/crud-handlers.js';
-import { initializeCrudElements } from './modules/crud-handlers.js';
 import {
     copyToClipboard,
-    renderExternalObjectsList
+    renderExternalObjectsList,
+    updatePageTitle
 } from './modules/utils.js';
-import { updatePageTitle } from './modules/utils.js';
-
 // Application initialization
 document.addEventListener('DOMContentLoaded', async () => {
     // --- DOM Elements ---
