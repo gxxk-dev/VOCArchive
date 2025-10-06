@@ -198,7 +198,7 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                             )}
 
                             {/* 通用占位符 */}
-                            {!['work-titles', 'work-creators', 'asset-creators', 'work-relations', 'creator-wikis', 'external-objects', 'media-sources'].includes(section.listType) && (
+                            {!['work-titles', 'work-creators', 'asset-creators', 'work-relations', 'creator-wikis', 'external-objects', 'media-sources'].includes(section.listType || '') && (
                                 <div class="dynamic-list-placeholder">
                                     <p>动态列表: {section.listType}</p>
                                     <button type="button" class="add-row-button">Add Item</button>
@@ -270,7 +270,7 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                             )}
 
                             {/* 未知选择器类型的占位符 */}
-                            {!['tags', 'categories'].includes(section.selectorType) && (
+                            {!['tags', 'categories'].includes(section.selectorType || '') && (
                                 <div class="selector-placeholder">
                                     <p>选择器: {section.selectorType}</p>
                                 </div>

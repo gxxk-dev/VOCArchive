@@ -24,6 +24,7 @@ import { TestToolsPage } from './pages/test-tools'
 import { AdminContentPage } from './pages/admin-content'
 import { AdminEditorPage } from './pages/admin-editor'
 import { UnauthorizedPage } from './pages/unauthorized'
+import type { FormOptions } from './pages/components/admin/form/form-field-types'
 import { loadAdminData, isValidAdminType } from './admin/data-loader'
 import { createDrizzleClient } from './db/client'
 import { getFooterSettings, initializeDatabaseWithMigrations, isDatabaseInitialized } from './db/operations/admin'
@@ -136,51 +137,6 @@ apiApp.route('/search', searchInfo)
 apiApp.route('/list', listInfo)
 
 const app = new Hono<{ Bindings: CloudflareBindings }>()
-
-// ========== 外部资源代理（添加 CORS 支持）==========
-app.get('/proxy/assets/*', async (c) => {
-  try {
-    const path = c.req.path.replace('/proxy/assets/', '');
-    const assetUrl = `https://assets.vocarchive.com/${path}`;
-
-    console.log(`[Proxy] 代理请求: ${assetUrl}`);
-
-    const response = await fetch(assetUrl);
-
-    if (!response.ok) {
-      return c.notFound();
-    }
-
-    // 克隆响应并添加 CORS 头部
-    const newResponse = new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: {
-        ...Object.fromEntries(response.headers),
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Expose-Headers': 'Content-Length,Content-Type',
-        'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-        'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept'
-      }
-    });
-
-    return newResponse;
-  } catch (error) {
-    console.error('[Proxy] 代理请求失败:', error);
-    return c.text('Proxy Error', 500);
-  }
-});
-
-// 处理 OPTIONS 预检请求
-app.options('/proxy/assets/*', (c) => {
-  return c.text('', 200, {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-    'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept',
-    'Access-Control-Max-Age': '86400'
-  });
-});
-
 app.route('/api', apiApp)
 
 // ========== 初始化检查中间件 ==========
@@ -347,7 +303,7 @@ app.get('/admin/editor', adminContentMiddleware, async (c) => {
     const db = createDrizzleClient(c.env.DB);
 
     let data = undefined;
-    let options = {
+    let options: FormOptions = {
         creators: [],
         tags: [],
         categories: [],
@@ -497,7 +453,7 @@ app.get('/admin/editor', adminContentMiddleware, async (c) => {
 
         // 加载外部存储源（所有表单都可能需要）
         try {
-            const externalSources = await listExternalSources(db);
+            const externalSources = await listExternalSources(db, 1, 999);
             options.allExternalSources = externalSources || [];
             console.log(`Loaded ${options.allExternalSources.length} external sources`);
         } catch (error) {
@@ -508,7 +464,7 @@ app.get('/admin/editor', adminContentMiddleware, async (c) => {
         // 加载外部对象（用于media和asset表单）
         try {
             const { listExternalObjects } = await import('./db/operations/external_object');
-            const externalObjects = await listExternalObjects(db);
+            const externalObjects = await listExternalObjects(db, 1, 999);
             options.allExternalObjects = externalObjects || [];
             console.log(`Loaded ${options.allExternalObjects.length} external objects`);
         } catch (error) {

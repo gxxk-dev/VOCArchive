@@ -1,7 +1,7 @@
 // 表单字段类型定义
 // Form Field Type Definitions
 
-import type { WorkInfo, TagApi, CategoryApi, CreatorApi, AssetWithCreators, MediaSourceWithExternalObjects } from '../../../../db/types';
+import type { WorkInfo, TagApi, CategoryApi, CreatorApi, AssetWithCreators, MediaSourceWithExternalObjects, TagWithCount, CategoryWithCount } from '../../../../db/types';
 
 export interface FormFieldBase {
     name: string;
@@ -83,8 +83,8 @@ export interface FormRenderData {
 
 export interface FormOptions {
     creators?: CreatorApi[];
-    tags?: TagApi[];
-    categories?: CategoryApi[];
+    tags?: TagWithCount[];
+    categories?: CategoryWithCount[];
     works?: any[];
     allExternalSources?: any[];
     allExternalObjects?: any[];

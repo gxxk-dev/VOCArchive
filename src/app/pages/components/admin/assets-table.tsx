@@ -22,18 +22,14 @@ export const AssetsTable = (props: AssetsTableProps) => {
 
     // Helper function to format creators
     const formatCreators = (asset: AssetApi) => {
-        if (!asset.creator) {
+        if (!asset.creator || !Array.isArray(asset.creator) || asset.creator.length === 0) {
             return <span class="null-value">无</span>;
         }
 
-        if (Array.isArray(asset.creator)) {
-            const creatorStrings = asset.creator.map(c =>
-                `${c.creator_name || c.name || ''}(${c.role || ''})`
-            );
-            return creatorStrings.join(', ');
-        } else {
-            return `${asset.creator.creator_name || asset.creator.name || ''}(${asset.creator.role || ''})`;
-        }
+        const creatorStrings = asset.creator.map(c =>
+            `${c.creator_name || ''}(${c.role || ''})`
+        );
+        return creatorStrings.join(', ');
     };
 
     // Helper function to format boolean values

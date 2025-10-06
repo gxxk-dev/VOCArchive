@@ -1,9 +1,9 @@
 import { jsx } from 'hono/jsx'
-import { ExternalObjectApi } from '../../../db/types'
+import type { ExternalObjectWithSource } from '../../../db/operations/external_object'
 import { AdminHeader, EmptyState, UuidTableCell, TableActionButtons } from './base'
 
 export interface ExternalObjectsTableProps {
-    objects: ExternalObjectApi[]
+    objects: ExternalObjectWithSource[]
     sources?: any[]  // External sources for name resolution
 }
 
@@ -34,15 +34,15 @@ export const ExternalObjectsTable = (props: ExternalObjectsTableProps) => {
     }
 
     // Helper function to get source name
-    const getSourceName = (obj: ExternalObjectApi) => {
+    const getSourceName = (obj: ExternalObjectWithSource) => {
         if (obj.source?.name) {
             return obj.source.name;
         }
-        const source = sources.find(s => s.uuid === obj.external_source_uuid);
+        const source = sources.find(s => s.uuid === obj.external_source_id);
         if (source?.name) {
             return source.name;
         }
-        return obj.external_source_uuid.substring(0, 8) + '...';
+        return obj.uuid.substring(0, 8) + '...';
     };
 
     return (
@@ -70,7 +70,7 @@ export const ExternalObjectsTable = (props: ExternalObjectsTableProps) => {
                                 <td>
                                     <span
                                         class="external-source-ref"
-                                        title={obj.source?.uuid || obj.external_source_uuid}
+                                        title={obj.source?.uuid || obj.uuid}
                                     >
                                         {getSourceName(obj)}
                                     </span>

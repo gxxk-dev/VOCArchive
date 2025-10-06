@@ -215,6 +215,21 @@ export interface CategoryApi {
     children?: CategoryApi[];
 }
 
+export interface ExternalSourceApi {
+    uuid: string;
+    type: 'raw_url' | 'ipfs';
+    name: string;
+    endpoint: string;
+    isIPFS: boolean;
+}
+
+export interface ExternalObjectApi {
+    uuid: string;
+    external_source_uuid: string;
+    mime_type: string;
+    file_id: string;
+}
+
 export interface WorkTitleApi {
     uuid: string;
     work_uuid: string;
@@ -231,6 +246,7 @@ export interface AssetApi {
     file_name: string;
     is_previewpic?: boolean;
     language?: string;
+    creator?: CreatorWithRole[];
 }
 
 export interface MediaSourceApi {
