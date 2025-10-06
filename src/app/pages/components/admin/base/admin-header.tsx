@@ -8,7 +8,7 @@ export interface AdminHeaderProps {
 }
 
 export const AdminHeader = (props: AdminHeaderProps) => {
-    const { title, target, createButtonText, showCreateButton } = props;
+    const { title, target, createButtonText, showCreateButton = true } = props;
     const defaultCreateText = `Create New ${target.charAt(0).toUpperCase() + target.slice(1)}`;
 
     return (
