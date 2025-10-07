@@ -10,6 +10,8 @@ import { updateWorkTitle } from '../db/operations/work-title';
 import { updateExternalSource } from '../db/operations/external_source';
 import { updateExternalObject } from '../db/operations/external_object';
 import { updateWikiPlatform } from '../db/operations/wiki-platforms';
+import { updateFooterSetting } from '../db/operations/admin';
+import { upsertSiteConfig } from '../db/operations/config';
 import { validateStorageSource } from '../db/utils/storage-handlers';
 import type { Work, WorkTitle, CreatorWithRole, WikiRef, Asset, WorkTitleUpdate, MediaSourceForDatabase, MediaSourceApiInput, ExternalSourceApiInput, ExternalObjectApiInput, WikiPlatformApiInput } from '../db/types';
 import { workUuidToId, externalSourceUuidToId } from '../db/utils/uuid-id-converter';
@@ -62,45 +64,173 @@ interface UpdateWorkTitleRequestBody {
 }
 
 const updateHandlers = {
-    creator: async (DB: any, body: UpdateCreatorRequestBody) => {
-        const db = createDrizzleClient(DB);
-        const full_creator = {
-            uuid: body.creator_uuid,
-            name: body.creator.name,
-            type: body.creator.type
-        };
-        return await updateCreator(db, body.creator_uuid, full_creator, body.wikis);
-    },
-    work: async (DB: any, body: UpdateWorkRequestBody) => {
-        const db = createDrizzleClient(DB);
-        return await updateWork(db, body.work_uuid, body.work, body.titles, body.license || null, body.creator, body.wikis);
-    },
-    asset: async (DB: any, body: UpdateAssetRequestBody) => {
-        const db = createDrizzleClient(DB);
-        const assetForDb = {
-            ...body.asset,
-            language: body.asset.language || null,
-            is_previewpic: body.asset.is_previewpic ?? null,
-        };
-        return await updateAsset(db, body.asset_uuid, assetForDb as any, body.creator, body.external_objects);
-    },
-    relation: async (DB: any, body: UpdateRelationRequestBody) => {
-        const db = createDrizzleClient(DB);
-        return await updateRelation(db, body.relation_uuid, body);
-    },
-    media: async (DB: any, body: UpdateMediaRequestBody) => {
+    creator: async (DB: any, body: any) => {
         const db = createDrizzleClient(DB);
 
-        const full_media_source: MediaSourceApiInput = {
-            uuid: body.media_uuid,
-            work_uuid: body.work_uuid, // Use work_uuid for API input
-            is_music: body.is_music,
-            file_name: body.file_name,
-            url: body.url,
-            mime_type: body.mime_type,
-            info: body.info
+        // 支持扁平化表单数据
+        const creatorUuid = body.uuid || body.creator_uuid;
+        const full_creator = {
+            uuid: creatorUuid,
+            name: body.name || body.creator?.name,
+            type: body.type || body.creator?.type
         };
-        return await updateMedia(db, body.media_uuid, full_media_source, body.external_objects);
+
+        // 转换 wikis 数组
+        const wikis = [];
+        if (body.wiki_platform && Array.isArray(body.wiki_platform)) {
+            for (let i = 0; i < body.wiki_platform.length; i++) {
+                if (body.wiki_platform[i] && body.wiki_id?.[i]) {
+                    wikis.push({
+                        platform: body.wiki_platform[i],
+                        identifier: body.wiki_id[i]
+                    });
+                }
+            }
+        }
+
+        return await updateCreator(db, creatorUuid, full_creator, wikis.length > 0 ? wikis : body.wikis);
+    },
+    work: async (DB: any, body: any) => {
+        const db = createDrizzleClient(DB);
+
+        // 转换扁平化表单数据为 API 格式
+        const work = {
+            uuid: body.uuid,
+            copyright_basis: body.copyright_basis || 'unknown',
+            publish_date: body.publish_date || null
+        };
+
+        // 转换 titles 数组
+        const titles = [];
+        if (body.title_text && Array.isArray(body.title_text)) {
+            for (let i = 0; i < body.title_text.length; i++) {
+                if (body.title_text[i]) {
+                    titles.push({
+                        title: body.title_text[i],
+                        language: body.title_lang?.[i] || 'ja',
+                        is_official: body.title_is_official?.[i] === 'on' || false,
+                        is_for_search: body.title_is_for_search?.[i] === 'on' || false
+                    });
+                }
+            }
+        }
+
+        // 转换 creators 数组
+        const creators = [];
+        if (body.creator_uuid && Array.isArray(body.creator_uuid)) {
+            for (let i = 0; i < body.creator_uuid.length; i++) {
+                if (body.creator_uuid[i]) {
+                    creators.push({
+                        creator_uuid: body.creator_uuid[i],
+                        role: body.creator_role?.[i] || ''
+                    });
+                }
+            }
+        }
+
+        // 转换 wikis 数组
+        const wikis = [];
+        if (body.wiki_platform && Array.isArray(body.wiki_platform)) {
+            for (let i = 0; i < body.wiki_platform.length; i++) {
+                if (body.wiki_platform[i] && body.wiki_id?.[i]) {
+                    wikis.push({
+                        platform: body.wiki_platform[i],
+                        identifier: body.wiki_id[i]
+                    });
+                }
+            }
+        }
+
+        return await updateWork(
+            db,
+            body.uuid,
+            work,
+            titles,
+            body.license || null,
+            creators.length > 0 ? creators : undefined,
+            wikis.length > 0 ? wikis : undefined
+        );
+    },
+    asset: async (DB: any, body: any) => {
+        const db = createDrizzleClient(DB);
+
+        // 支持扁平化表单数据
+        const assetUuid = body.uuid || body.asset_uuid;
+        const assetForDb = {
+            uuid: assetUuid,
+            asset_type: body.asset_type || body.asset?.asset_type,
+            work_uuid: body.work_uuid || body.asset?.work_uuid,
+            language: body.language || body.asset?.language || null,
+            is_previewpic: body.is_previewpic === 'on' || body.is_previewpic === true || body.asset?.is_previewpic || null,
+            content: body.content || body.asset?.content || ''
+        };
+
+        // 转换 creators 数组
+        let creators = body.creator;
+        if (Array.isArray(body.creator_uuid)) {
+            creators = [];
+            for (let i = 0; i < body.creator_uuid.length; i++) {
+                if (body.creator_uuid[i]) {
+                    creators.push({
+                        creator_uuid: body.creator_uuid[i],
+                        role: body.creator_role?.[i] || ''
+                    });
+                }
+            }
+        }
+
+        // 转换 external_objects 数组（过滤空值）
+        let externalObjects = body.external_objects;
+        if (Array.isArray(body.external_object_uuid)) {
+            externalObjects = body.external_object_uuid.filter((uuid: string) => uuid && uuid.trim() !== '');
+        } else if (Array.isArray(externalObjects)) {
+            externalObjects = externalObjects.filter((uuid: string) => uuid && uuid.trim() !== '');
+        } else {
+            externalObjects = undefined;
+        }
+
+        return await updateAsset(db, assetUuid, assetForDb as any, creators, externalObjects);
+    },
+    relation: async (DB: any, body: any) => {
+        const db = createDrizzleClient(DB);
+
+        // 支持扁平化表单数据
+        const relationUuid = body.uuid || body.relation_uuid;
+        const relationData = {
+            relation_uuid: relationUuid,
+            from_work_uuid: body.from_work_uuid,
+            to_work_uuid: body.to_work_uuid,
+            relation_type: body.relation_type
+        };
+
+        return await updateRelation(db, relationUuid, relationData);
+    },
+    media: async (DB: any, body: any) => {
+        const db = createDrizzleClient(DB);
+
+        // 支持扁平化表单数据
+        const mediaUuid = body.uuid || body.media_uuid;
+        const full_media_source: MediaSourceApiInput = {
+            uuid: mediaUuid,
+            work_uuid: body.work_uuid,
+            is_music: body.is_music === 'on' || body.is_music === true || body.is_music === 'true',
+            file_name: body.file_name || '',
+            url: body.url || '',
+            mime_type: body.mime_type || '',
+            info: body.info || ''
+        };
+
+        // 转换 external_objects 数组（过滤空值）
+        let externalObjects = body.external_objects;
+        if (Array.isArray(body.external_object_uuid)) {
+            externalObjects = body.external_object_uuid.filter((uuid: string) => uuid && uuid.trim() !== '');
+        } else if (Array.isArray(externalObjects)) {
+            externalObjects = externalObjects.filter((uuid: string) => uuid && uuid.trim() !== '');
+        } else {
+            externalObjects = undefined;
+        }
+
+        return await updateMedia(db, mediaUuid, full_media_source, externalObjects);
     },
     tag: async (DB: any, body: { tag_uuid: string; name: string }) => {
         const db = createDrizzleClient(DB);
@@ -115,10 +245,14 @@ const updateHandlers = {
         return await updateWorkTitle(db, body.title_uuid, body.updates);
     },
     'external_source': async (DB: any, body: ExternalSourceApiInput) => {
+        console.log('Received external_source update body:', JSON.stringify(body, null, 2));
+
         // 验证存储源配置
         const validation = validateStorageSource(body);
 
         if (!validation.valid) {
+            console.error('Storage source validation failed:', validation.error);
+            console.error('Received body:', body);
             throw new Error(validation.error);
         }
 
@@ -144,6 +278,21 @@ const updateHandlers = {
     wiki_platform: async (DB: any, body: WikiPlatformApiInput & { platform_key: string }) => {
         const db = createDrizzleClient(DB);
         return await updateWikiPlatform(db, body.platform_key, body);
+    },
+    footer: async (DB: any, body: { uuid: string; item_type: 'link' | 'social' | 'copyright'; text: string; url?: string; icon_class?: string }) => {
+        const db = createDrizzleClient(DB);
+        return await updateFooterSetting(db, {
+            uuid: body.uuid,
+            item_type: body.item_type,
+            text: body.text,
+            url: body.url,
+            icon_class: body.icon_class
+        });
+    },
+    site_config: async (DB: any, body: { key: string; value: string; description?: string }) => {
+        const db = createDrizzleClient(DB);
+        await upsertSiteConfig(db, body.key, body.value, body.description);
+        return true; // upsertSiteConfig doesn't return a value, so we return true to indicate success
     }
 };
 
