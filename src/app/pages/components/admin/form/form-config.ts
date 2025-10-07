@@ -339,7 +339,7 @@ export const externalObjectFormConfig: FormConfig = {
                     targetInputId: 'external_source_uuid',
                     dataSource: 'allExternalSources',
                     className: 'uuid',
-                    sourcePath: 'external_object.external_source_uuid'
+                    sourcePath: 'external_object.source.uuid'
                 },
                 {
                     name: 'mime_type',
@@ -367,17 +367,18 @@ export const footerFormConfig: FormConfig = {
             name: 'basic',
             title: 'Footer Item Details',
             fields: [
-                { name: 'uuid', type: 'hidden' },
+                { name: 'uuid', type: 'hidden', sourcePath: 'footer.uuid' },
                 {
                     name: 'item_type',
                     type: 'md3_select',
                     options: ['link', 'social', 'copyright'],
                     label: 'Type',
-                    required: true
+                    required: true,
+                    sourcePath: 'footer.item_type'
                 },
-                { name: 'text', type: 'text_input_required', label: 'Text' },
-                { name: 'url', type: 'text_input', label: 'URL (optional)' },
-                { name: 'icon_class', type: 'text_input', label: 'Icon Class (optional)' }
+                { name: 'text', type: 'text_input_required', label: 'Text', sourcePath: 'footer.text' },
+                { name: 'url', type: 'text_input', label: 'URL (optional)', sourcePath: 'footer.url' },
+                { name: 'icon_class', type: 'text_input', label: 'Icon Class (optional)', sourcePath: 'footer.icon_class' }
             ]
         }
     ]
@@ -458,6 +459,48 @@ export const wikiPlatformFormConfig: FormConfig = {
     ]
 };
 
+// Relation 表单配置
+export const relationFormConfig: FormConfig = {
+    sections: [
+        {
+            name: 'basic',
+            title: 'Work Relation Details',
+            fields: [
+                { name: 'relation_uuid', type: 'hidden', sourcePath: 'relation.uuid' },
+                { name: 'uuid', type: 'uuid_readonly', label: 'UUID', className: 'uuid', sourcePath: 'relation.uuid' },
+                {
+                    name: 'from_work_uuid',
+                    type: 'quick_select_input',
+                    label: '源作品 (From Work)',
+                    quickSelectId: 'from-work-quick-select',
+                    targetInputId: 'from_work_uuid',
+                    dataSource: 'options.works',
+                    className: 'uuid',
+                    sourcePath: 'relation.from_work_uuid'
+                },
+                {
+                    name: 'relation_type',
+                    type: 'md3_select',
+                    options: ['original', 'remix', 'cover', 'remake', 'picture', 'lyrics'],
+                    label: '关系类型',
+                    required: true,
+                    sourcePath: 'relation.relation_type'
+                },
+                {
+                    name: 'to_work_uuid',
+                    type: 'quick_select_input',
+                    label: '目标作品 (To Work)',
+                    quickSelectId: 'to-work-quick-select',
+                    targetInputId: 'to_work_uuid',
+                    dataSource: 'options.works',
+                    className: 'uuid',
+                    sourcePath: 'relation.to_work_uuid'
+                }
+            ]
+        }
+    ]
+};
+
 // 所有表单配置的映射
 export const formConfigs: Record<string, FormConfig> = {
     work: workFormConfig,
@@ -470,7 +513,8 @@ export const formConfigs: Record<string, FormConfig> = {
     external_object: externalObjectFormConfig,
     footer: footerFormConfig,
     site_config: siteConfigFormConfig,
-    wiki_platform: wikiPlatformFormConfig
+    wiki_platform: wikiPlatformFormConfig,
+    relation: relationFormConfig
 };
 
 // 工具函数：根据类型获取表单配置

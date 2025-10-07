@@ -681,6 +681,38 @@ export async function getFooterSettings(db: DrizzleDB): Promise<FooterSetting[]>
 }
 
 /**
+ * Get a single footer setting by UUID
+ */
+export async function getFooterByUUID(db: DrizzleDB, uuid: string): Promise<FooterSetting | null> {
+    if (!validateUUID(uuid)) {
+        return null;
+    }
+
+    const result = await db
+        .select({
+            uuid: footerSettings.uuid,
+            item_type: footerSettings.item_type,
+            text: footerSettings.text,
+            url: footerSettings.url,
+            icon_class: footerSettings.icon_class,
+        })
+        .from(footerSettings)
+        .where(eq(footerSettings.uuid, uuid))
+        .limit(1);
+
+    if (result.length === 0) {
+        return null;
+    }
+
+    const setting = result[0];
+    return {
+        ...setting,
+        url: setting.url || undefined,
+        icon_class: setting.icon_class || undefined,
+    };
+}
+
+/**
  * Insert a new footer setting
  */
 export async function insertFooterSetting(db: DrizzleDB, setting: FooterSetting): Promise<boolean> {

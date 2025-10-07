@@ -27,7 +27,7 @@ import { UnauthorizedPage } from './pages/unauthorized'
 import type { FormOptions } from './pages/components/admin/form/form-field-types'
 import { loadAdminData, isValidAdminType } from './admin/data-loader'
 import { createDrizzleClient } from './db/client'
-import { getFooterSettings, initializeDatabaseWithMigrations, isDatabaseInitialized } from './db/operations/admin'
+import { getFooterSettings, getFooterByUUID, initializeDatabaseWithMigrations, isDatabaseInitialized } from './db/operations/admin'
 import { getPublicSiteConfig, getSiteConfig } from './db/operations/config'
 import { getWorkByUUID, getWorkListWithPagination, getTotalWorkCount } from './db/operations/work'
 import { searchWorks, getAvailableLanguages } from './db/operations/search'
@@ -105,18 +105,17 @@ const adminContentMiddleware = async (c: any, next: any) => {
 
 // ========== 信息管理 ==========
 // ---------- 删除信息 ----------
+apiApp.use("/delete/*",middleware)
 apiApp.route('/delete', deleteInfo)
-    .use("/delete/*",middleware)
 // ---------- 修改信息 ----------
+apiApp.use("/update/*",middleware)
 apiApp.route('/update', updateInfo)
-    .use("/update/*",middleware)
 // ---------- 录入信息 ----------
+apiApp.use("/input/*",middleware)
 apiApp.route('/input', inputInfo)
-    .use("/input/*",middleware)
-
 // ========== 数据库迁移 ==========
+apiApp.use("/migration/*", middleware)
 apiApp.route('/migration', migration)
-    .use("/migration/*", middleware)
 
 // ========== 配置/权限 ==========
 apiApp.route('/auth', auth)
@@ -351,6 +350,12 @@ app.get('/admin/editor', adminContentMiddleware, async (c) => {
                     console.log('Loaded media data:', mediaData);
                     data = mediaData ? { media: mediaData } : undefined;
                     break;
+                case 'relation':
+                    const { getRelationByUUID } = await import('./db/operations/relation');
+                    const relationData = await getRelationByUUID(db, uuid);
+                    console.log('Loaded relation data:', relationData);
+                    data = relationData ? { relation: relationData } : undefined;
+                    break;
                 case 'external_source':
                     const { getExternalSourceByUUID } = await import('./db/operations/external_source');
                     const externalSourceData = await getExternalSourceByUUID(db, uuid);
@@ -385,6 +390,11 @@ app.get('/admin/editor', adminContentMiddleware, async (c) => {
                         console.error('Error loading wiki_platform:', error);
                         data = undefined;
                     }
+                    break;
+                case 'footer':
+                    const footerData = await getFooterByUUID(db, uuid);
+                    console.log('Loaded footer data:', footerData);
+                    data = footerData ? { footer: footerData } : undefined;
                     break;
                 default:
                     console.warn(`Unsupported type for data loading: ${type}`);

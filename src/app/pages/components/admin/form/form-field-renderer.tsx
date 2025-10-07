@@ -71,7 +71,7 @@ function getFieldValue(field: FormFieldConfig, data?: FormRenderData): string {
         }
     }
 
-    const result = value !== undefined ? value.toString() : (field.defaultValue?.toString() || '');
+    const result = (value !== undefined && value !== null) ? value.toString() : (field.defaultValue?.toString() || '');
     return result;
 }
 
@@ -179,8 +179,12 @@ function renderSelectField(field: FormFieldConfig, data?: FormRenderData) {
     // 根据字段名称获取对应的选项
     if (field.name === 'copyright_basis') {
         options = copyrightBasisOptions;
-    } else if (field.name === 'type' && field.options) {
+    } else if (field.name === 'type' && field.options?.includes('human')) {
+        // Creator type: human, virtual
         options = creatorTypeOptions;
+    } else if (field.name === 'type' && field.options?.includes('raw_url')) {
+        // Storage type: raw_url, ipfs
+        options = storageTypeOptions;
     } else if (field.name === 'is_music') {
         options = booleanOptions;
     } else if (field.name === 'is_previewpic') {
@@ -191,8 +195,6 @@ function renderSelectField(field: FormFieldConfig, data?: FormRenderData) {
         options = relationTypeOptions;
     } else if (field.name === 'item_type') {
         options = footerItemTypeOptions;
-    } else if (field.name === 'type' && field.options) {
-        options = storageTypeOptions;
     } else if (Array.isArray(field.options)) {
         options = field.options.map(opt =>
             typeof opt === 'string' ? { value: opt, text: opt } : opt

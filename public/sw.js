@@ -537,6 +537,11 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') {
     return;
   }
+  // 跳过非 http(s) 协议的请求（如 chrome-extension://）
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
 
   // 强制拦截所有assets.vocarchive.com的请求（用于调试）
   if (url.hostname === 'assets.vocarchive.com') {

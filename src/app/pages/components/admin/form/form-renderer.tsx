@@ -4,6 +4,7 @@
 import { jsx } from 'hono/jsx';
 import type { FormConfig, FormRenderData, FormOptions } from './form-field-types';
 import { renderFormField } from './form-field-renderer';
+import { MultiSelector } from './selectors';
 
 export interface FormRendererProps {
     config: FormConfig;
@@ -16,11 +17,11 @@ function renderTitleRow(title?: any, index?: number) {
     const titleData = title || { title: '', language: 'ja', is_official: false, is_for_search: false };
     return (
         <div class="dynamic-list-item" data-index={index}>
-            <input type="text" name="title_text" placeholder="Title" required value={titleData.title || ''} />
-            <input type="text" name="title_lang" placeholder="Lang" required value={titleData.language || 'ja'} />
-            <label><input type="checkbox" name="title_is_official" checked={titleData.is_official ? true : undefined} /> 官方标题</label>
-            <label><input type="checkbox" name="title_is_for_search" checked={titleData.is_for_search ? true : undefined} /> 仅用于搜索</label>
-            <button type="button" class="remove-row-button">Remove</button>
+            <input type="text" name="title_text[]" placeholder="Title" required value={titleData.title || ''} />
+            <input type="text" name="title_lang[]" placeholder="Lang" required value={titleData.language || 'ja'} />
+            <label><input type="checkbox" name="title_is_official[]" checked={titleData.is_official ? true : undefined} /> 官方标题</label>
+            <label><input type="checkbox" name="title_is_for_search[]" checked={titleData.is_for_search ? true : undefined} /> 仅用于搜索</label>
+            <button type="button" class="remove-row-button" onclick="this.parentElement.remove()">Remove</button>
         </div>
     );
 }
@@ -34,7 +35,7 @@ function renderCreatorRow(creator?: any, allCreators?: any[], index?: number) {
     return (
         <div class="dynamic-list-item" data-index={index}>
             <div class="md3-select-field">
-                <select name="creator_uuid" required>
+                <select name="creator_uuid[]" required>
                     <option value="">Select Creator</option>
                     {allCreators?.map(c => (
                         <option value={c.uuid} selected={creator_uuid === c.uuid ? true : undefined}>
@@ -45,8 +46,8 @@ function renderCreatorRow(creator?: any, allCreators?: any[], index?: number) {
                 <label class="md3-label">Creator</label>
                 <div class="md3-state-layer"></div>
             </div>
-            <input type="text" name="creator_role" placeholder="Role" required value={creatorRole} />
-            <button type="button" class="remove-row-button">Remove</button>
+            <input type="text" name="creator_role[]" placeholder="Role" required value={creatorRole} />
+            <button type="button" class="remove-row-button" onclick="this.parentElement.remove()">Remove</button>
         </div>
     );
 }
@@ -56,9 +57,9 @@ function renderWikiRow(wiki?: any, index?: number) {
     const wikiData = wiki || { platform: '', identifier: '' };
     return (
         <div class="dynamic-list-item" data-index={index}>
-            <input type="text" name="wiki_platform" placeholder="Wiki Platform" required value={wikiData.platform || ''} />
-            <input type="text" name="wiki_id" placeholder="Wiki ID" required value={wikiData.identifier || ''} />
-            <button type="button" class="remove-row-button">Remove</button>
+            <input type="text" name="wiki_platform[]" placeholder="Wiki Platform" required value={wikiData.platform || ''} />
+            <input type="text" name="wiki_id[]" placeholder="Wiki ID" required value={wikiData.identifier || ''} />
+            <button type="button" class="remove-row-button" onclick="this.parentElement.remove()">Remove</button>
         </div>
     );
 }
@@ -69,13 +70,17 @@ function renderExternalObjectsSelector(externalSources?: any[], selectedObjects?
         return <p>No external objects available</p>;
     }
 
-    // 创建已选中对象的UUID集合
     const selectedUuids = new Set(selectedObjects?.map(obj => obj.uuid) || []);
 
     return (
         <div class="external-objects-selector">
             <div class="external-objects-filter">
-                <input type="text" placeholder="Filter external objects..." class="external-object-filter" />
+                <input
+                    type="text"
+                    placeholder="Filter external objects..."
+                    class="external-object-filter"
+                    oninput="filterCheckboxes(this, '.external-object-item')"
+                />
             </div>
             <div class="external-objects-list">
                 {allExternalObjects.map(obj => {
@@ -83,9 +88,10 @@ function renderExternalObjectsSelector(externalSources?: any[], selectedObjects?
                                      externalSources?.find(s => s.uuid === obj.external_source_uuid)?.name ||
                                      '未知源';
                     const isSelected = selectedUuids.has(obj.uuid);
+                    const searchText = `${obj.file_id} ${sourceName} ${obj.mime_type}`.toLowerCase();
 
                     return (
-                        <div class="external-object-item">
+                        <div class="external-object-item" data-name={searchText}>
                             <label>
                                 <input type="checkbox" name="external_objects" value={obj.uuid} checked={isSelected ? true : undefined} />
                                 <div class="external-object-details">
@@ -128,7 +134,25 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                                             renderTitleRow(undefined, 0)
                                         }
                                     </div>
-                                    <button type="button" id="add-title-button" class="add-row-button">Add Title</button>
+
+                                    <template id="title-row-template">
+                                        <div class="dynamic-list-item">
+                                            <input type="text" name="title_text[]" placeholder="Title" required value="" />
+                                            <input type="text" name="title_lang[]" placeholder="Lang" required value="ja" />
+                                            <label><input type="checkbox" name="title_is_official[]" /> 官方标题</label>
+                                            <label><input type="checkbox" name="title_is_for_search[]" /> 仅用于搜索</label>
+                                            <button type="button" class="remove-row-button" onclick="this.parentElement.remove()">Remove</button>
+                                        </div>
+                                    </template>
+
+                                    <button
+                                        type="button"
+                                        id="add-title-button"
+                                        class="add-row-button"
+                                        onclick="addRowFromTemplate('title-row-template', 'titles-list')"
+                                    >
+                                        Add Title
+                                    </button>
                                 </div>
                             )}
 
@@ -142,7 +166,32 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                                             renderCreatorRow(undefined, options?.creators, 0)
                                         }
                                     </div>
-                                    <button type="button" id="add-creator-button" class="add-row-button">Add Creator</button>
+
+                                    <template id="creator-row-template">
+                                        <div class="dynamic-list-item">
+                                            <div class="md3-select-field">
+                                                <select name="creator_uuid[]" required>
+                                                    <option value="">Select Creator</option>
+                                                    {options?.creators?.map(c => (
+                                                        <option value={c.uuid}>{c.name}</option>
+                                                    ))}
+                                                </select>
+                                                <label class="md3-label">Creator</label>
+                                                <div class="md3-state-layer"></div>
+                                            </div>
+                                            <input type="text" name="creator_role[]" placeholder="Role" required value="" />
+                                            <button type="button" class="remove-row-button" onclick="this.parentElement.remove()">Remove</button>
+                                        </div>
+                                    </template>
+
+                                    <button
+                                        type="button"
+                                        id="add-creator-button"
+                                        class="add-row-button"
+                                        onclick="addRowFromTemplate('creator-row-template', 'creator-list')"
+                                    >
+                                        Add Creator
+                                    </button>
                                 </div>
                             )}
 
@@ -156,7 +205,32 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                                             renderCreatorRow(undefined, options?.creators, 0)
                                         }
                                     </div>
-                                    <button type="button" id="add-asset-creator-button" class="add-row-button">Add Creator</button>
+
+                                    <template id="asset-creator-row-template">
+                                        <div class="dynamic-list-item">
+                                            <div class="md3-select-field">
+                                                <select name="creator_uuid[]" required>
+                                                    <option value="">Select Creator</option>
+                                                    {options?.creators?.map(c => (
+                                                        <option value={c.uuid}>{c.name}</option>
+                                                    ))}
+                                                </select>
+                                                <label class="md3-label">Creator</label>
+                                                <div class="md3-state-layer"></div>
+                                            </div>
+                                            <input type="text" name="creator_role[]" placeholder="Role" required value="" />
+                                            <button type="button" class="remove-row-button" onclick="this.parentElement.remove()">Remove</button>
+                                        </div>
+                                    </template>
+
+                                    <button
+                                        type="button"
+                                        id="add-asset-creator-button"
+                                        class="add-row-button"
+                                        onclick="addRowFromTemplate('asset-creator-row-template', 'asset-creator-list')"
+                                    >
+                                        Add Creator
+                                    </button>
                                 </div>
                             )}
 
@@ -183,7 +257,23 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                                             renderWikiRow(undefined, 0)
                                         }
                                     </div>
-                                    <button type="button" id="add-wiki-button" class="add-row-button">Add Wiki</button>
+
+                                    <template id="wiki-row-template">
+                                        <div class="dynamic-list-item">
+                                            <input type="text" name="wiki_platform[]" placeholder="Wiki Platform" required value="" />
+                                            <input type="text" name="wiki_id[]" placeholder="Wiki ID" required value="" />
+                                            <button type="button" class="remove-row-button" onclick="this.parentElement.remove()">Remove</button>
+                                        </div>
+                                    </template>
+
+                                    <button
+                                        type="button"
+                                        id="add-wiki-button"
+                                        class="add-row-button"
+                                        onclick="addRowFromTemplate('wiki-row-template', 'wikis-list')"
+                                    >
+                                        Add Wiki
+                                    </button>
                                 </div>
                             )}
 
@@ -197,7 +287,6 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                                 </div>
                             )}
 
-                            {/* 通用占位符 */}
                             {!['work-titles', 'work-creators', 'asset-creators', 'work-relations', 'creator-wikis', 'external-objects', 'media-sources'].includes(section.listType || '') && (
                                 <div class="dynamic-list-placeholder">
                                     <p>动态列表: {section.listType}</p>
@@ -211,65 +300,25 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                     {section.type === 'selector' && (
                         <div class="selector-container">
                             {section.selectorType === 'tags' && (
-                                <div class="tag-selector">
-                                    <div class="tag-selector-filter">
-                                        <input type="text" placeholder="Filter tags..." class="tag-filter" />
-                                    </div>
-                                    <div class="tag-selector-grid">
-                                        {options?.tags?.map(tag => {
-                                            const isSelected = data?.work?.tags?.some(t => t.uuid === tag.uuid) || false;
-                                            return (
-                                                <label class="tag-selector-item">
-                                                    <input
-                                                        type="checkbox"
-                                                        name="selected_tags"
-                                                        value={tag.uuid}
-                                                        checked={isSelected ? true : undefined}
-                                                    />
-                                                    <span class="tag-name">{tag.name}</span>
-                                                    {tag.work_count && <span class="tag-count">({tag.work_count})</span>}
-                                                </label>
-                                            );
-                                        })}
-                                        {(!options?.tags || options.tags.length === 0) && (
-                                            <p class="no-options">No tags available</p>
-                                        )}
-                                    </div>
-                                </div>
+                                <MultiSelector
+                                    type="tags"
+                                    data={options?.tags || []}
+                                    selectedItems={data?.work?.tags || []}
+                                    label="标签"
+                                    placeholder="搜索标签..."
+                                />
                             )}
 
                             {section.selectorType === 'categories' && (
-                                <div class="category-selector">
-                                    <div class="category-selector-filter">
-                                        <input type="text" placeholder="Filter categories..." class="category-filter" />
-                                    </div>
-                                    <div class="category-selector-tree">
-                                        {options?.categories?.map(category => {
-                                            const isSelected = data?.work?.categories?.some(c => c.uuid === category.uuid) || false;
-                                            return (
-                                                <div class="category-selector-group">
-                                                    <label class="category-selector-item">
-                                                        <input
-                                                            type="checkbox"
-                                                            name="selected_categories"
-                                                            value={category.uuid}
-                                                            checked={isSelected ? true : undefined}
-                                                        />
-                                                        <span class="category-name">{category.name}</span>
-                                                        {category.work_count && <span class="category-count">({category.work_count})</span>}
-                                                    </label>
-                                                    {/* TODO: Add support for nested categories */}
-                                                </div>
-                                            );
-                                        })}
-                                        {(!options?.categories || options.categories.length === 0) && (
-                                            <p class="no-options">No categories available</p>
-                                        )}
-                                    </div>
-                                </div>
+                                <MultiSelector
+                                    type="categories"
+                                    data={options?.categories || []}
+                                    selectedItems={data?.work?.categories || []}
+                                    label="分类"
+                                    placeholder="搜索分类..."
+                                />
                             )}
 
-                            {/* 未知选择器类型的占位符 */}
                             {!['tags', 'categories'].includes(section.selectorType || '') && (
                                 <div class="selector-placeholder">
                                     <p>选择器: {section.selectorType}</p>

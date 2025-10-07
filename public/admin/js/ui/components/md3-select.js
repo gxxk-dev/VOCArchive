@@ -1,6 +1,6 @@
 /**
- * Material Design 3 Select Enhancement
- * Provides floating label behavior and state management for MD3 select fields
+ * Material Design 3 Select Enhancement - 精简版
+ * 只保留状态管理功能，所有 HTML 生成已移至 SSR
  */
 
 class MD3Select {
@@ -9,10 +9,10 @@ class MD3Select {
     }
 
     init() {
-        // Initialize existing MD3 select fields
+        // 初始化已存在的 MD3 select 字段
         this.initializeExistingFields();
         
-        // Set up mutation observer for dynamically added selects
+        // 设置 mutation observer 监听动态添加的 select
         this.setupMutationObserver();
     }
 
@@ -26,11 +26,11 @@ class MD3Select {
             mutations.forEach((mutation) => {
                 mutation.addedNodes.forEach((node) => {
                     if (node.nodeType === Node.ELEMENT_NODE) {
-                        // Check if the added node is a select field
+                        // 检查添加的节点是否是 select field
                         if (node.classList && node.classList.contains('md3-select-field')) {
                             this.enhanceSelectField(node);
                         }
-                        // Check for select fields within the added node
+                        // 检查节点内部的 select fields
                         const selectFields = node.querySelectorAll && node.querySelectorAll('.md3-select-field');
                         if (selectFields) {
                             selectFields.forEach(field => this.enhanceSelectField(field));
@@ -50,35 +50,24 @@ class MD3Select {
         const select = field.querySelector('select');
         if (!select) return;
 
-        // Add state layer if not present
-        this.ensureStateLayer(field);
-        
-        // Set up event listeners
+        // 设置事件监听器
         this.setupEventListeners(field, select);
         
-        // Initial state check
+        // 初始状态检查
         this.updateFieldState(field, select);
     }
 
-    ensureStateLayer(field) {
-        if (!field.querySelector('.md3-state-layer')) {
-            const stateLayer = document.createElement('div');
-            stateLayer.classList.add('md3-state-layer');
-            field.appendChild(stateLayer);
-        }
-    }
-
     setupEventListeners(field, select) {
-        // Prevent duplicate listeners
+        // 防止重复监听器
         if (select.hasAttribute('data-md3-enhanced')) return;
         select.setAttribute('data-md3-enhanced', 'true');
 
-        // Handle value changes
+        // 处理值变化
         select.addEventListener('change', () => {
             this.updateFieldState(field, select);
         });
 
-        // Handle focus events
+        // 处理焦点事件
         select.addEventListener('focus', () => {
             field.classList.add('focused');
         });
@@ -88,7 +77,7 @@ class MD3Select {
             this.updateFieldState(field, select);
         });
 
-        // Handle input events for better responsiveness
+        // 处理 input 事件以提高响应性
         select.addEventListener('input', () => {
             this.updateFieldState(field, select);
         });
@@ -103,7 +92,7 @@ class MD3Select {
             field.classList.remove('has-value');
         }
 
-        // Update validation state if needed
+        // 更新验证状态
         this.updateValidationState(field, select);
     }
 
@@ -118,120 +107,16 @@ class MD3Select {
             field.classList.remove('error');
         }
     }
-
-    // Utility method to convert regular select to MD3 select
-    static convertToMD3(selectElement, labelText, helperText = '') {
-        const wrapper = document.createElement('div');
-        wrapper.classList.add('md3-select-field');
-
-        // Create label
-        const label = document.createElement('label');
-        label.classList.add('md3-label');
-        label.textContent = labelText;
-
-        // Create state layer
-        const stateLayer = document.createElement('div');
-        stateLayer.classList.add('md3-state-layer');
-
-        // Clone the select element
-        const newSelect = selectElement.cloneNode(true);
-        
-        // Build the structure
-        wrapper.appendChild(newSelect);
-        wrapper.appendChild(label);
-        wrapper.appendChild(stateLayer);
-
-        // Add helper text if provided
-        if (helperText) {
-            const helper = document.createElement('div');
-            helper.classList.add('md3-helper-text');
-            helper.textContent = helperText;
-            wrapper.appendChild(helper);
-        }
-
-        // Replace the original select
-        selectElement.parentNode.replaceChild(wrapper, selectElement);
-
-        // Initialize the new field
-        const md3Instance = window.md3Select || new MD3Select();
-        md3Instance.enhanceSelectField(wrapper);
-
-        return wrapper;
-    }
-
-    // Method to create MD3 select from scratch
-    static create(options = {}) {
-        const {
-            name = '',
-            id = '',
-            labelText = '',
-            helperText = '',
-            required = false,
-            options: selectOptions = [],
-            value = '',
-            classes = []
-        } = options;
-
-        const wrapper = document.createElement('div');
-        wrapper.classList.add('md3-select-field');
-        if (classes.length > 0) {
-            wrapper.classList.add(...classes);
-        }
-
-        // Create select element
-        const select = document.createElement('select');
-        if (name) select.name = name;
-        if (id) select.id = id;
-        if (required) select.required = true;
-
-        // Add options
-        selectOptions.forEach(option => {
-            const optionElement = document.createElement('option');
-            optionElement.value = option.value || option;
-            optionElement.textContent = option.text || option;
-            if (option.value === value || option === value) {
-                optionElement.selected = true;
-            }
-            select.appendChild(optionElement);
-        });
-
-        // Create label
-        const label = document.createElement('label');
-        label.classList.add('md3-label');
-        label.textContent = labelText;
-        if (id) label.setAttribute('for', id);
-
-        // Create state layer
-        const stateLayer = document.createElement('div');
-        stateLayer.classList.add('md3-state-layer');
-
-        // Build structure
-        wrapper.appendChild(select);
-        wrapper.appendChild(label);
-        wrapper.appendChild(stateLayer);
-
-        // Add helper text if provided
-        if (helperText) {
-            const helper = document.createElement('div');
-            helper.classList.add('md3-helper-text');
-            helper.textContent = helperText;
-            wrapper.appendChild(helper);
-        }
-
-        // Initialize the field
-        const md3Instance = window.md3Select || new MD3Select();
-        md3Instance.enhanceSelectField(wrapper);
-
-        return wrapper;
-    }
 }
 
-// Initialize when DOM is loaded
+// DOM 加载完成后初始化
 document.addEventListener('DOMContentLoaded', () => {
     window.md3Select = new MD3Select();
 });
 
-// Export for use in modules
+// 导出供 ES 模块使用
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = MD3Select;
 }
+
+console.log('MD3Select enhancement loaded (SSR mode)');
