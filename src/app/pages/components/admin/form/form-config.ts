@@ -22,7 +22,7 @@ export const workFormConfig: FormConfig = {
                 {
                     name: 'copyright_basis',
                     type: 'md3_select',
-                    options: ['none', 'original', 'cover', 'arrangement'],
+                    options: ['none', 'license', 'accept', 'onlymetadata', 'arr'],
                     label: 'Copyright Basis',
                     defaultValue: 'none',
                     sourcePath: 'work.copyright_basis'
@@ -160,6 +160,12 @@ export const mediaFormConfig: FormConfig = {
             ]
         },
         {
+            name: 'work_info',
+            title: '所属 Work 信息',
+            type: 'info-display',
+            fields: []
+        },
+        {
             name: 'external_objects',
             title: 'External Objects',
             type: 'dynamic-list',
@@ -207,6 +213,12 @@ export const assetFormConfig: FormConfig = {
                 },
                 { name: 'language', type: 'text_input', label: '语言', sourcePath: 'asset.language' }
             ]
+        },
+        {
+            name: 'work_info',
+            title: '所属 Work 信息',
+            type: 'info-display',
+            fields: []
         },
         {
             name: 'creators',

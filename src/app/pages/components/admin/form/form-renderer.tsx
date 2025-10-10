@@ -64,6 +64,105 @@ function renderWikiRow(wiki?: any, index?: number) {
     );
 }
 
+// 渲染媒体源列表项（只读显示）
+function renderMediaSourceRow(mediaSource?: any, index?: number) {
+    if (!mediaSource) return null;
+
+    return (
+        <div class="dynamic-list-item media-source-item" data-index={index}>
+            <div class="media-source-info">
+                <strong>文件名:</strong> {mediaSource.file_name}<br/>
+                <strong>类型:</strong> {mediaSource.is_music ? '音频' : '视频'}<br/>
+                <strong>MIME:</strong> {mediaSource.mime_type}<br/>
+                <strong>信息:</strong> {mediaSource.info || 'N/A'}
+            </div>
+            <button
+                type="button"
+                class="edit-link-button"
+                onclick={`window.parent.postMessage({type: 'load-editor', data: {itemType: 'media', uuid: '${mediaSource.uuid}'}}, '*')`}
+            >
+                编辑
+            </button>
+        </div>
+    );
+}
+
+// 渲染资产列表项（只读显示）
+function renderAssetRow(asset?: any, index?: number) {
+    if (!asset) return null;
+
+    return (
+        <div class="dynamic-list-item asset-item" data-index={index}>
+            <div class="asset-info">
+                <strong>文件名:</strong> {asset.file_name}<br/>
+                <strong>类型:</strong> {asset.asset_type === 'lyrics' ? '歌词' : '图片'}<br/>
+                {asset.is_previewpic && <span class="badge">预览图</span>}
+                {asset.language && <><strong>语言:</strong> {asset.language}<br/></>}
+                {asset.creator && asset.creator.length > 0 && (
+                    <><strong>创作者:</strong> {asset.creator.map((c: any) => c.creator_name).join(', ')}</>
+                )}
+            </div>
+            <button
+                type="button"
+                class="edit-link-button"
+                onclick={`window.parent.postMessage({type: 'load-editor', data: {itemType: 'asset', uuid: '${asset.uuid}'}}, '*')`}
+            >
+                编辑
+            </button>
+        </div>
+    );
+}
+
+// 渲染作品关系列表项（只读显示）
+function renderWorkRelationRow(relation?: any, index?: number) {
+    if (!relation) return null;
+
+    // 关系类型中文映射
+    const relationTypeMap: Record<string, string> = {
+        'original': '原曲',
+        'remix': '混音/重制',
+        'cover': '翻唱',
+        'remake': '重编曲',
+        'picture': 'PV/插画',
+        'lyrics': '歌词'
+    };
+
+    // 获取标题显示
+    const getWorkTitle = (titles?: Array<{ language: string; title: string }>) => {
+        if (!titles || titles.length === 0) return '未知作品';
+        // 优先显示中文标题，否则显示第一个标题
+        const zhTitle = titles.find(t => t.language === 'zh-cn' || t.language === 'zh');
+        return zhTitle ? zhTitle.title : titles[0].title;
+    };
+
+    const fromTitle = getWorkTitle(relation.related_work_titles?.from_work_titles);
+    const toTitle = getWorkTitle(relation.related_work_titles?.to_work_titles);
+
+    return (
+        <div class="dynamic-list-item relation-item" data-index={index}>
+            <div class="relation-info">
+                <div class="relation-chain">
+                    <span class="work-title">{fromTitle}</span>
+                    <span class="relation-arrow">→</span>
+                    <span class="relation-type">{relationTypeMap[relation.relation_type] || relation.relation_type}</span>
+                    <span class="relation-arrow">→</span>
+                    <span class="work-title">{toTitle}</span>
+                </div>
+                <div class="relation-details">
+                    <small>From: {relation.from_work_uuid.substring(0, 8)}... → To: {relation.to_work_uuid.substring(0, 8)}...</small>
+                </div>
+            </div>
+            <button
+                type="button"
+                class="edit-link-button"
+                onclick={`window.parent.postMessage({type: 'load-editor', data: {itemType: 'relation', uuid: '${relation.uuid}'}}, '*')`}
+            >
+                编辑
+            </button>
+        </div>
+    );
+}
+
 // 渲染外部对象选择器
 function renderExternalObjectsSelector(externalSources?: any[], selectedObjects?: any[], allExternalObjects?: any[]) {
     if (!allExternalObjects || allExternalObjects.length === 0) {
@@ -236,14 +335,15 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
 
                             {section.listType === 'work-relations' && (
                                 <div>
-                                    <div id="relations-list" class="dynamic-list">
-                                        {data?.work?.relation?.map((relation, index) => (
-                                            <div class="dynamic-list-item" data-index={index}>
-                                                <span>Relations management - coming soon</span>
-                                            </div>
-                                        ))}
+                                    <div id="relations-list" class="relations-list">
+                                        {data?.work?.relation && data.work.relation.length > 0 ? (
+                                            data.work.relation.map((relation, index) =>
+                                                renderWorkRelationRow(relation, index)
+                                            )
+                                        ) : (
+                                            <p class="no-items">暂无作品关系，请在关系管理页面添加</p>
+                                        )}
                                     </div>
-                                    <button type="button" id="add-relation-button" class="add-row-button">Add Relation</button>
                                 </div>
                             )}
 
@@ -277,7 +377,35 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                                 </div>
                             )}
 
-                            {(section.listType === 'external-objects' || section.listType === 'media-sources') && (
+                            {section.listType === 'media-sources' && (
+                                <div>
+                                    <div id="media-sources-list" class="media-sources-list">
+                                        {data?.work?.media_sources && data.work.media_sources.length > 0 ? (
+                                            data.work.media_sources.map((media, index) =>
+                                                renderMediaSourceRow(media, index)
+                                            )
+                                        ) : (
+                                            <p class="no-items">暂无媒体源，请在媒体源管理页面添加</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {section.listType === 'assets' && (
+                                <div>
+                                    <div id="assets-list" class="assets-list">
+                                        {data?.work?.asset && data.work.asset.length > 0 ? (
+                                            data.work.asset.map((asset, index) =>
+                                                renderAssetRow(asset, index)
+                                            )
+                                        ) : (
+                                            <p class="no-items">暂无资产，请在资产管理页面添加</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {section.listType === 'external-objects' && (
                                 <div>
                                     <div id="external-objects-selector" class="external-objects-selector">
                                         {renderExternalObjectsSelector(options?.allExternalSources,
@@ -287,11 +415,40 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                                 </div>
                             )}
 
-                            {!['work-titles', 'work-creators', 'asset-creators', 'work-relations', 'creator-wikis', 'external-objects', 'media-sources'].includes(section.listType || '') && (
+                            {!['work-titles', 'work-creators', 'asset-creators', 'work-relations', 'creator-wikis', 'external-objects', 'media-sources', 'assets'].includes(section.listType || '') && (
                                 <div class="dynamic-list-placeholder">
                                     <p>动态列表: {section.listType}</p>
                                     <button type="button" class="add-row-button">Add Item</button>
                                 </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* 信息展示渲染 */}
+                    {section.type === 'info-display' && (
+                        <div class="info-display-section">
+                            {data?.work_tags && data.work_tags.length > 0 && (
+                                <div class="info-item">
+                                    <strong>标签:</strong>
+                                    <div class="info-chips">
+                                        {data.work_tags.map((tag: any) => (
+                                            <span class="info-chip tag-chip">{tag.name}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            {data?.work_categories && data.work_categories.length > 0 && (
+                                <div class="info-item">
+                                    <strong>分类:</strong>
+                                    <div class="info-chips">
+                                        {data.work_categories.map((category: any) => (
+                                            <span class="info-chip category-chip">{category.name}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            {(!data?.work_tags || data.work_tags.length === 0) && (!data?.work_categories || data.work_categories.length === 0) && (
+                                <p class="no-items">暂无标签和分类信息</p>
                             )}
                         </div>
                     )}

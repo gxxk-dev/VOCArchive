@@ -83,8 +83,8 @@ export async function getMediaByUUID(
  * Get paginated list of media sources
  */
 export async function listMedia(
-    db: DrizzleDB, 
-    page: number, 
+    db: DrizzleDB,
+    page: number,
     pageSize: number
 ): Promise<MediaSourceForApplication[]> {
     if (page < 1 || pageSize < 1) {
@@ -92,7 +92,7 @@ export async function listMedia(
     }
 
     const offset = (page - 1) * pageSize;
-    
+
     const mediaList = await db
         .select({
             id: mediaSource.id,

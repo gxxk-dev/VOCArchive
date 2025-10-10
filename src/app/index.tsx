@@ -34,6 +34,8 @@ import { searchWorks, getAvailableLanguages } from './db/operations/search'
 import { getWorksByTag, getWorkCountByTag, getTagByUUID, listTagsWithCounts } from './db/operations/tag'
 import { getWorksByCategory, getWorkCountByCategory, getCategoryByUUID, listCategoriesWithCounts } from './db/operations/category'
 import { listExternalSources } from './db/operations/external_source'
+import { eq } from 'drizzle-orm'
+import { tag, workTag, category, workCategory, work } from './db/schema'
 
 const apiApp = new Hono<{ Bindings: CloudflareBindings }>()
 
@@ -342,13 +344,73 @@ app.get('/admin/editor', adminContentMiddleware, async (c) => {
                     const { getAssetByUUID } = await import('./db/operations/asset');
                     const assetData = await getAssetByUUID(db, uuid);
                     console.log('Loaded asset data:', assetData);
-                    data = assetData ? { asset: assetData } : undefined;
+
+                    // Load work's tags and categories
+                    if (assetData && assetData.work_uuid) {
+                        const workTags = await db
+                            .select({
+                                uuid: tag.uuid,
+                                name: tag.name,
+                            })
+                            .from(tag)
+                            .innerJoin(workTag, eq(tag.id, workTag.tag_id))
+                            .innerJoin(work, eq(workTag.work_id, work.id))
+                            .where(eq(work.uuid, assetData.work_uuid));
+
+                        const workCategories = await db
+                            .select({
+                                uuid: category.uuid,
+                                name: category.name,
+                            })
+                            .from(category)
+                            .innerJoin(workCategory, eq(category.id, workCategory.category_id))
+                            .innerJoin(work, eq(workCategory.work_id, work.id))
+                            .where(eq(work.uuid, assetData.work_uuid));
+
+                        data = {
+                            asset: assetData,
+                            work_tags: workTags,
+                            work_categories: workCategories
+                        };
+                    } else {
+                        data = assetData ? { asset: assetData } : undefined;
+                    }
                     break;
                 case 'media':
                     const { getMediaByUUID } = await import('./db/operations/media');
                     const mediaData = await getMediaByUUID(db, uuid);
                     console.log('Loaded media data:', mediaData);
-                    data = mediaData ? { media: mediaData } : undefined;
+
+                    // Load work's tags and categories
+                    if (mediaData && mediaData.work_uuid) {
+                        const workTags = await db
+                            .select({
+                                uuid: tag.uuid,
+                                name: tag.name,
+                            })
+                            .from(tag)
+                            .innerJoin(workTag, eq(tag.id, workTag.tag_id))
+                            .innerJoin(work, eq(workTag.work_id, work.id))
+                            .where(eq(work.uuid, mediaData.work_uuid));
+
+                        const workCategories = await db
+                            .select({
+                                uuid: category.uuid,
+                                name: category.name,
+                            })
+                            .from(category)
+                            .innerJoin(workCategory, eq(category.id, workCategory.category_id))
+                            .innerJoin(work, eq(workCategory.work_id, work.id))
+                            .where(eq(work.uuid, mediaData.work_uuid));
+
+                        data = {
+                            media: mediaData,
+                            work_tags: workTags,
+                            work_categories: workCategories
+                        };
+                    } else {
+                        data = mediaData ? { media: mediaData } : undefined;
+                    }
                     break;
                 case 'relation':
                     const { getRelationByUUID } = await import('./db/operations/relation');

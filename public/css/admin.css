@@ -9,6 +9,122 @@ body {
     overflow: auto;
 }
 
+/* Edit Link Button Styles */
+.edit-link-button {
+    padding: 6px 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s ease;
+}
+
+.edit-link-button:hover {
+    background-color: #0056b3;
+}
+
+.edit-link-button:active {
+    background-color: #004085;
+}
+
+[data-theme="dark"] .edit-link-button {
+    background-color: #0d6efd;
+}
+
+[data-theme="dark"] .edit-link-button:hover {
+    background-color: #0a58ca;
+}
+
+/* Info Display Section Styles */
+.info-display-section {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.info-display-section .info-item {
+    margin-bottom: 12px;
+}
+
+.info-display-section .info-item:last-child {
+    margin-bottom: 0;
+}
+
+.info-display-section .info-item strong {
+    display: block;
+    margin-bottom: 6px;
+    color: #333;
+    font-size: 0.95em;
+}
+
+.info-display-section .info-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.info-display-section .info-chip {
+    display: inline-block;
+    padding: 4px 10px;
+    background-color: #e9ecef;
+    border: 1px solid #dee2e6;
+    border-radius: 16px;
+    font-size: 0.85em;
+    color: #495057;
+}
+
+.info-display-section .tag-chip {
+    background-color: #e3f2fd;
+    border-color: #90caf9;
+    color: #1976d2;
+}
+
+.info-display-section .category-chip {
+    background-color: #f3e5f5;
+    border-color: #ce93d8;
+    color: #7b1fa2;
+}
+
+.info-display-section .no-items {
+    color: #6c757d;
+    font-style: italic;
+    margin: 0;
+}
+
+[data-theme="dark"] .info-display-section {
+    background-color: rgba(15, 15, 15, 0.85);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .info-display-section .info-item strong {
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .info-display-section .info-chip {
+    background-color: #444;
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .info-display-section .tag-chip {
+    background-color: #1e3a5f;
+    border-color: #2962ff;
+    color: #82b1ff;
+}
+
+[data-theme="dark"] .info-display-section .category-chip {
+    background-color: #4a1a4a;
+    border-color: #ab47bc;
+    color: #ce93d8;
+}
+
+[data-theme="dark"] .info-display-section .no-items {
+    color: #aaa;
+}
+
 h1, h2, h3, h4, h5, h6 {
     color: #333;
     margin: 0;

@@ -287,6 +287,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                         closeEditor(editor, editorModal);
                         break;
 
+                    case 'load-editor':
+                        // 从 editor iframe 内部请求加载另一个编辑器
+                        console.log('Load editor request:', event.data.data);
+                        const { itemType, uuid } = event.data.data;
+                        if (itemType && uuid) {
+                            loadEditorForEdit(editor, editorModal, itemType, uuid);
+                        }
+                        break;
+
                     default:
                         console.log('Unknown message type:', event.data.type);
                         break;

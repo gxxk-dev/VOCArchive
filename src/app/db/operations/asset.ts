@@ -91,8 +91,8 @@ export async function getAssetByUUID(
  * Get paginated list of assets
  */
 export async function listAssets(
-    db: DrizzleDB, 
-    page: number, 
+    db: DrizzleDB,
+    page: number,
     pageSize: number
 ): Promise<AssetForApplication[]> {
     if (page < 1 || pageSize < 1) {
@@ -100,7 +100,7 @@ export async function listAssets(
     }
 
     const offset = (page - 1) * pageSize;
-    
+
     const assets = await db
         .select({
             id: asset.id,
@@ -126,8 +126,8 @@ export async function listAssets(
             uuid: converted.uuid,
             asset_type: converted.asset_type,
             file_name: converted.file_name,
-            language: converted.language,
             is_previewpic: converted.is_previewpic,
+            language: converted.language,
         };
     });
 }

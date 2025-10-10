@@ -59,24 +59,27 @@ export const MultiSelector = ({ type, data, selectedItems, label, placeholder }:
 
   const selectedIds = selectedItems.map(item => item.uuid)
 
+  // 将复数形式转换为单数形式以匹配 CSS 类名
+  const singularType = type === 'tags' ? 'tag' : type === 'categories' ? 'category' : type
+
   return (
-    <div class={`${type}-selector`}>
+    <div class={`${singularType}-selector`}>
       <input
         type="text"
         class="filter-input"
         placeholder={placeholder}
-        oninput={`filterCheckboxes(this, '.${type}-item')`}
+        oninput={`filterCheckboxes(this, '.${singularType}-checkbox')`}
       />
-      <div class={`${type}-list`}>
+      <div class={`${singularType}-list`}>
         {data.map(item => (
-          <label class={`${type}-item`} data-name={item.name.toLowerCase()}>
+          <label class={`${singularType}-checkbox`} data-name={item.name.toLowerCase()}>
             <input
               type="checkbox"
               name={`selected_${type}`}
               value={item.uuid}
               checked={selectedIds.includes(item.uuid) ? true : undefined}
             />
-            <span class={selectedIds.includes(item.uuid) ? `${type}-chip selected` : `${type}-chip`}>
+            <span class={selectedIds.includes(item.uuid) ? `${singularType}-chip selected` : `${singularType}-chip`}>
               {item.name}
             </span>
           </label>
@@ -104,6 +107,9 @@ export const HierarchicalMultiSelector = ({ type, data, selectedItems, label, pl
 
   const selectedIds = selectedItems.map(item => item.uuid)
 
+  // 将复数形式转换为单数形式以匹配 CSS 类名
+  const singularType = type === 'tags' ? 'tag' : type === 'categories' ? 'category' : type
+
   // 递归渲染分层项
   const renderHierarchicalItems = (items: any[], level: number = 0): any => {
     return items.map(item => {
@@ -112,14 +118,14 @@ export const HierarchicalMultiSelector = ({ type, data, selectedItems, label, pl
 
       return (
         <>
-          <label class={`${type}-item indent-level-${Math.min(level, 10)}`} data-name={item.name.toLowerCase()}>
+          <label class={`${singularType}-checkbox indent-level-${Math.min(level, 10)}`} data-name={item.name.toLowerCase()}>
             <input
               type="checkbox"
               name={`selected_${type}`}
               value={item.uuid}
               checked={selectedIds.includes(item.uuid) ? true : undefined}
             />
-            <span class={selectedIds.includes(item.uuid) ? `${type}-chip selected` : `${type}-chip`}>
+            <span class={`${singularType}-name ${selectedIds.includes(item.uuid) ? 'selected' : ''}`}>
               {indent}{item.name}
             </span>
           </label>
@@ -130,14 +136,14 @@ export const HierarchicalMultiSelector = ({ type, data, selectedItems, label, pl
   }
 
   return (
-    <div class={`${type}-selector`}>
+    <div class={`${singularType}-selector`}>
       <input
         type="text"
         class="filter-input"
         placeholder={placeholder}
-        oninput={`filterCheckboxes(this, '.${type}-item')`}
+        oninput={`filterCheckboxes(this, '.${singularType}-checkbox')`}
       />
-      <div class={`${type}-list`}>
+      <div class={`${singularType}-list`}>
         {renderHierarchicalItems(data)}
       </div>
     </div>
