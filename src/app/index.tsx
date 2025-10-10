@@ -13,6 +13,7 @@ import footer from './routes/footer'
 import config from './routes/config'
 import { migration } from './routes/migration'
 import { jwt } from 'hono/jwt'
+import { checkPendingMigrations } from './db/utils/migration-engine'
 
 import { IndexPage } from './pages/index'
 import { PlayerPage } from './pages/player'
@@ -139,6 +140,52 @@ apiApp.route('/list', listInfo)
 
 const app = new Hono<{ Bindings: CloudflareBindings }>()
 app.route('/api', apiApp)
+
+// ========== 数据库版本检查中间件 ==========
+// 检查数据库版本是否匹配最新迁移版本
+app.use('/*', async (c, next) => {
+  const path = c.req.path;
+
+  // 跳过对 /init、/migration、/api/init、/api/migration、静态资源的检查
+  if (path.startsWith('/init') || path.startsWith('/migration') ||
+      path.startsWith('/api/init') || path.startsWith('/api/migration') ||
+      path.startsWith('/static') || path.includes('.')) {
+    return next();
+  }
+
+  try {
+    const db = createDrizzleClient(c.env.DB);
+    const isInitialized = await isDatabaseInitialized(db);
+
+    // 如果未初始化,跳过版本检查(由下一个中间件处理)
+    if (!isInitialized) {
+      return next();
+    }
+
+    // 检查数据库版本
+    const migrationStatus = await checkPendingMigrations(db);
+
+    if (migrationStatus.currentVersion !== migrationStatus.latestVersion) {
+      // 数据库版本不匹配
+      if (path.startsWith('/admin')) {
+        // 管理后台路由 -> 重定向到迁移页面
+        return c.redirect('/migration');
+      } else {
+        // 其他主页路由 -> 返回 501 错误
+        return c.text(
+          `数据库版本不匹配。当前版本: ${migrationStatus.currentVersion}, 预期版本: ${migrationStatus.latestVersion}。\n` +
+          `此功能需要数据库迁移才能使用。请联系管理员访问 /migration 页面进行数据库迁移。`,
+          501
+        );
+      }
+    }
+  } catch (error) {
+    console.error('Database version check failed:', error);
+    // 版本检查失败时,允许继续(避免阻塞正常流程)
+  }
+
+  return next();
+});
 
 // ========== 初始化检查中间件 ==========
 // 检查数据库是否已初始化，如果未初始化则重定向到 /init
