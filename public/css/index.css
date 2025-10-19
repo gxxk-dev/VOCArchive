@@ -76,17 +76,17 @@ body {
 
 .search-select-field:hover {
     background: rgba(50, 50, 50, 0.9) !important;
-    border-color: rgba(120, 119, 198, 0.3) !important;
+    border-color: rgba(37, 99, 235, 0.3) !important;
 }
 
 .search-select-field:focus-within {
     background: rgba(60, 60, 60, 0.95) !important;
-    border-color: rgba(120, 119, 198, 0.5) !important;
-    box-shadow: 0 0 0 1px rgba(120, 119, 198, 0.3);
+    border-color: rgba(37, 99, 235, 0.5) !important;
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.3);
 }
 
 .search-select-field .md3-label {
-    color: #888 !important;
+    color: #999 !important;
     background-color: transparent !important;
     font-size: 10px !important;
     top: 4px !important;
@@ -96,16 +96,16 @@ body {
 
 .search-select-field:focus-within .md3-label,
 .search-select-field.has-value .md3-label {
-    color: rgba(120, 119, 198, 0.8) !important;
+    color: rgba(37, 99, 235, 0.8) !important;
 }
 
 .search-select-field::after {
-    border-top-color: #888 !important;
+    border-top-color: #999 !important;
     right: 12px !important;
 }
 
 .search-select-field:focus-within::after {
-    border-top-color: rgba(120, 119, 198, 0.8) !important;
+    border-top-color: rgba(37, 99, 235, 0.8) !important;
 }
 
 .search-select-field .md3-state-layer {
@@ -113,11 +113,11 @@ body {
 }
 
 .search-select-field:hover .md3-state-layer {
-    background-color: rgba(120, 119, 198, 0.1) !important;
+    background-color: rgba(37, 99, 235, 0.1) !important;
 }
 
 .search-select-field:focus-within .md3-state-layer {
-    background-color: rgba(120, 119, 198, 0.15) !important;
+    background-color: rgba(37, 99, 235, 0.15) !important;
 }
 
 .floating-search-input::placeholder {
@@ -139,7 +139,7 @@ body {
 
 .floating-search-btn:hover {
     transform: scale(1.05);
-    box-shadow: 0 4px 15px rgba(124, 119, 198, 0.4);
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
 }
 
 /* 头部区域 */
@@ -157,7 +157,7 @@ body {
     transform: translateX(-50%);
     width: 80px;
     height: 4px;
-    background: linear-gradient(90deg, #7c77c6, #ff77c6, #77dbff);
+    background: linear-gradient(90deg, #2563eb, #60a5fa, #93c5fd);
     border-radius: 2px;
 }
 
@@ -245,7 +245,7 @@ body {
 }
 
 .section-title i {
-    color: #7c77c6;
+    color: #2563eb;
     font-size: 0.9em;
 }
 
@@ -254,7 +254,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: rgba(124, 119, 198, 0.15);
+    background: rgba(37, 99, 235, 0.15);
     border-radius: 20px;
     padding: 4px 12px;
     margin-left: var(--spacing-sm);
@@ -263,7 +263,7 @@ body {
 }
 
 .filter-indicator-inline i {
-    color: #7c77c6;
+    color: #2563eb;
     font-size: 0.9em;
 }
 
@@ -355,7 +355,7 @@ body {
     height: 40px;
     border-radius: 8px;
     object-fit: cover;
-    background: linear-gradient(135deg, #7c77c6, #6366f1);
+    background: linear-gradient(135deg, #2563eb, #6366f1);
 }
 
 .work-info {
@@ -400,7 +400,7 @@ body {
 }
 
 .tag-chip, .category-chip {
-    background: rgba(120, 119, 198, 0.2);
+    background: rgba(37, 99, 235, 0.2);
     color: #bbb;
     padding: 2px 6px;
     border-radius: 10px;
@@ -411,13 +411,13 @@ body {
 }
 
 .tag-chip:hover, .category-chip:hover {
-    background: rgba(120, 119, 198, 0.3);
+    background: rgba(37, 99, 235, 0.3);
     color: #ddd;
     transform: translateY(-1px);
 }
 
 .tags-more {
-    color: #888;
+    color: #999;
     font-size: 0.75rem;
     cursor: pointer;
     font-style: italic;
@@ -459,7 +459,7 @@ body {
 
 .work-play-btn:hover {
     transform: scale(1.15);
-    box-shadow: 0 8px 25px rgba(124, 119, 198, 0.5);
+    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.5);
 }
 
 /* 分页 */
@@ -511,7 +511,7 @@ body {
 .pagination-btn.active {
     background: var(--primary-gradient);
     color: white;
-    border-color: #7c77c6;
+    border-color: #2563eb;
 }
 
 .pagination-btn:disabled {
