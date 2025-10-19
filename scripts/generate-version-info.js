@@ -16,6 +16,40 @@ function getGitInfo() {
     }
 }
 
+function hasUncommittedChanges() {
+    try {
+        const status = execSync('git status --porcelain', { encoding: 'utf8' }).trim();
+        return status.length > 0;
+    } catch (error) {
+        console.warn('Warning: Could not check git status:', error.message);
+        return true; // 如果无法检查，假设有未提交的更改
+    }
+}
+
+function getCurrentGitTag() {
+    try {
+        const tag = execSync('git describe --exact-match --tags HEAD', { encoding: 'utf8' }).trim();
+        return tag;
+    } catch (error) {
+        // 当前 commit 没有 tag
+        return null;
+    }
+}
+
+function parseGitTag(tag) {
+    // 解析格式: vX.Y.Z-tag.N
+    // 例如: v1.5.0-rc.1
+    const match = tag.match(/^v[\d.]+-(alpha|beta|rc|stable)\.(\d+)$/);
+    if (match) {
+        return {
+            versionTag: match[1],
+            tagNum: parseInt(match[2], 10)
+        };
+    }
+    // 如果格式不匹配，返回 null
+    return null;
+}
+
 function getPackageVersion() {
     try {
         const packagePath = path.join(__dirname, '../package.json');
@@ -27,14 +61,51 @@ function getPackageVersion() {
     }
 }
 
+function generateFullVersion() {
+    const { gitCommit } = getGitInfo();
+    const baseVersion = getPackageVersion(); // 例如: 1.5.0
+
+    if (!gitCommit) {
+        console.warn('Warning: No git commit found, using base version');
+        return baseVersion;
+    }
+
+    const commitHash = gitCommit.substring(0, 8);
+    const hasChanges = hasUncommittedChanges();
+    const gitTag = getCurrentGitTag();
+
+    let versionTag = 'alpha';
+    let tagNum = 0;
+
+    // 如果没有未提交的更改且有 tag，解析 tag
+    if (!hasChanges && gitTag) {
+        const parsed = parseGitTag(gitTag);
+        if (parsed) {
+            versionTag = parsed.versionTag;
+            tagNum = parsed.tagNum;
+        } else {
+            console.warn(`Warning: Could not parse git tag "${gitTag}", using alpha.0`);
+        }
+    } else {
+        if (hasChanges) {
+            console.log('Uncommitted changes detected, using alpha.0');
+        } else {
+            console.log('No git tag found, using alpha.0');
+        }
+    }
+
+    // 拼接: vMAJOR.MINOR.PATCH-versiontag.num-commithash
+    return `v${baseVersion}-${versionTag}.${tagNum}-${commitHash}`;
+}
+
 function generateVersionInfo() {
     const { gitCommit, gitBranch, commitMessage } = getGitInfo();
-    const version = getPackageVersion();
+    const fullVersion = generateFullVersion();
     const buildTime = new Date().toISOString();
     const buildEnv = process.env.NODE_ENV || 'development';
 
     const versionInfo = {
-        version,
+        version: fullVersion,
         gitCommit,
         gitBranch,
         commitMessage,
@@ -69,16 +140,10 @@ export function getVersionInfo(): VersionInfo {
 
 /**
  * 获取版本字符串
+ * 返回完整的版本号，格式: vMAJOR.MINOR.PATCH-versiontag.num-commithash
  */
 export function getVersionString(): string {
-    const info = getVersionInfo();
-    let versionStr = \`v\${info.version}\`;
-
-    if (info.gitCommit) {
-        versionStr += \` (\${info.gitCommit.substring(0, 7)})\`;
-    }
-
-    return versionStr;
+    return getVersionInfo().version;
 }
 
 /**
@@ -86,14 +151,10 @@ export function getVersionString(): string {
  */
 export function getFullVersionString(): string {
     const info = getVersionInfo();
-    let parts = [\`v\${info.version}\`];
+    let parts = [info.version];
 
     if (info.commitMessage) {
         parts.push(info.commitMessage);
-    }
-
-    if (info.gitCommit) {
-        parts.push(\`commit \${info.gitCommit}\`);
     }
 
     if (info.gitBranch) {
