@@ -103,6 +103,9 @@ export const WorkHeader = (props: WorkHeaderProps) => {
 
     return (
         <div class="work-header">
+            <button id="ipfs-settings-btn" class="ipfs-settings-btn" title="IPFS网关设置" aria-label="IPFS网关设置">
+                <i class="fas fa-cog"></i>
+            </button>
             <div class="work-title">
                 {displayTitle}
                 {!is_officialTitle && (
