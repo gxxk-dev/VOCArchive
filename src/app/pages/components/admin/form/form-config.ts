@@ -1,4 +1,4 @@
-// 表单配置定义
+﻿// 表单配置定义
 // Form Configuration Definitions
 
 import type { FormConfig } from './form-field-types';
@@ -10,14 +10,14 @@ export const workFormConfig: FormConfig = {
             name: 'basic',
             title: 'Work Details',
             fields: [
-                { name: 'work_uuid', type: 'hidden', sourcePath: 'work.work_uuid' },
+                { name: 'work_index', type: 'hidden', sourcePath: 'work.index' },
                 {
-                    name: 'work_uuid_display',
-                    type: 'uuid_readonly',
-                    label: 'Work UUID',
-                    id: 'work-uuid',
-                    className: 'uuid',
-                    sourcePath: 'work.work_uuid'
+                    name: 'index',
+                    type: 'index_editable',
+                    label: 'Work Index',
+                    id: 'work-index',
+                    className: 'index',
+                    sourcePath: 'work.index'
                 },
                 {
                     name: 'copyright_basis',
@@ -94,13 +94,13 @@ export const creatorFormConfig: FormConfig = {
             name: 'basic',
             title: 'Creator Details',
             fields: [
-                { name: 'creator_uuid', type: 'hidden', sourcePath: 'creator.creator.uuid' },
+                { name: 'creator_index', type: 'hidden', sourcePath: 'creator.creator.index' },
                 {
-                    name: 'creator.uuid',
-                    type: 'uuid_readonly',
-                    label: 'UUID',
-                    className: 'uuid',
-                    sourcePath: 'creator.creator.uuid'
+                    name: 'creator.index',
+                    type: 'index_editable',
+                    label: 'index',
+                    className: 'index',
+                    sourcePath: 'creator.creator.index'
                 },
                 {
                     name: 'creator.name',
@@ -135,17 +135,17 @@ export const mediaFormConfig: FormConfig = {
             name: 'basic',
             title: 'Media Details',
             fields: [
-                { name: 'media_uuid', type: 'hidden', sourcePath: 'media.uuid' },
-                { name: 'uuid', type: 'uuid_readonly', label: 'UUID', className: 'uuid', sourcePath: 'media.uuid' },
+                { name: 'media_index', type: 'hidden', sourcePath: 'media.index' },
+                { name: 'index', type: 'index_editable', label: 'index', className: 'index', sourcePath: 'media.index' },
                 {
-                    name: 'work_uuid',
+                    name: 'work_index',
                     type: 'quick_select_input',
-                    label: 'Work UUID',
+                    label: 'Work Index',
                     quickSelectId: 'work-quick-select',
-                    targetInputId: 'work_uuid',
+                    targetInputId: 'work_index',
                     dataSource: 'options.works',
-                    className: 'uuid',
-                    sourcePath: 'media.work_uuid'
+                    className: 'index',
+                    sourcePath: 'media.work_index'
                 },
                 {
                     name: 'is_music',
@@ -182,18 +182,18 @@ export const assetFormConfig: FormConfig = {
             name: 'basic',
             title: 'Asset Details',
             fields: [
-                { name: 'asset_uuid', type: 'hidden', sourcePath: 'asset.uuid' },
-                { name: 'uuid', type: 'uuid_readonly', label: 'UUID', className: 'uuid', sourcePath: 'asset.uuid' },
+                { name: 'asset_index', type: 'hidden', sourcePath: 'asset.index' },
+                { name: 'index', type: 'index_editable', label: 'index', className: 'index', sourcePath: 'asset.index' },
                 {
-                    name: 'work_uuid',
+                    name: 'work_index',
                     type: 'quick_select_input',
-                    label: 'Work UUID',
-                    id: 'work_uuid_asset',
+                    label: 'Work Index',
+                    id: 'work_index_asset',
                     quickSelectId: 'work-quick-select-asset',
-                    targetInputId: 'work_uuid_asset',
+                    targetInputId: 'work_index_asset',
                     dataSource: 'options.works',
-                    className: 'uuid',
-                    sourcePath: 'asset.work_uuid'
+                    className: 'index',
+                    sourcePath: 'asset.work_index'
                 },
                 {
                     name: 'asset_type',
@@ -244,8 +244,8 @@ export const tagFormConfig: FormConfig = {
             name: 'basic',
             title: 'Tag Details',
             fields: [
-                { name: 'tag_uuid', type: 'hidden', sourcePath: 'tag.uuid' },
-                { name: 'uuid', type: 'uuid_readonly', label: 'UUID', className: 'uuid', sourcePath: 'tag.uuid' },
+                { name: 'tag_index', type: 'hidden', sourcePath: 'tag.index' },
+                { name: 'index', type: 'index_editable', label: 'index', className: 'index', sourcePath: 'tag.index' },
                 {
                     name: 'name',
                     type: 'text_input_required',
@@ -265,8 +265,8 @@ export const categoryFormConfig: FormConfig = {
             name: 'basic',
             title: 'Category Details',
             fields: [
-                { name: 'category_uuid', type: 'hidden', sourcePath: 'category.uuid' },
-                { name: 'uuid', type: 'uuid_readonly', label: 'UUID', className: 'uuid', sourcePath: 'category.uuid' },
+                { name: 'category_index', type: 'hidden', sourcePath: 'category.index' },
+                { name: 'index', type: 'index_editable', label: 'index', className: 'index', sourcePath: 'category.index' },
                 {
                     name: 'name',
                     type: 'text_input_required',
@@ -275,15 +275,15 @@ export const categoryFormConfig: FormConfig = {
                     sourcePath: 'category.name'
                 },
                 {
-                    name: 'parent_uuid',
+                    name: 'parent_index',
                     type: 'quick_select_input',
                     label: '父分类 (可选)',
                     placeholder: '留空表示顶级分类',
                     quickSelectId: 'parent-category-quick-select',
-                    targetInputId: 'parent_uuid',
+                    targetInputId: 'parent_index',
                     dataSource: 'options.categories',
-                    className: 'uuid',
-                    sourcePath: 'category.parent_uuid'
+                    className: 'index',
+                    sourcePath: 'category.parent_index'
                 }
             ]
         }
@@ -297,8 +297,8 @@ export const externalSourceFormConfig: FormConfig = {
             name: 'basic',
             title: 'External Source Details',
             fields: [
-                { name: 'external_source_uuid', type: 'hidden', sourcePath: 'external_source.uuid' },
-                { name: 'uuid', type: 'uuid_readonly', label: 'UUID', className: 'uuid', sourcePath: 'external_source.uuid' },
+                { name: 'external_source_index', type: 'hidden', sourcePath: 'external_source.index' },
+                { name: 'index', type: 'index_editable', label: 'index', className: 'index', sourcePath: 'external_source.index' },
                 {
                     name: 'type',
                     type: 'md3_select',
@@ -341,17 +341,17 @@ export const externalObjectFormConfig: FormConfig = {
             name: 'basic',
             title: 'External Object Details',
             fields: [
-                { name: 'external_object_uuid', type: 'hidden', sourcePath: 'external_object.uuid' },
-                { name: 'uuid', type: 'uuid_readonly', label: 'UUID', className: 'uuid', sourcePath: 'external_object.uuid' },
+                { name: 'external_object_index', type: 'hidden', sourcePath: 'external_object.index' },
+                { name: 'index', type: 'index_editable', label: 'index', className: 'index', sourcePath: 'external_object.index' },
                 {
-                    name: 'external_source_uuid',
+                    name: 'external_source_index',
                     type: 'quick_select_input',
                     label: '存储源',
                     quickSelectId: 'source-quick-select',
-                    targetInputId: 'external_source_uuid',
+                    targetInputId: 'external_source_index',
                     dataSource: 'allExternalSources',
-                    className: 'uuid',
-                    sourcePath: 'external_object.source.uuid'
+                    className: 'index',
+                    sourcePath: 'external_object.source.index'
                 },
                 {
                     name: 'mime_type',
@@ -379,7 +379,7 @@ export const footerFormConfig: FormConfig = {
             name: 'basic',
             title: 'Footer Item Details',
             fields: [
-                { name: 'uuid', type: 'hidden', sourcePath: 'footer.uuid' },
+                { name: 'index', type: 'hidden', sourcePath: 'footer.index' },
                 {
                     name: 'item_type',
                     type: 'md3_select',
@@ -478,17 +478,17 @@ export const relationFormConfig: FormConfig = {
             name: 'basic',
             title: 'Work Relation Details',
             fields: [
-                { name: 'relation_uuid', type: 'hidden', sourcePath: 'relation.uuid' },
-                { name: 'uuid', type: 'uuid_readonly', label: 'UUID', className: 'uuid', sourcePath: 'relation.uuid' },
+                { name: 'relation_index', type: 'hidden', sourcePath: 'relation.index' },
+                { name: 'index', type: 'index_editable', label: 'index', className: 'index', sourcePath: 'relation.index' },
                 {
-                    name: 'from_work_uuid',
+                    name: 'from_work_index',
                     type: 'quick_select_input',
                     label: '源作品 (From Work)',
                     quickSelectId: 'from-work-quick-select',
-                    targetInputId: 'from_work_uuid',
+                    targetInputId: 'from_work_index',
                     dataSource: 'options.works',
-                    className: 'uuid',
-                    sourcePath: 'relation.from_work_uuid'
+                    className: 'index',
+                    sourcePath: 'relation.from_work_index'
                 },
                 {
                     name: 'relation_type',
@@ -499,14 +499,14 @@ export const relationFormConfig: FormConfig = {
                     sourcePath: 'relation.relation_type'
                 },
                 {
-                    name: 'to_work_uuid',
+                    name: 'to_work_index',
                     type: 'quick_select_input',
                     label: '目标作品 (To Work)',
                     quickSelectId: 'to-work-quick-select',
-                    targetInputId: 'to_work_uuid',
+                    targetInputId: 'to_work_index',
                     dataSource: 'options.works',
-                    className: 'uuid',
-                    sourcePath: 'relation.to_work_uuid'
+                    className: 'index',
+                    sourcePath: 'relation.to_work_index'
                 }
             ]
         }

@@ -69,10 +69,10 @@ export const WorkHeader = (props: WorkHeaderProps) => {
                 <span class="meta-label">标签:</span>
                 <div class="tags-container">
                     {visibleTags.map((tag: TagApi) =>
-                        <span class="tag-chip clickable" data-tag={tag.uuid}>{tag.name}</span>
+                        <span class="tag-chip clickable" data-tag={tag.index}>{tag.name}</span>
                     )}
                     {hiddenTags.length > 0 && (
-                        <span class="tags-expand" data-work={workInfo.work.uuid}>
+                        <span class="tags-expand" data-work={workInfo.work.index}>
                             +{hiddenTags.length} more
                         </span>
                     )}
@@ -93,7 +93,7 @@ export const WorkHeader = (props: WorkHeaderProps) => {
                     {workInfo.categories.map((category: CategoryApi, index: number) => (
                         <>
                             {index > 0 && <span class="category-separator"> &gt; </span>}
-                            <span class="category-chip clickable" data-category={category.uuid}>{category.name}</span>
+                            <span class="category-chip clickable" data-category={category.index}>{category.name}</span>
                         </>
                     ))}
                 </div>

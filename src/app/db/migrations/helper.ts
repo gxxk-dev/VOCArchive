@@ -1,4 +1,4 @@
-import type { DrizzleDB } from '../client';
+﻿import type { DrizzleDB } from '../client';
 import { sql } from 'drizzle-orm';
 import * as schema from '../schema';
 
@@ -23,7 +23,7 @@ export async function ensureTablesExist(db: DrizzleDB): Promise<void> {
         )`,
 
         `CREATE TABLE IF NOT EXISTS footer_settings (
-            uuid TEXT PRIMARY KEY NOT NULL,
+            "index" TEXT PRIMARY KEY NOT NULL,
             item_type TEXT NOT NULL,
             text TEXT NOT NULL,
             url TEXT,
@@ -32,33 +32,33 @@ export async function ensureTablesExist(db: DrizzleDB): Promise<void> {
 
         `CREATE TABLE IF NOT EXISTS creator (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            uuid TEXT NOT NULL UNIQUE,
+            "index" TEXT NOT NULL UNIQUE,
             name TEXT NOT NULL,
             type TEXT NOT NULL
         )`,
 
         `CREATE TABLE IF NOT EXISTS work (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            uuid TEXT NOT NULL UNIQUE,
+            "index" TEXT NOT NULL UNIQUE,
             copyright_basis TEXT NOT NULL
         )`,
 
         `CREATE TABLE IF NOT EXISTS tag (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            uuid TEXT NOT NULL UNIQUE,
+            "index" TEXT NOT NULL UNIQUE,
             name TEXT NOT NULL UNIQUE
         )`,
 
         `CREATE TABLE IF NOT EXISTS category (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            uuid TEXT NOT NULL UNIQUE,
+            "index" TEXT NOT NULL UNIQUE,
             name TEXT NOT NULL,
             parent_id INTEGER,
             FOREIGN KEY (parent_id) REFERENCES category(id)
         )`,
 
         `CREATE TABLE IF NOT EXISTS external_source (
-            uuid TEXT PRIMARY KEY NOT NULL,
+            "index" TEXT PRIMARY KEY NOT NULL,
             type TEXT NOT NULL,
             name TEXT NOT NULL,
             endpoint TEXT NOT NULL
@@ -74,16 +74,16 @@ export async function ensureTablesExist(db: DrizzleDB): Promise<void> {
 
         // 2. 依赖表
         `CREATE TABLE IF NOT EXISTS external_object (
-            uuid TEXT PRIMARY KEY NOT NULL,
-            external_source_uuid TEXT NOT NULL,
+            "index" TEXT PRIMARY KEY NOT NULL,
+            external_source_index TEXT NOT NULL,
             mime_type TEXT NOT NULL,
             file_id TEXT NOT NULL,
-            FOREIGN KEY (external_source_uuid) REFERENCES external_source(uuid)
+            FOREIGN KEY (external_source_index) REFERENCES external_source("index")
         )`,
 
         `CREATE TABLE IF NOT EXISTS work_title (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            uuid TEXT NOT NULL UNIQUE,
+            "index" TEXT NOT NULL UNIQUE,
             work_id INTEGER NOT NULL,
             is_official INTEGER NOT NULL,
             is_for_search INTEGER NOT NULL DEFAULT 0,
@@ -110,7 +110,7 @@ export async function ensureTablesExist(db: DrizzleDB): Promise<void> {
 
         `CREATE TABLE IF NOT EXISTS asset (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            uuid TEXT NOT NULL UNIQUE,
+            "index" TEXT NOT NULL UNIQUE,
             work_id INTEGER NOT NULL,
             asset_type TEXT NOT NULL,
             file_name TEXT,
@@ -120,7 +120,7 @@ export async function ensureTablesExist(db: DrizzleDB): Promise<void> {
 
         `CREATE TABLE IF NOT EXISTS media_source (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            uuid TEXT NOT NULL UNIQUE,
+            "index" TEXT NOT NULL UNIQUE,
             work_id INTEGER NOT NULL,
             media_type TEXT NOT NULL,
             platform TEXT NOT NULL,
@@ -178,7 +178,7 @@ export async function ensureTablesExist(db: DrizzleDB): Promise<void> {
             external_object_id TEXT NOT NULL,
             PRIMARY KEY (asset_id, external_object_id),
             FOREIGN KEY (asset_id) REFERENCES asset(id) ON DELETE CASCADE,
-            FOREIGN KEY (external_object_id) REFERENCES external_object(uuid) ON DELETE CASCADE
+            FOREIGN KEY (external_object_id) REFERENCES external_object("index") ON DELETE CASCADE
         )`,
 
         `CREATE TABLE IF NOT EXISTS media_source_external_object (
@@ -186,7 +186,7 @@ export async function ensureTablesExist(db: DrizzleDB): Promise<void> {
             external_object_id TEXT NOT NULL,
             PRIMARY KEY (media_source_id, external_object_id),
             FOREIGN KEY (media_source_id) REFERENCES media_source(id) ON DELETE CASCADE,
-            FOREIGN KEY (external_object_id) REFERENCES external_object(uuid) ON DELETE CASCADE
+            FOREIGN KEY (external_object_id) REFERENCES external_object("index") ON DELETE CASCADE
         )`
     ];
 
@@ -286,9 +286,9 @@ export async function executeBatch<T>(
 /**
  * 安全的UUID验证
  */
-export function validateUUID(uuid: string): boolean {
+export function validateUUID(index: string): boolean {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(uuid);
+    return uuidRegex.test(index);
 }
 
 /**
@@ -340,15 +340,15 @@ export async function validateDatabaseIntegrity(db: DrizzleDB): Promise<{
     try {
         // 检查孤立的外部对象
         const orphanedObjects = await db
-            .select({ uuid: schema.externalObject.uuid })
+            .select({ index: schema.externalObject.index })
             .from(schema.externalObject)
             .leftJoin(
                 schema.assetExternalObject,
-                sql`${schema.externalObject.uuid} = ${schema.assetExternalObject.external_object_id}`
+                sql`${schema.externalObject.index} = ${schema.assetExternalObject.external_object_id}`
             )
             .leftJoin(
                 schema.mediaSourceExternalObject,
-                sql`${schema.externalObject.uuid} = ${schema.mediaSourceExternalObject.external_object_id}`
+                sql`${schema.externalObject.index} = ${schema.mediaSourceExternalObject.external_object_id}`
             )
             .where(
                 sql`${schema.assetExternalObject.external_object_id} IS NULL AND ${schema.mediaSourceExternalObject.external_object_id} IS NULL`
@@ -360,13 +360,13 @@ export async function validateDatabaseIntegrity(db: DrizzleDB): Promise<{
 
         // 检查损坏的外部源引用
         const brokenReferences = await db
-            .select({ uuid: schema.externalObject.uuid })
+            .select({ index: schema.externalObject.index })
             .from(schema.externalObject)
             .leftJoin(
                 schema.externalSource,
-                sql`${schema.externalObject.external_source_id} = ${schema.externalSource.uuid}`
+                sql`${schema.externalObject.external_source_id} = ${schema.externalSource.index}`
             )
-            .where(sql`${schema.externalSource.uuid} IS NULL`);
+            .where(sql`${schema.externalSource.index} IS NULL`);
 
         if (brokenReferences.length > 0) {
             errors.push(`Found ${brokenReferences.length} external objects with missing source references`);

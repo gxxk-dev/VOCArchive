@@ -1,4 +1,4 @@
-import { jsx } from 'hono/jsx'
+﻿import { jsx } from 'hono/jsx'
 import { AdminContentData } from '../admin/data-loader'
 import {
     WorkCard,
@@ -115,13 +115,13 @@ export const AdminContentPage = (props: AdminContentPageProps) => {
                             if (target.classList.contains('edit-button')) {
                                 e.preventDefault();
                                 const itemTarget = target.dataset.target;
-                                const uuid = target.dataset.uuid;
+                                const index = target.dataset.index;
 
-                                if (itemTarget && uuid && window.parent) {
+                                if (itemTarget && index && window.parent) {
                                     window.parent.postMessage({
                                         type: 'edit-request',
                                         target: itemTarget,
-                                        uuid: uuid
+                                        index: uuid
                                     }, '*');
                                 }
                                 return;
@@ -132,14 +132,14 @@ export const AdminContentPage = (props: AdminContentPageProps) => {
                                 e.preventDefault();
                                 const itemTarget = target.dataset.target;
                                 const row = target.closest('.work-card') || target.closest('tr');
-                                const uuid = row?.dataset.uuid;
+                                const index = row?.dataset.index;
 
-                                if (itemTarget && uuid && window.parent) {
+                                if (itemTarget && index && window.parent) {
                                     if (confirm(\`确定要删除这个 \${itemTarget} 吗？\`)) {
                                         window.parent.postMessage({
                                             type: 'delete-request',
                                             target: itemTarget,
-                                            uuid: uuid
+                                            index: uuid
                                         }, '*');
                                     }
                                 }

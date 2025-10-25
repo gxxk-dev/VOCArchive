@@ -28,6 +28,15 @@ export interface UuidFieldConfig extends FormFieldBase {
     type: 'uuid_readonly' | 'uuid_editable';
 }
 
+export interface IndexFieldConfig extends FormFieldBase {
+    type: 'index_readonly' | 'index_editable';
+}
+
+export interface InfoDisplayFieldConfig extends FormFieldBase {
+    type: 'info-display';
+    value?: string;
+}
+
 export interface CheckboxFieldConfig extends FormFieldBase {
     type: 'checkbox' | 'checkbox_inline';
 }
@@ -50,6 +59,8 @@ export type FormFieldConfig =
     | TextFieldConfig
     | HiddenFieldConfig
     | UuidFieldConfig
+    | IndexFieldConfig
+    | InfoDisplayFieldConfig
     | CheckboxFieldConfig
     | SelectFieldConfig
     | QuickSelectInputConfig;
@@ -58,7 +69,7 @@ export interface FormSectionConfig {
     name: string;
     title?: string;
     fields?: FormFieldConfig[];
-    type?: 'dynamic-list' | 'selector';
+    type?: 'dynamic-list' | 'selector' | 'info-display';
     listType?: string;
     selectorType?: string;
     dataSource?: string;

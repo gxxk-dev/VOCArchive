@@ -242,7 +242,7 @@ body {
     animation: fadeInUp 0.3s cubic-bezier(0.2, 0.0, 0, 1.0);
     animation-delay: 0.1s;
     animation-fill-mode: both;
-    align-self: center;
+    width: 100%;
     text-align: left;
 }
 

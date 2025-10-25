@@ -1,17 +1,17 @@
-import { jsx } from 'hono/jsx'
+﻿import { jsx } from 'hono/jsx'
 import { getFormConfig } from './components/admin/form/form-config'
 import { FormRenderer } from './components/admin/form/form-renderer'
 import type { FormRenderData, FormOptions } from './components/admin/form/form-field-types'
 
 export interface AdminEditorPageProps {
     type?: string
-    uuid?: string
+    index?: string
     data?: FormRenderData
     options?: FormOptions
 }
 
 export const AdminEditorPage = (props: AdminEditorPageProps) => {
-    const { type, uuid, data, options } = props;
+    const { type, index, data, options } = props;
 
     // 获取表单配置
     const formConfig = type ? getFormConfig(type) : null;
@@ -35,7 +35,7 @@ export const AdminEditorPage = (props: AdminEditorPageProps) => {
         return typeNames[type] || type;
     };
 
-    const isNewItem = !uuid;
+    const isNewItem = !index;
     const actionText = isNewItem ? '新建' : '编辑';
     const typeDisplayName = type ? getTypeDisplayName(type) : '内容';
     const editorTitle = `${actionText}${typeDisplayName}`;
@@ -61,8 +61,8 @@ export const AdminEditorPage = (props: AdminEditorPageProps) => {
                     dangerouslySetInnerHTML={{
                         __html: JSON.stringify({
                             type: type || '',
-                            uuid: uuid || '',
-                            isNew: !uuid
+                            index: index || '',
+                            isNew: !index
                         })
                     }}
                 ></script>

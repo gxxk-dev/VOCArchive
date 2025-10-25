@@ -1,4 +1,4 @@
-import { createDrizzleClient } from '../db/client';
+﻿import { createDrizzleClient } from '../db/client';
 import { inputWork } from '../db/operations/work';
 import { inputAsset } from '../db/operations/asset';
 import { inputCreator } from '../db/operations/creator';
@@ -20,7 +20,7 @@ import {
     type MigrationStatus
 } from '../db/operations/admin';
 import type { Work, WorkTitle, CreatorWithRole, WikiRef, Asset, MediaSource, WorkRelation, Tag, Category, WorkTitleInput, MediaSourceForDatabase, MediaSourceApiInput, ExternalSourceApiInput, ExternalObjectApiInput, WikiPlatformApiInput } from '../db/types';
-import { workUuidToId, externalSourceUuidToId } from '../db/utils/uuid-id-converter';
+import { workIndexToId, externalSourceIndexToId } from '../db/utils/index-id-converter';
 import { validateStorageSource } from '../db/utils/storage-handlers';
 import { Hono } from "hono";
 
@@ -34,7 +34,7 @@ interface InputWorkRequestBody {
 }
 
 interface InputCreatorRequestBody {
-    creator: { uuid: string; name: string; type: 'human' | 'virtual' };
+    creator: { index: string; name: string; type: 'human' | 'virtual' };
     wikis?: WikiRef[];
 }
 
@@ -45,8 +45,8 @@ interface InputAssetRequestBody {
 }
 
 interface InputMediaRequestBody {
-    uuid: string;
-    work_uuid: string;
+    index: string;
+    work_index: string;
     is_music: boolean;
     file_name: string;
     url: string;
@@ -56,9 +56,9 @@ interface InputMediaRequestBody {
 }
 
 interface InputRelationRequestBody {
-    uuid: string;
-    from_work_uuid: string;
-    to_work_uuid: string;
+    index: string;
+    from_work_index: string;
+    to_work_index: string;
     relation_type: 'original' | 'remix' | 'cover' | 'remake' | 'picture' | 'lyrics';
 }
 
@@ -125,8 +125,8 @@ inputInfo.post('/media', async (c: any) => {
         
         // 构建 MediaSource 对象
         const mediaData: MediaSourceApiInput = {
-            uuid: body.uuid,
-            work_uuid: body.work_uuid, // Use work_uuid for API input
+            index: body.index,
+            work_index: body.work_index, // Use work_index for API input
             is_music: body.is_music,
             file_name: body.file_name,
             url: body.url,
@@ -146,13 +146,13 @@ inputInfo.post('/work-title', async (c: any) => {
     try {
         const body: WorkTitleInput = await c.req.json();
         const db = createDrizzleClient(c.env.DB);
-        const title_uuid = await inputWorkTitle(db, body);
+        const title_index = await inputWorkTitle(db, body);
         
-        if (!title_uuid) {
+        if (!title_index) {
             return c.json({ error: 'Failed to create work title. Check if work exists.' }, 400);
         }
         
-        return c.json({ message: "Work title added successfully.", uuid: title_uuid }, 200);
+        return c.json({ message: "Work title added successfully.", index: title_index }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);
     }
@@ -161,7 +161,7 @@ inputInfo.post('/work-title', async (c: any) => {
 // 添加标签
 inputInfo.post('/tag', async (c: any) => {
     try {
-        const body: { uuid: string; name: string } = await c.req.json();
+        const body: { index: string; name: string } = await c.req.json();
         const db = createDrizzleClient(c.env.DB);
         await inputTag(db, body);
         return c.json({ message: "Tag added successfully." }, 200);
@@ -173,7 +173,7 @@ inputInfo.post('/tag', async (c: any) => {
 // 添加分类
 inputInfo.post('/category', async (c: any) => {
     try {
-        const body: { uuid: string; name: string; parent_uuid?: string } = await c.req.json();
+        const body: { index: string; name: string; parent_index?: string } = await c.req.json();
         const db = createDrizzleClient(c.env.DB);
         await inputCategory(db, body);
         return c.json({ message: "Category added successfully." }, 200);
@@ -185,14 +185,14 @@ inputInfo.post('/category', async (c: any) => {
 // 批量添加作品标签
 inputInfo.post('/work-tags', async (c: any) => {
     try {
-        const { work_uuid, tag_uuids } = await c.req.json();
+        const { work_index, tag_indexs } = await c.req.json();
         
-        if (!work_uuid || !Array.isArray(tag_uuids)) {
+        if (!work_index || !Array.isArray(tag_indexs)) {
             return c.json({ error: 'Invalid request body' }, 400);
         }
         
         const db = createDrizzleClient(c.env.DB);
-        const success = await addWorkTags(db, work_uuid, tag_uuids);
+        const success = await addWorkTags(db, work_index, tag_indexs);
         if (success) {
             return c.json({ message: 'Work tags added successfully.' });
         } else {
@@ -206,14 +206,14 @@ inputInfo.post('/work-tags', async (c: any) => {
 // 批量添加作品分类
 inputInfo.post('/work-categories', async (c: any) => {
     try {
-        const { work_uuid, category_uuids } = await c.req.json();
+        const { work_index, category_indexs } = await c.req.json();
         
-        if (!work_uuid || !Array.isArray(category_uuids)) {
+        if (!work_index || !Array.isArray(category_indexs)) {
             return c.json({ error: 'Invalid request body' }, 400);
         }
         
         const db = createDrizzleClient(c.env.DB);
-        const success = await addWorkCategories(db, work_uuid, category_uuids);
+        const success = await addWorkCategories(db, work_index, category_indexs);
         if (success) {
             return c.json({ message: 'Work categories added successfully.' });
         } else {
@@ -261,15 +261,15 @@ inputInfo.post('/external_object', async (c: any) => {
         const body: ExternalObjectApiInput = await c.req.json();
         const db = createDrizzleClient(c.env.DB);
 
-        // 转换external_source_uuid为external_source_id
-        const external_source_id = await externalSourceUuidToId(db, body.external_source_uuid);
+        // 转换external_source_index为external_source_id
+        const external_source_id = await externalSourceIndexToId(db, body.external_source_index);
         if (!external_source_id) {
             return c.json({ error: 'External source not found' }, 400);
         }
 
         // 构建数据库对象
         const objectData = {
-            uuid: body.uuid,
+            index: body.index,
             external_source_id: external_source_id,
             mime_type: body.mime_type,
             file_id: body.file_id

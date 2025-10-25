@@ -1,6 +1,6 @@
-import { jsx } from 'hono/jsx'
+﻿import { jsx } from 'hono/jsx'
 import { TagApi, CategoryApi } from '../../../db/types'
-import { AdminHeader, EmptyState, UuidTableCell, TableActionButtons } from './base'
+import { AdminHeader, EmptyState, IndexTableCell, TableActionButtons } from './base'
 
 export interface TagsTableProps {
     tags: TagApi[]
@@ -38,12 +38,12 @@ export const TagsTable = (props: TagsTableProps) => {
                     </thead>
                     <tbody>
                         {tags.map(tag => (
-                            <tr data-uuid={tag.uuid}>
-                                <UuidTableCell uuid={tag.uuid} />
+                            <tr data-index={tag.index}>
+                                <IndexTableCell index={tag.index} />
                                 <td class="tag-name">{tag.name}</td>
                                 <TableActionButtons
                                     target="tag"
-                                    uuid={tag.uuid}
+                                    index={tag.index}
                                     editText="编辑"
                                     deleteText="删除"
                                 />
@@ -105,15 +105,15 @@ export const CategoriesTable = (props: CategoriesTableProps) => {
                     </thead>
                     <tbody>
                         {categories.map(category => (
-                            <tr data-uuid={category.uuid}>
-                                <UuidTableCell uuid={category.uuid} />
+                            <tr data-index={category.index}>
+                                <IndexTableCell index={category.index} />
                                 <td class="category-name">{category.name}</td>
                                 <td class="parent-category">
-                                    <UuidTableCell uuid={category.parent_uuid} />
+                                    <IndexTableCell index={category.parent_index} />
                                 </td>
                                 <TableActionButtons
                                     target="category"
-                                    uuid={category.uuid}
+                                    index={category.index}
                                     editText="编辑"
                                     deleteText="删除"
                                 />

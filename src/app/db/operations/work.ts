@@ -1,4 +1,4 @@
-import { eq, inArray, count, and, or } from 'drizzle-orm';
+﻿import { eq, inArray, count, and, or } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import {
     work,
@@ -17,14 +17,14 @@ import {
     tag,
     category
 } from '../schema';
-import { convertAssetData, convertCategoryData, validateUUID } from '../utils';
+import { convertAssetData, convertCategoryData, validateIndex } from '../utils';
 import {
-    workUuidToId,
-    creatorUuidToId,
-    assetUuidToId,
-    workIdToUuid,
-    creatorIdToUuid
-} from '../utils/uuid-id-converter';
+    workIndexToId,
+    creatorIndexToId,
+    assetIndexToId,
+    workIdToIndex,
+    creatorIdToIndex 
+} from '../utils/index-id-converter';
 import {
     Work,
     WorkTitle,
@@ -48,7 +48,7 @@ import { enrichWikiReferences, WikiReferenceWithUrl } from './wiki-platforms';
 
 // 临时接口用于构建作者数据
 interface CreatorWithRoleBuilder {
-    creator_uuid: string;
+    creator_index: string;
     creator_name?: string;
     creator_type: 'human' | 'virtual';
     role: string;
@@ -58,16 +58,16 @@ interface CreatorWithRoleBuilder {
 /**
  * Get work titles for API layer (complete with all fields)
  */
-async function getWorkTitlesApi(db: DrizzleDB, workUUID: string, includeForSearch: boolean = true): Promise<WorkTitleApi[]> {
-    // Convert work UUID to ID
-    const workId = await workUuidToId(db, workUUID);
+async function getWorkTitlesApi(db: DrizzleDB, workindex: string, includeForSearch: boolean = true): Promise<WorkTitleApi[]> {
+    // Convert work index to ID
+    const workId = await workIndexToId(db, workindex);
     if (!workId) {
         return [];
     }
 
     const titles = await db
         .select({
-            uuid: workTitle.uuid,
+            index: workTitle.index,
             is_official: workTitle.is_official,
             is_for_search: workTitle.is_for_search,
             language: workTitle.language,
@@ -76,10 +76,10 @@ async function getWorkTitlesApi(db: DrizzleDB, workUUID: string, includeForSearc
         .from(workTitle)
         .where(eq(workTitle.work_id, workId));
 
-    // Convert to API format with work_uuid
+    // Convert to API format with work_index 
     return titles.map(title => ({
-        uuid: title.uuid,
-        work_uuid: workUUID, // Use the provided work UUID
+        index: title.index,
+        work_index: workindex, // Use the provided work index 
         is_official: title.is_official,
         is_for_search: title.is_for_search,
         language: title.language,
@@ -101,9 +101,9 @@ export async function getWorkListWithPagination(
     
     const offset = (page - 1) * pageSize;
     
-    // Get paginated work UUIDs
+    // Get paginated work IDs and Indexes
     const works = await db
-        .select({ uuid: work.uuid })
+        .select({ id: work.id, index: work.index })
         .from(work)
         .limit(pageSize)
         .offset(offset);
@@ -112,13 +112,13 @@ export async function getWorkListWithPagination(
         return [];
     }
     
-    const workUUIDs = works.map(w => w.uuid);
+    const workIndexs = works.map(w => w.index);
     
     // Get all creators for these works in a single query
     const creators = await db
         .select({
-            work_uuid: work.uuid,
-            creator_uuid: creator.uuid,
+            work_index: work.index,
+            creator_index: creator.index,
             creator_name: creator.name,
             creator_type: creator.type,
             role: workCreator.role,
@@ -126,16 +126,16 @@ export async function getWorkListWithPagination(
         .from(workCreator)
         .innerJoin(creator, eq(workCreator.creator_id, creator.id))
         .innerJoin(work, eq(workCreator.work_id, work.id))
-        .where(inArray(work.uuid, workUUIDs));
+        .where(inArray(work.index, workIndexs));
     
-    // Group creators by work UUID
+    // Group creators by work index 
     const creatorMap = new Map<string, CreatorWithRole[]>();
     creators.forEach(row => {
-        if (!creatorMap.has(row.work_uuid)) {
-            creatorMap.set(row.work_uuid, []);
+        if (!creatorMap.has(row.work_index)) {
+            creatorMap.set(row.work_index, []);
         }
-        creatorMap.get(row.work_uuid)!.push({
-            creator_uuid: row.creator_uuid,
+        creatorMap.get(row.work_index)!.push({
+            creator_index: row.creator_index,
             creator_name: row.creator_name,
             creator_type: row.creator_type,
             role: row.role
@@ -144,16 +144,16 @@ export async function getWorkListWithPagination(
     
     // Get all titles, assets, tags, and categories for each work
     const workListPromises = works.map(async (workItem) => {
-        const { uuid: work_uuid } = workItem;
-        
+        const { id: work_id, index: work_index } = workItem;
+
         // Get titles
-        const titles = await getWorkTitlesApi(db, work_uuid);
+        const titles = await getWorkTitlesApi(db, work_index);
         
         // Get preview assets
         const previewAssets = await db
             .select({
-                uuid: asset.uuid,
-                work_uuid: work.uuid,
+                index: asset.index,
+                work_index: work.index,
                 asset_type: asset.asset_type,
                 file_name: asset.file_name,
                 is_previewpic: asset.is_previewpic,
@@ -163,7 +163,7 @@ export async function getWorkListWithPagination(
             .innerJoin(work, eq(asset.work_id, work.id))
             .where(
                 and(
-                    eq(work.uuid, work_uuid),
+                    eq(work.index, work_index),
                     eq(asset.asset_type, 'picture'),
                     eq(asset.is_previewpic, true)
                 )
@@ -172,8 +172,8 @@ export async function getWorkListWithPagination(
         
         const nonPreviewAssets = await db
             .select({
-                uuid: asset.uuid,
-                work_uuid: work.uuid,
+                index: asset.index,
+                work_index: work.index,
                 asset_type: asset.asset_type,
                 file_name: asset.file_name,
                 is_previewpic: asset.is_previewpic,
@@ -183,7 +183,7 @@ export async function getWorkListWithPagination(
             .innerJoin(work, eq(asset.work_id, work.id))
             .where(
                 and(
-                    eq(work.uuid, work_uuid),
+                    eq(work.index, work_index),
                     eq(asset.asset_type, 'picture')
                     // For non-preview, we'll need to handle null/false separately
                 )
@@ -193,51 +193,52 @@ export async function getWorkListWithPagination(
         // Get tags
         const workTags = await db
             .select({
-                uuid: tag.uuid,
+                index: tag.index,
                 name: tag.name,
             })
             .from(tag)
             .innerJoin(workTag, eq(tag.id, workTag.tag_id))
             .innerJoin(work, eq(workTag.work_id, work.id))
-            .where(eq(work.uuid, work_uuid));
+            .where(eq(work.index, work_index));
         
         // Get categories
         const workCategories = await db
             .select({
-                uuid: category.uuid,
+                index: category.index,
                 name: category.name,
                 parent_id: category.parent_id,
             })
             .from(category)
             .innerJoin(workCategory, eq(category.id, workCategory.category_id))
             .innerJoin(work, eq(workCategory.work_id, work.id))
-            .where(eq(work.uuid, work_uuid));
+            .where(eq(work.index, work_index));
 
         // Convert to CategoryApi format
         const categoriesApi = await Promise.all(
             workCategories.map(async (cat) => {
-                let parent_uuid: string | null = null;
+                let parent_index: string | null = null;
                 if (cat.parent_id !== null) {
-                    const parentResult = await db.select({ uuid: category.uuid })
+                    const parentResult = await db.select({ index: category.index })
                         .from(category)
                         .where(eq(category.id, cat.parent_id))
                         .limit(1);
-                    parent_uuid = parentResult[0]?.uuid || null;
+                    parent_index = parentResult[0]?.index || null;
                 }
                 return {
-                    uuid: cat.uuid,
+                    index: cat.index,
                     name: cat.name,
-                    parent_uuid: parent_uuid,
+                    parent_index: parent_index,
                 };
             })
         );
         
         return {
-            work_uuid,
+            work_id,
+            work_index,
             titles,
             preview_asset: previewAssets[0] ? convertAssetData(previewAssets[0]) : undefined,
             non_preview_asset: nonPreviewAssets[0] ? convertAssetData(nonPreviewAssets[0]) : undefined,
-            creator: creatorMap.get(work_uuid) || [],
+            creator: creatorMap.get(work_index) || [],
             tags: workTags,
             categories: categoriesApi,
         };
@@ -258,21 +259,21 @@ export async function getTotalWorkCount(db: DrizzleDB): Promise<number> {
 }
 
 /**
- * Get detailed information for a single work by UUID
+ * Get detailed information for a single work by index 
  */
-export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<WorkInfo | null> {
-    if (!validateUUID(workUUID)) {
+export async function getWorkByIndex(db: DrizzleDB, workindex: string): Promise<WorkInfo | null> {
+    if (!validateIndex(workindex)) {
         return null;
     }
 
     // 1. Get work basic information
     const works = await db
         .select({
-            uuid: work.uuid,
+            index: work.index,
             copyright_basis: work.copyright_basis,
         })
         .from(work)
-        .where(eq(work.uuid, workUUID))
+        .where(eq(work.index, workindex))
         .limit(1);
 
     if (works.length === 0) {
@@ -281,13 +282,13 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
 
     const workData = works[0];
 
-    // 2. Get work titles
-    const titles = await getWorkTitlesApi(db, workUUID, true);
+    // 2. Get work titles (use the actual index from database, not the parameter)
+    const titles = await getWorkTitlesApi(db, workData.index, true);
     // 3. Get license information if needed
     let license: string | undefined;
     if (workData.copyright_basis === 'license') {
-        // Convert work UUID to ID
-        const workId = await workUuidToId(db, workUUID);
+        // Convert work index to ID
+        const workId = await workIndexToId(db, workindex);
         if (workId) {
             const licenseData = await db
                 .select({ license_type: workLicense.license_type })
@@ -302,8 +303,8 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
     // 4. Get media sources
     const mediaSources = await db
         .select({
-            uuid: mediaSource.uuid,
-            work_uuid: work.uuid,
+            index: mediaSource.index,
+            work_index: work.index,
             is_music: mediaSource.is_music,
             file_name: mediaSource.file_name,
             mime_type: mediaSource.mime_type,
@@ -311,19 +312,19 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
         })
         .from(mediaSource)
         .innerJoin(work, eq(mediaSource.work_id, work.id))
-        .where(eq(work.uuid, workUUID));
+        .where(eq(work.index, workindex));
 
     // 5. Get assets with their creators
     const assets = await db
         .select({
-            uuid: asset.uuid,
+            index: asset.index,
             file_id: asset.file_id,
-            work_uuid: work.uuid,
+            work_index: work.index,
             asset_type: asset.asset_type,
             file_name: asset.file_name,
             is_previewpic: asset.is_previewpic,
             language: asset.language,
-            creator_uuid: creator.uuid,
+            creator_index: creator.index,
             creator_name: creator.name,
             creator_type: creator.type,
             creator_role: assetCreator.role,
@@ -332,15 +333,15 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
         .innerJoin(work, eq(asset.work_id, work.id))
         .leftJoin(assetCreator, eq(asset.id, assetCreator.asset_id))
         .leftJoin(creator, eq(assetCreator.creator_id, creator.id))
-        .where(eq(work.uuid, workUUID));
+        .where(eq(work.index, workindex));
 
     // Group assets with their creators
     const assetMap = new Map<string, AssetWithCreators>();
     assets.forEach(row => {
-        if (!assetMap.has(row.uuid)) {
-            assetMap.set(row.uuid, {
-                uuid: row.uuid,
-                work_uuid: row.work_uuid,
+        if (!assetMap.has(row.index)) {
+            assetMap.set(row.index, {
+                index: row.index,
+                work_index: row.work_index,
                 asset_type: row.asset_type,
                 file_name: row.file_name,
                 is_previewpic: row.is_previewpic || undefined,
@@ -349,9 +350,9 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
             });
         }
 
-        if (row.creator_uuid) {
-            assetMap.get(row.uuid)!.creator.push({
-                creator_uuid: row.creator_uuid,
+        if (row.creator_index) {
+            assetMap.get(row.index)!.creator.push({
+                creator_index: row.creator_index,
                 creator_name: row.creator_name ?? undefined,
                 creator_type: row.creator_type!,
                 role: row.creator_role!
@@ -364,7 +365,7 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
     // 6. Get work creators with their wiki information
     const creators = await db
         .select({
-            creator_uuid: creator.uuid,
+            creator_index: creator.index,
             creator_name: creator.name,
             creator_type: creator.type,
             role: workCreator.role,
@@ -375,15 +376,15 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
         .innerJoin(work, eq(workCreator.work_id, work.id))
         .innerJoin(creator, eq(workCreator.creator_id, creator.id))
         .leftJoin(creatorWiki, eq(creator.id, creatorWiki.creator_id))
-        .where(eq(work.uuid, workUUID));
+        .where(eq(work.index, workindex));
 
     // Group creators with their wikis
     const creatorBuilderMap = new Map<string, CreatorWithRoleBuilder>();
     creators.forEach(row => {
-        const key = `${row.creator_uuid}-${row.role}`;
+        const key = `${row.creator_index}-${row.role}`;
         if (!creatorBuilderMap.has(key)) {
             creatorBuilderMap.set(key, {
-                creator_uuid: row.creator_uuid,
+                creator_index: row.creator_index,
                 creator_name: row.creator_name,
                 creator_type: row.creator_type,
                 role: row.role,
@@ -403,7 +404,7 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
     const creatorList: CreatorWithRole[] = [];
     for (const builderCreator of creatorBuilderMap.values()) {
         const creator: CreatorWithRole = {
-            creator_uuid: builderCreator.creator_uuid,
+            creator_index: builderCreator.creator_index,
             creator_name: builderCreator.creator_name,
             creator_type: builderCreator.creator_type,
             role: builderCreator.role,
@@ -418,15 +419,15 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
     }
 
     // 7. Get work relations with related work titles
-    // Convert work UUID to ID for database queries
-    const currentWorkId = await workUuidToId(db, workUUID);
+    // Convert work index to ID for database queries
+    const currentWorkId = await workIndexToId(db, workindex);
     if (!currentWorkId) {
         return null; // Work not found
     }
 
     const relations = await db
         .select({
-            uuid: workRelation.uuid,
+            index: workRelation.index,
             from_work_id: workRelation.from_work_id,
             to_work_id: workRelation.to_work_id,
             relation_type: workRelation.relation_type,
@@ -441,18 +442,18 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
     const relationList: WorkRelationApi[] = [];
     for (const relation of relations) {
         // Convert work IDs to UUIDs for getWorkTitles calls
-        const fromWorkUuid = await workIdToUuid(db, relation.from_work_id);
-        const toWorkUuid = await workIdToUuid(db, relation.to_work_id);
+        const fromWorkindex = await workIdToIndex(db, relation.from_work_id);
+        const toWorkindex = await workIdToIndex(db, relation.to_work_id);
 
-        if (!fromWorkUuid || !toWorkUuid) continue; // Skip if conversion fails
+        if (!fromWorkindex || !toWorkindex) continue; // Skip if conversion fails
 
-        const fromTitles = await getWorkTitlesApi(db, fromWorkUuid);
-        const toTitles = await getWorkTitlesApi(db, toWorkUuid);
+        const fromTitles = await getWorkTitlesApi(db, fromWorkindex);
+        const toTitles = await getWorkTitlesApi(db, toWorkindex);
 
         relationList.push({
-            uuid: relation.uuid,
-            from_work_uuid: fromWorkUuid,
-            to_work_uuid: toWorkUuid,
+            index: relation.index,
+            from_work_index: fromWorkindex,
+            to_work_index: toWorkindex,
             relation_type: relation.relation_type,
             related_work_titles: {
                 from_work_titles: fromTitles,
@@ -464,7 +465,7 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
     // Also get works that reference this work as original
     const originalRelations = await db
         .select({
-            uuid: workRelation.uuid,
+            index: workRelation.index,
             from_work_id: workRelation.from_work_id,
             to_work_id: workRelation.to_work_id,
             relation_type: workRelation.relation_type,
@@ -477,20 +478,20 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
 
     for (const relation of originalRelations) {
         // Convert work IDs to UUIDs for getWorkTitles calls
-        const fromWorkUuid = await workIdToUuid(db, relation.from_work_id);
-        const toWorkUuid = await workIdToUuid(db, relation.to_work_id);
+        const fromWorkindex = await workIdToIndex(db, relation.from_work_id);
+        const toWorkindex = await workIdToIndex(db, relation.to_work_id);
 
-        if (!fromWorkUuid || !toWorkUuid) continue; // Skip if conversion fails
+        if (!fromWorkindex || !toWorkindex) continue; // Skip if conversion fails
 
-        const fromTitles = await getWorkTitlesApi(db, fromWorkUuid);
-        const toTitles = await getWorkTitlesApi(db, toWorkUuid);
+        const fromTitles = await getWorkTitlesApi(db, fromWorkindex);
+        const toTitles = await getWorkTitlesApi(db, toWorkindex);
 
         // Avoid duplicates
-        if (!relationList.find(r => r.uuid === relation.uuid)) {
+        if (!relationList.find(r => r.index === relation.index)) {
             relationList.push({
-                uuid: relation.uuid,
-                from_work_uuid: fromWorkUuid,
-                to_work_uuid: toWorkUuid,
+                index: relation.index,
+                from_work_index: fromWorkindex,
+                to_work_index: toWorkindex,
                 relation_type: relation.relation_type,
                 related_work_titles: {
                     from_work_titles: fromTitles,
@@ -508,7 +509,7 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
         })
         .from(workWiki)
         .innerJoin(work, eq(workWiki.work_id, work.id))
-        .where(eq(work.uuid, workUUID));
+        .where(eq(work.index, workindex));
 
     // Enrich wiki references with complete URL information
     const wikis = await enrichWikiReferences(db, wikiRefs);
@@ -516,41 +517,41 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
     // 9. Get work tags
     const workTags = await db
         .select({
-            uuid: tag.uuid,
+            index: tag.index,
             name: tag.name,
         })
         .from(tag)
         .innerJoin(workTag, eq(tag.id, workTag.tag_id))
         .innerJoin(work, eq(workTag.work_id, work.id))
-        .where(eq(work.uuid, workUUID));
+        .where(eq(work.index, workindex));
 
     // 10. Get work categories
     const workCategories = await db
         .select({
-            uuid: category.uuid,
+            index: category.index,
             name: category.name,
             parent_id: category.parent_id,
         })
         .from(category)
         .innerJoin(workCategory, eq(category.id, workCategory.category_id))
         .innerJoin(work, eq(workCategory.work_id, work.id))
-        .where(eq(work.uuid, workUUID));
+        .where(eq(work.index, workindex));
 
     // Convert to CategoryApi format
     const categoriesApi = await Promise.all(
         workCategories.map(async (cat) => {
-            let parent_uuid: string | null = null;
+            let parent_index: string | null = null;
             if (cat.parent_id !== null) {
-                const parentResult = await db.select({ uuid: category.uuid })
+                const parentResult = await db.select({ index: category.index })
                     .from(category)
                     .where(eq(category.id, cat.parent_id))
                     .limit(1);
-                parent_uuid = parentResult[0]?.uuid || null;
+                parent_index = parentResult[0]?.index || null;
             }
             return {
-                uuid: cat.uuid,
+                index: cat.index,
                 name: cat.name,
-                parent_uuid: parent_uuid,
+                parent_index: parent_index,
             };
         })
     );
@@ -558,7 +559,7 @@ export async function getWorkByUUID(db: DrizzleDB, workUUID: string): Promise<Wo
     // 11. Assemble complete information
     return {
         work: {
-            uuid: workData.uuid,
+            index: workData.index,
             copyright_basis: workData.copyright_basis
         } as Work,
         titles,
@@ -587,21 +588,21 @@ export async function inputWork(
     // For D1 compatibility, execute operations sequentially without transactions
     // Insert work
     await db.insert(work).values({
-        uuid: workData.uuid,
+        index: workData.index,
         copyright_basis: workData.copyright_basis,
     });
 
     // Get work ID for foreign key operations
-    const workId = await workUuidToId(db, workData.uuid);
+    const workId = await workIndexToId(db, workData.index);
     if (!workId) {
-        throw new Error(`Failed to find work after insert: ${workData.uuid}`);
+        throw new Error(`Failed to find work after insert: ${workData.index}`);
     }
 
     // Insert titles
     if (titles.length > 0) {
         await db.insert(workTitle).values(
             titles.map(title => ({
-                uuid: crypto.randomUUID(),
+                index: crypto.randomUUID(),
                 work_id: workId,
                 is_official: title.is_official,
                 is_for_search: title.is_for_search || false,
@@ -623,9 +624,9 @@ export async function inputWork(
     if (creators.length > 0) {
         const creatorInserts = [];
         for (const creator of creators) {
-            const creatorId = await creatorUuidToId(db, creator.creator_uuid);
+            const creatorId = await creatorIndexToId(db, creator.creator_index);
             if (!creatorId) {
-                throw new Error(`Creator not found: ${creator.creator_uuid}`);
+                throw new Error(`Creator not found: ${creator.creator_index}`);
             }
             creatorInserts.push({
                 work_id: workId,
@@ -650,65 +651,105 @@ export async function inputWork(
 
 /**
  * Update an existing work and all its related data
+ *
+ * 部分更新语义：
+ * - titles 为 undefined：不修改现有标题
+ * - titles 为空数组：清空所有标题
+ * - titles 为非空数组：替换为新标题
+ *
+ * creators 和 wikis 同理
  */
 export async function updateWork(
     db: DrizzleDB,
-    workUuid: string,
+    workindex: string,
     workData: Work,
-    titles: WorkTitle[],
-    license: string | null,
+    titles?: WorkTitle[],
+    license?: string | null,
     creators?: CreatorWithRole[],
     wikis?: WikiRef[]
 ): Promise<boolean> {
-    if (!validateUUID(workUuid)) return false;
-    
+    if (!validateIndex(workindex)) return false;
+
     try {
         // For D1 compatibility, execute operations sequentially without transactions
         // Get work ID for foreign key operations
-        const workId = await workUuidToId(db, workUuid);
+        const workId = await workIndexToId(db, workindex);
         if (!workId) {
-            throw new Error(`Work not found: ${workUuid}`);
+            throw new Error(`Work not found: ${workindex}`);
         }
 
-        // Update work
-        await db
-            .update(work)
-            .set({ copyright_basis: workData.copyright_basis })
-            .where(eq(work.uuid, workUuid));
+        // Check if index is being changed
+        const newIndex = workData.index;
+        if (newIndex && newIndex !== workindex) {
+            // Validate new index
+            if (!validateIndex(newIndex)) {
+                throw new Error(`Invalid new index: ${newIndex}`);
+            }
 
-        // Delete and re-insert titles
-        await db.delete(workTitle).where(eq(workTitle.work_id, workId));
-        if (titles.length > 0) {
-            await db.insert(workTitle).values(
-                titles.map(title => ({
-                    uuid: crypto.randomUUID(),
+            // Check if new index already exists
+            const existingWork = await db
+                .select({ id: work.id })
+                .from(work)
+                .where(eq(work.index, newIndex))
+                .limit(1);
+
+            if (existingWork.length > 0) {
+                throw new Error(`Index already exists: ${newIndex}`);
+            }
+
+            // Update work with new index and copyright_basis
+            await db
+                .update(work)
+                .set({
+                    index: newIndex,
+                    copyright_basis: workData.copyright_basis
+                })
+                .where(eq(work.index, workindex));
+        } else {
+            // Update work without changing index
+            await db
+                .update(work)
+                .set({ copyright_basis: workData.copyright_basis })
+                .where(eq(work.index, workindex));
+        }
+
+        // Delete and re-insert titles (only if titles parameter is provided)
+        if (titles !== undefined) {
+            await db.delete(workTitle).where(eq(workTitle.work_id, workId));
+            if (titles.length > 0) {
+                await db.insert(workTitle).values(
+                    titles.map(title => ({
+                        index: crypto.randomUUID(),
+                        work_id: workId,
+                        is_official: title.is_official,
+                        is_for_search: title.is_for_search || false,
+                        language: title.language,
+                        title: title.title,
+                    }))
+                );
+            }
+        }
+
+        // Handle license (only if license parameter is provided)
+        if (license !== undefined) {
+            await db.delete(workLicense).where(eq(workLicense.work_id, workId));
+            if (license && workData.copyright_basis === 'license') {
+                await db.insert(workLicense).values({
                     work_id: workId,
-                    is_official: title.is_official,
-                    is_for_search: title.is_for_search || false,
-                    language: title.language,
-                    title: title.title,
-                }))
-            );
-        }
-        
-        // Handle license
-        await db.delete(workLicense).where(eq(workLicense.work_id, workId));
-        if (license && workData.copyright_basis === 'license') {
-            await db.insert(workLicense).values({
-                work_id: workId,
-                license_type: license,
-            });
+                    license_type: license,
+                });
+            }
         }
 
-        // Handle creators
-        if (creators) {
+        // Handle creators (only if creators parameter is provided)
+        if (creators !== undefined) {
             await db.delete(workCreator).where(eq(workCreator.work_id, workId));
             if (creators.length > 0) {
                 const creatorInserts = [];
                 for (const creator of creators) {
-                    const creatorId = await creatorUuidToId(db, creator.creator_uuid);
+                    const creatorId = await creatorIndexToId(db, creator.creator_index);
                     if (!creatorId) {
-                        throw new Error(`Creator not found: ${creator.creator_uuid}`);
+                        throw new Error(`Creator not found: ${creator.creator_index}`);
                     }
                     creatorInserts.push({
                         work_id: workId,
@@ -719,19 +760,21 @@ export async function updateWork(
                 await db.insert(workCreator).values(creatorInserts);
             }
         }
-        
-        // Handle wikis
-        await db.delete(workWiki).where(eq(workWiki.work_id, workId));
-        if (wikis && wikis.length > 0) {
-            await db.insert(workWiki).values(
-                wikis.map(wiki => ({
-                    work_id: workId,
-                    platform: wiki.platform,
-                    identifier: wiki.identifier,
-                }))
-            );
+
+        // Handle wikis (only if wikis parameter is provided)
+        if (wikis !== undefined) {
+            await db.delete(workWiki).where(eq(workWiki.work_id, workId));
+            if (wikis.length > 0) {
+                await db.insert(workWiki).values(
+                    wikis.map(wiki => ({
+                        work_id: workId,
+                        platform: wiki.platform,
+                        identifier: wiki.identifier,
+                    }))
+                );
+            }
         }
-        
+
         return true;
     } catch (error) {
         console.error('Error updating work:', error);
@@ -742,21 +785,21 @@ export async function updateWork(
 /**
  * Delete a work and all its related data
  */
-export async function deleteWork(db: DrizzleDB, workUuid: string): Promise<boolean> {
-    if (!validateUUID(workUuid)) return false;
+export async function deleteWork(db: DrizzleDB, workindex: string): Promise<boolean> {
+    if (!validateIndex(workindex)) return false;
     
     try {
         // Check if work exists
         const existingWork = await db
-            .select({ uuid: work.uuid })
+            .select({ index: work.index })
             .from(work)
-            .where(eq(work.uuid, workUuid))
+            .where(eq(work.index, workindex))
             .limit(1);
         
         if (existingWork.length === 0) return false;
         
         // Delete work (cascade will handle related tables)
-        const result = await db.delete(work).where(eq(work.uuid, workUuid));
+        const result = await db.delete(work).where(eq(work.index, workindex));
         return true;
     } catch (error) {
         console.error('Error deleting work:', error);
@@ -774,8 +817,8 @@ export async function listAssets(db: DrizzleDB, page: number, pageSize: number):
 
     const assets = await db
         .select({
-            uuid: asset.uuid,
-            work_uuid: work.uuid,
+            index: asset.index,
+            work_index: work.index,
             asset_type: asset.asset_type,
             file_name: asset.file_name,
             is_previewpic: asset.is_previewpic,
@@ -797,21 +840,21 @@ export async function inputAsset(
     assetData: AssetApi,
     creators: CreatorWithRole[]
 ): Promise<boolean> {
-    if (!validateUUID(assetData.uuid) || !validateUUID(assetData.work_uuid)) {
+    if (!validateIndex(assetData.index) || !validateIndex(assetData.work_index)) {
         return false;
     }
 
     try {
         // For D1 compatibility, execute operations sequentially without transactions
-        // Convert work UUID to ID
-        const workId = await workUuidToId(db, assetData.work_uuid);
+        // Convert work index to ID
+        const workId = await workIndexToId(db, assetData.work_index);
         if (!workId) {
-            throw new Error(`Work not found: ${assetData.work_uuid}`);
+            throw new Error(`Work not found: ${assetData.work_index}`);
         }
 
         // Insert asset
         await db.insert(asset).values({
-            uuid: assetData.uuid,
+            index: assetData.index,
             work_id: workId,
             asset_type: assetData.asset_type,
             file_name: assetData.file_name,
@@ -822,16 +865,16 @@ export async function inputAsset(
         // Insert asset creators
         if (creators.length > 0) {
             // Get asset ID for foreign key operations
-            const assetId = await assetUuidToId(db, assetData.uuid);
+            const assetId = await assetIndexToId(db, assetData.index);
             if (!assetId) {
-                throw new Error(`Asset not found after insert: ${assetData.uuid}`);
+                throw new Error(`Asset not found after insert: ${assetData.index}`);
             }
 
             const creatorInserts = [];
             for (const creator of creators) {
-                const creatorId = await creatorUuidToId(db, creator.creator_uuid);
+                const creatorId = await creatorIndexToId(db, creator.creator_index);
                 if (!creatorId) {
-                    throw new Error(`Creator not found: ${creator.creator_uuid}`);
+                    throw new Error(`Creator not found: ${creator.creator_index}`);
                 }
                 creatorInserts.push({
                     asset_id: assetId,
@@ -853,18 +896,18 @@ export async function inputAsset(
  */
 export async function updateAsset(
     db: DrizzleDB,
-    assetUuid: string,
+    assetIndex: string,
     assetData: AssetApi,
     creators?: CreatorWithRole[]
 ): Promise<boolean> {
-    if (!validateUUID(assetUuid)) return false;
+    if (!validateIndex(assetIndex)) return false;
 
     try {
         // For D1 compatibility, execute operations sequentially without transactions
-        // Convert work UUID to ID
-        const workId = await workUuidToId(db, assetData.work_uuid);
+        // Convert work index to ID
+        const workId = await workIndexToId(db, assetData.work_index);
         if (!workId) {
-            throw new Error(`Work not found: ${assetData.work_uuid}`);
+            throw new Error(`Work not found: ${assetData.work_index}`);
         }
 
         // Update asset
@@ -877,23 +920,23 @@ export async function updateAsset(
                 is_previewpic: assetData.is_previewpic || null,
                 language: assetData.language || null,
             })
-            .where(eq(asset.uuid, assetUuid));
+            .where(eq(asset.index, assetIndex));
 
         // Handle creators
         if (creators) {
             // Get asset ID for foreign key operations
-            const assetId = await assetUuidToId(db, assetUuid);
+            const assetId = await assetIndexToId(db, assetIndex);
             if (!assetId) {
-                throw new Error(`Asset not found: ${assetUuid}`);
+                throw new Error(`Asset not found: ${assetIndex}`);
             }
 
             await db.delete(assetCreator).where(eq(assetCreator.asset_id, assetId));
             if (creators.length > 0) {
                 const creatorInserts = [];
                 for (const creator of creators) {
-                    const creatorId = await creatorUuidToId(db, creator.creator_uuid);
+                    const creatorId = await creatorIndexToId(db, creator.creator_index);
                     if (!creatorId) {
-                        throw new Error(`Creator not found: ${creator.creator_uuid}`);
+                        throw new Error(`Creator not found: ${creator.creator_index}`);
                     }
                     creatorInserts.push({
                         asset_id: assetId,
@@ -914,11 +957,11 @@ export async function updateAsset(
 /**
  * Delete an asset
  */
-export async function deleteAsset(db: DrizzleDB, assetUuid: string): Promise<boolean> {
-    if (!validateUUID(assetUuid)) return false;
+export async function deleteAsset(db: DrizzleDB, assetIndex: string): Promise<boolean> {
+    if (!validateIndex(assetIndex)) return false;
 
     try {
-        await db.delete(asset).where(eq(asset.uuid, assetUuid));
+        await db.delete(asset).where(eq(asset.index, assetIndex));
         return true;
     } catch (error) {
         console.error('Error deleting asset:', error);
@@ -936,7 +979,7 @@ export async function listRelations(db: DrizzleDB, page: number, pageSize: numbe
 
     const relations = await db
         .select({
-            uuid: workRelation.uuid,
+            index: workRelation.index,
             from_work_id: workRelation.from_work_id,
             to_work_id: workRelation.to_work_id,
             relation_type: workRelation.relation_type,
@@ -948,14 +991,14 @@ export async function listRelations(db: DrizzleDB, page: number, pageSize: numbe
     // Convert work IDs to UUIDs for API compatibility
     const relationList: WorkRelationApi[] = [];
     for (const relation of relations) {
-        const fromWorkUuid = await workIdToUuid(db, relation.from_work_id);
-        const toWorkUuid = await workIdToUuid(db, relation.to_work_id);
+        const fromWorkindex = await workIdToIndex(db, relation.from_work_id);
+        const toWorkindex = await workIdToIndex(db, relation.to_work_id);
 
-        if (fromWorkUuid && toWorkUuid) {
+        if (fromWorkindex && toWorkindex) {
             relationList.push({
-                uuid: relation.uuid,
-                from_work_uuid: fromWorkUuid,
-                to_work_uuid: toWorkUuid,
+                index: relation.index,
+                from_work_index: fromWorkindex,
+                to_work_index: toWorkindex,
                 relation_type: relation.relation_type,
             });
         }

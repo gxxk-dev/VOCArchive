@@ -395,7 +395,7 @@
     color: #f0f0f0;
 }
 
-[data-theme="dark"] .uuid {
+[data-theme="dark"] .index {
     color: #ccc !important;
 }
 
@@ -528,7 +528,7 @@
     color: #f0f0f0 !important;
 }
 
-[data-theme="dark"] .work-card-uuid {
+[data-theme="dark"] .work-card-index {
     color: #bbb !important;
 }
 

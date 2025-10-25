@@ -1,4 +1,4 @@
-// UI > Iframe Manager
+﻿// UI > Iframe Manager
 
 /**
  * Show editor modal
@@ -47,10 +47,10 @@ export async function loadEditorForCreate(editor, editorModal, type) {
  * @param {HTMLIFrameElement} editor - The editor iframe element
  * @param {HTMLElement} editorModal - The editor modal element
  * @param {string} type - Item type
- * @param {string} uuid - Item UUID
+ * @param {string} Index - Item Index
  */
-export async function loadEditorForEdit(editor, editorModal, type, uuid) {
-    console.log('Loading editor for edit:', { type, uuid });
+export async function loadEditorForEdit(editor, editorModal, type, index) {
+    console.log('Loading editor for edit:', { type, index });
 
     if (!editor || !editorModal) {
         console.error('Editor iframe or modal not found');
@@ -59,7 +59,7 @@ export async function loadEditorForEdit(editor, editorModal, type, uuid) {
 
     // Get JWT token for editor authorization
     const { jwtToken } = await import('../core/config.js');
-    const editorUrl = `/admin/editor?type=${encodeURIComponent(type)}&uuid=${encodeURIComponent(uuid)}&token=${encodeURIComponent(jwtToken)}`;
+    const editorUrl = `/admin/editor?type=${encodeURIComponent(type)}&index=${encodeURIComponent(index)}&token=${encodeURIComponent(jwtToken)}`;
 
     editor.src = editorUrl;
     showEditorModal(editorModal);

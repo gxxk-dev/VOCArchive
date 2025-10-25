@@ -7,7 +7,7 @@ export const Pagination = (props?: {
     filterInfo?: {
         type: 'tag' | 'category',
         name: string,
-        uuid: string
+        index: string
     } | null,
     searchQuery: string
 }) => {

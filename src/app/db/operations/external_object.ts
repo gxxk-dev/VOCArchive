@@ -1,10 +1,10 @@
-import { eq } from 'drizzle-orm';
+﻿import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { externalObject, externalSource } from '../schema';
 import type { ExternalObject, NewExternalObject, ExternalSource as ExternalSourceType, ExternalObjectApiInput } from '../types';
 import { buildStorageURL, buildStorageURLWithLoadBalancing } from '../utils/storage-handlers';
-import { externalSourceUuidToId } from '../utils/uuid-id-converter';
-import { validateUUID } from '../utils';
+import { externalSourceIndexToId } from '../utils/index-id-converter';
+import { validateIndex } from '../utils';
 
 /**
  * Extended external object interface with source information
@@ -14,13 +14,13 @@ export interface ExternalObjectWithSource extends ExternalObject {
 }
 
 /**
- * Get external object by UUID with source information
+ * Get external object by index with source information
  */
-export async function getExternalObjectByUUID(
+export async function getExternalObjectByIndex(
     db: DrizzleDB, 
-    objectUuid: string
+    objectindex: string
 ): Promise<ExternalObjectWithSource | null> {
-    if (!validateUUID(objectUuid)) {
+    if (!validateIndex(objectindex)) {
         return null;
     }
 
@@ -28,13 +28,13 @@ export async function getExternalObjectByUUID(
         .select({
             // External object fields
             id: externalObject.id,
-            uuid: externalObject.uuid,
+            index: externalObject.index,
             external_source_id: externalObject.external_source_id,
             mime_type: externalObject.mime_type,
             file_id: externalObject.file_id,
             // External source fields
             source_id: externalSource.id,
-            source_uuid: externalSource.uuid,
+            source_index: externalSource.index,
             source_type: externalSource.type,
             source_name: externalSource.name,
             source_endpoint: externalSource.endpoint,
@@ -42,7 +42,7 @@ export async function getExternalObjectByUUID(
         })
         .from(externalObject)
         .innerJoin(externalSource, eq(externalObject.external_source_id, externalSource.id))
-        .where(eq(externalObject.uuid, objectUuid))
+        .where(eq(externalObject.index, objectindex))
         .limit(1);
 
     if (result.length === 0) {
@@ -52,13 +52,13 @@ export async function getExternalObjectByUUID(
     const row = result[0];
     return {
         id: row.id,
-        uuid: row.uuid,
+        index: row.index,
         external_source_id: row.external_source_id,
         mime_type: row.mime_type,
         file_id: row.file_id,
         source: {
             id: row.source_id,
-            uuid: row.source_uuid,
+            index: row.source_index,
             type: row.source_type,
             name: row.source_name,
             endpoint: row.source_endpoint,
@@ -85,13 +85,13 @@ export async function listExternalObjects(
         .select({
             // External object fields
             id: externalObject.id,
-            uuid: externalObject.uuid,
+            index: externalObject.index,
             external_source_id: externalObject.external_source_id,
             mime_type: externalObject.mime_type,
             file_id: externalObject.file_id,
             // External source fields
             source_id: externalSource.id,
-            source_uuid: externalSource.uuid,
+            source_index: externalSource.index,
             source_type: externalSource.type,
             source_name: externalSource.name,
             source_endpoint: externalSource.endpoint,
@@ -104,13 +104,13 @@ export async function listExternalObjects(
 
     return results.map(row => ({
         id: row.id,
-        uuid: row.uuid,
+        index: row.index,
         external_source_id: row.external_source_id,
         mime_type: row.mime_type,
         file_id: row.file_id,
         source: {
             id: row.source_id,
-            uuid: row.source_uuid,
+            index: row.source_index,
             type: row.source_type,
             name: row.source_name,
             endpoint: row.source_endpoint,
@@ -120,18 +120,18 @@ export async function listExternalObjects(
 }
 
 /**
- * Get external objects by external source UUID
+ * Get external objects by external source index 
  */
 export async function getExternalObjectsBySource(
     db: DrizzleDB,
-    sourceUuid: string
+    sourceindex: string
 ): Promise<ExternalObject[]> {
-    if (!validateUUID(sourceUuid)) {
+    if (!validateIndex(sourceindex)) {
         return [];
     }
 
-    // Convert source UUID to ID
-    const sourceId = await externalSourceUuidToId(db, sourceUuid);
+    // Convert source index to ID
+    const sourceId = await externalSourceIndexToId(db, sourceindex);
     if (!sourceId) {
         return [];
     }
@@ -139,7 +139,7 @@ export async function getExternalObjectsBySource(
     const objects = await db
         .select({
             id: externalObject.id,
-            uuid: externalObject.uuid,
+            index: externalObject.index,
             external_source_id: externalObject.external_source_id,
             mime_type: externalObject.mime_type,
             file_id: externalObject.file_id,
@@ -158,7 +158,7 @@ export async function inputExternalObject(
     objectData: NewExternalObject
 ): Promise<void> {
     await db.insert(externalObject).values({
-        uuid: objectData.uuid,
+        index: objectData.index,
         external_source_id: objectData.external_source_id,
         mime_type: objectData.mime_type,
         file_id: objectData.file_id,
@@ -170,26 +170,58 @@ export async function inputExternalObject(
  */
 export async function updateExternalObject(
     db: DrizzleDB,
-    objectUuid: string,
-    objectData: Omit<ExternalObjectApiInput, 'uuid'>
+    objectindex: string,
+    objectData: ExternalObjectApiInput
 ): Promise<boolean> {
-    if (!validateUUID(objectUuid)) return false;
+    if (!validateIndex(objectindex)) return false;
 
     try {
-        // Convert external source UUID to ID
-        const externalSourceId = await externalSourceUuidToId(db, objectData.external_source_uuid);
+        // Convert external source index to ID
+        const externalSourceId = await externalSourceIndexToId(db, objectData.external_source_index);
         if (!externalSourceId) {
-            throw new Error(`External source not found: ${objectData.external_source_uuid}`);
+            throw new Error(`External source not found: ${objectData.external_source_index}`);
         }
 
-        await db
-            .update(externalObject)
-            .set({
-                external_source_id: externalSourceId,
-                mime_type: objectData.mime_type,
-                file_id: objectData.file_id,
-            })
-            .where(eq(externalObject.uuid, objectUuid));
+        // Check if index is being changed
+        const newIndex = objectData.index;
+        if (newIndex && newIndex !== objectindex) {
+            // Validate new index
+            if (!validateIndex(newIndex)) {
+                throw new Error(`Invalid new index: ${newIndex}`);
+            }
+
+            // Check if new index already exists
+            const existingObject = await db
+                .select({ id: externalObject.id })
+                .from(externalObject)
+                .where(eq(externalObject.index, newIndex))
+                .limit(1);
+
+            if (existingObject.length > 0) {
+                throw new Error(`Index already exists: ${newIndex}`);
+            }
+
+            // Update external object with new index and other fields
+            await db
+                .update(externalObject)
+                .set({
+                    index: newIndex,
+                    external_source_id: externalSourceId,
+                    mime_type: objectData.mime_type,
+                    file_id: objectData.file_id,
+                })
+                .where(eq(externalObject.index, objectindex));
+        } else {
+            // Update external object without changing index
+            await db
+                .update(externalObject)
+                .set({
+                    external_source_id: externalSourceId,
+                    mime_type: objectData.mime_type,
+                    file_id: objectData.file_id,
+                })
+                .where(eq(externalObject.index, objectindex));
+        }
 
         return true;
     } catch (error) {
@@ -201,11 +233,11 @@ export async function updateExternalObject(
 /**
  * Delete an external object
  */
-export async function deleteExternalObject(db: DrizzleDB, objectUuid: string): Promise<boolean> {
-    if (!validateUUID(objectUuid)) return false;
+export async function deleteExternalObject(db: DrizzleDB, objectindex: string): Promise<boolean> {
+    if (!validateIndex(objectindex)) return false;
 
     try {
-        await db.delete(externalObject).where(eq(externalObject.uuid, objectUuid));
+        await db.delete(externalObject).where(eq(externalObject.index, objectindex));
         
         return true;
     } catch (error) {
@@ -228,12 +260,12 @@ export async function getExternalObjectCount(db: DrizzleDB): Promise<number> {
 }
 
 /**
- * Get external objects by asset UUID (for future junction table support)
+ * Get external objects by asset index (for future junction table support)
  * Note: This will be fully implemented when junction tables are added in step 5
  */
 export async function getExternalObjectsByAsset(
     db: DrizzleDB,
-    assetUuid: string
+    assetIndex: string
 ): Promise<ExternalObjectWithSource[]> {
     // TODO: Implement when asset-external_object junction table is added
     // For now, return empty array as placeholder
@@ -241,12 +273,12 @@ export async function getExternalObjectsByAsset(
 }
 
 /**
- * Get external objects by media source UUID (for future junction table support)
+ * Get external objects by media source index (for future junction table support)
  * Note: This will be fully implemented when junction tables are added in step 5
  */
 export async function getExternalObjectsByMediaSource(
     db: DrizzleDB,
-    mediaUuid: string
+    mediaindex: string
 ): Promise<ExternalObjectWithSource[]> {
     // TODO: Implement when media_source-external_object junction table is added
     // For now, return empty array as placeholder

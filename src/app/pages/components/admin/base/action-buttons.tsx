@@ -1,22 +1,22 @@
-import { jsx } from 'hono/jsx'
+﻿import { jsx } from 'hono/jsx'
 
 export interface ActionButtonsProps {
     target: string
-    uuid: string
+    index: string
     editText?: string
     deleteText?: string
     className?: string
 }
 
 export const ActionButtons = (props: ActionButtonsProps) => {
-    const { target, uuid, editText = 'Edit', deleteText = 'Delete', className = 'actions' } = props;
+    const { target, index, editText = 'Edit', deleteText = 'Delete', className = 'actions' } = props;
 
     return (
         <div class={className}>
-            <button class="edit-button" data-target={target} data-uuid={uuid}>
+            <button class="edit-button" data-target={target} data-index={index}>
                 {editText}
             </button>
-            <button class="delete-button" data-target={target} data-uuid={uuid}>
+            <button class="delete-button" data-target={target} data-index={index}>
                 {deleteText}
             </button>
         </div>
@@ -27,10 +27,10 @@ export const ActionButtons = (props: ActionButtonsProps) => {
 export const TableActionButtons = (props: ActionButtonsProps) => {
     return (
         <td class="actions">
-            <button class="edit-button" data-target={props.target} data-uuid={props.uuid}>
+            <button class="edit-button" data-target={props.target} data-index={props.index}>
                 {props.editText || 'Edit'}
             </button>
-            <button class="delete-button" data-target={props.target} data-uuid={props.uuid}>
+            <button class="delete-button" data-target={props.target} data-index={props.index}>
                 {props.deleteText || 'Delete'}
             </button>
         </td>

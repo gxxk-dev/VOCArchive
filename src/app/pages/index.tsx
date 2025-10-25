@@ -18,7 +18,7 @@ export const IndexPage = (props: {
     filterInfo?: {
         type: 'tag' | 'category',
         name: string,
-        uuid: string
+        index: string
     } | null,
     searchQuery: string,
     preferredLanguage?: string,

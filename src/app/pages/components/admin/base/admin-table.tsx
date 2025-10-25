@@ -1,4 +1,4 @@
-import { jsx } from 'hono/jsx'
+﻿import { jsx } from 'hono/jsx'
 import { AdminHeader } from './admin-header'
 import { EmptyState } from './empty-state'
 import { TableCell } from './table-cell'
@@ -17,8 +17,8 @@ export interface AdminTableProps {
 
 // 默认获取UUID的函数
 function defaultGetUuid(row: any, target: string): string {
-    return row.uuid || row.work_uuid || row.creator_uuid || row.media_uuid ||
-           row.asset_uuid || row.relation_uuid || row.key ||
+    return row.index || row.work_index || row.creator_index || row.media_index ||
+           row.asset_index || row.relation_index || row.key ||
            (target === 'wiki_platform' ? row.platform_key : null);
 }
 
@@ -64,9 +64,9 @@ export const AdminTable = (props: AdminTableProps) => {
                     </thead>
                     <tbody>
                         {data.map(row => {
-                            const uuid = getUuidFromRow(row);
+                            const index = getUuidFromRow(row);
                             return (
-                                <tr data-uuid={uuid}>
+                                <tr data-index={index}>
                                     {tableHeaders.map(h => {
                                         // 检查是否有自定义渲染器
                                         const customCell = renderCustomCell?.(row[h], h, row);
@@ -76,7 +76,7 @@ export const AdminTable = (props: AdminTableProps) => {
                                         // 使用默认的TableCell
                                         return <TableCell data={row[h]} columnName={h} />;
                                     })}
-                                    <TableActionButtons target={target} uuid={uuid} />
+                                    <TableActionButtons target={target} index={index} />
                                 </tr>
                             );
                         })}

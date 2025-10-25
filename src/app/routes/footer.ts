@@ -1,10 +1,10 @@
-import { Hono } from 'hono';
+﻿import { Hono } from 'hono';
 import { createDrizzleClient } from '../db/client';
 import { getFooterSettings, insertFooterSetting, updateFooterSetting, deleteFooterSetting } from '../db/operations/admin';
-import { v4 as uuidv4 } from 'uuid';
+import { generateIndex } from '../db/utils/index-utils';
 
 interface FooterSetting {
-    uuid: string;
+    index: string;
     item_type: 'link' | 'social' | 'copyright';
     text: string;
     url?: string;
@@ -26,26 +26,26 @@ app.get('/', async (c) => {
 
 app.post('/settings', async (c) => {
     try {
-        const body = await c.req.json<Omit<FooterSetting, 'uuid'>>();
+        const body = await c.req.json<Omit<FooterSetting, 'index'>>();
         const newSetting: FooterSetting = {
             ...body,
-            uuid: uuidv4()
+            index: generateIndex()
         };
         const db = createDrizzleClient(c.env.DB);
         await insertFooterSetting(db, newSetting);
-        return c.json({ success: true, uuid: newSetting.uuid });
+        return c.json({ success: true, index: newSetting.index });
     } catch (e: any) {
         return c.json({ error: e.message }, 500);
     }
 })
 
-app.put('/settings/:uuid', async (c) => {
+app.put('/settings/:index', async (c) => {
     try {
-        const uuid = c.req.param('uuid');
-        const body = await c.req.json<Omit<FooterSetting, 'uuid'>>();
+        const index = c.req.param('index');
+        const body = await c.req.json<Omit<FooterSetting, 'index'>>();
         const setting: FooterSetting = {
             ...body,
-            uuid
+            index 
         };
         const db = createDrizzleClient(c.env.DB);
         await updateFooterSetting(db, setting);
@@ -55,11 +55,11 @@ app.put('/settings/:uuid', async (c) => {
     }
 })
 
-app.delete('/settings/:uuid', async (c) => {
+app.delete('/settings/:index', async (c) => {
     try {
-        const uuid = c.req.param('uuid');
+        const index = c.req.param('index');
         const db = createDrizzleClient(c.env.DB);
-        await deleteFooterSetting(db, uuid);
+        await deleteFooterSetting(db, index);
         return c.json({ success: true });
     } catch (e: any) {
         return c.json({ error: e.message }, 500);

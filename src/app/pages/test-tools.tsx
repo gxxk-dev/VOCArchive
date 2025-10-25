@@ -1,4 +1,4 @@
-import { jsx } from 'hono/jsx'
+﻿import { jsx } from 'hono/jsx'
 import { BaseLayout } from './layouts/base-layout'
 import { FooterSetting } from '../db/operations/admin'
 
@@ -606,7 +606,7 @@ export const TestToolsPage = (props: TestToolsPageProps) => {
                             <h2>4. 文件重定向测试</h2>
                             <div id="redirect-status" class="status info">未测试</div>
                             <button onclick="testFileRedirect()">测试文件重定向</button>
-                            <div class="test-url">/api/get/file/{'{'} uuid {'}'}</div>
+                            <div class="test-url">/api/get/file/{'{'} index {'}'}</div>
                         </div>
 
                         <div class="test-section">

@@ -1,6 +1,6 @@
-import { jsx } from 'hono/jsx'
+﻿import { jsx } from 'hono/jsx'
 import { AssetApi } from '../../../db/types'
-import { AdminHeader, EmptyState, UuidTableCell, TableActionButtons } from './base'
+import { AdminHeader, EmptyState, IndexTableCell, TableActionButtons } from './base'
 
 export interface AssetsTableProps {
     assets: AssetApi[]
@@ -65,10 +65,10 @@ export const AssetsTable = (props: AssetsTableProps) => {
                     </thead>
                     <tbody>
                         {assets.map(asset => (
-                            <tr data-uuid={asset.uuid}>
-                                <UuidTableCell uuid={asset.uuid} />
+                            <tr data-index={asset.index}>
+                                <IndexTableCell index={asset.index} />
                                 <td>
-                                    <UuidTableCell uuid={asset.work_uuid || ''} />
+                                    <IndexTableCell index={asset.work_index || ''} />
                                 </td>
                                 <td class="file-name">{asset.file_name || ''}</td>
                                 <td class="asset-type">{asset.asset_type || ''}</td>
@@ -83,7 +83,7 @@ export const AssetsTable = (props: AssetsTableProps) => {
                                 </td>
                                 <TableActionButtons
                                     target="asset"
-                                    uuid={asset.uuid}
+                                    index={asset.index}
                                     editText="编辑"
                                     deleteText="删除"
                                 />

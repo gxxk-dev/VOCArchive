@@ -9,7 +9,7 @@ import { jsx } from 'hono/jsx'
  */
 export interface UuidSelectorProps {
   type: string
-  data: Array<{ uuid: string; name: string; [key: string]: any }>
+  data: Array<{ index: string; name: string; [key: string]: any }>
   selectedValue?: string
   targetInputId: string
   label: string
@@ -29,7 +29,7 @@ export const UuidSelector = ({ type, data, selectedValue, targetInputId, label }
         >
           <option value="">选择...</option>
           {data.map(item => (
-            <option value={item.uuid} selected={item.uuid === selectedValue ? true : undefined}>
+            <option value={item.index} selected={item.index === selectedValue ? true : undefined}>
               {item.name}
             </option>
           ))}
@@ -46,8 +46,8 @@ export const UuidSelector = ({ type, data, selectedValue, targetInputId, label }
  */
 export interface MultiSelectorProps {
   type: string
-  data: Array<{ uuid: string; name: string; [key: string]: any }>
-  selectedItems: Array<{ uuid: string; [key: string]: any }>
+  data: Array<{ index: string; name: string; [key: string]: any }>
+  selectedItems: Array<{ index: string; [key: string]: any }>
   label: string
   placeholder: string
 }
@@ -57,7 +57,7 @@ export const MultiSelector = ({ type, data, selectedItems, label, placeholder }:
     return <p>暂无可用{label}</p>
   }
 
-  const selectedIds = selectedItems.map(item => item.uuid)
+  const selectedIds = selectedItems.map(item => item.index)
 
   // 将复数形式转换为单数形式以匹配 CSS 类名
   const singularType = type === 'tags' ? 'tag' : type === 'categories' ? 'category' : type
@@ -76,10 +76,10 @@ export const MultiSelector = ({ type, data, selectedItems, label, placeholder }:
             <input
               type="checkbox"
               name={`selected_${type}`}
-              value={item.uuid}
-              checked={selectedIds.includes(item.uuid) ? true : undefined}
+              value={item.index}
+              checked={selectedIds.includes(item.index) ? true : undefined}
             />
-            <span class={selectedIds.includes(item.uuid) ? `${singularType}-chip selected` : `${singularType}-chip`}>
+            <span class={selectedIds.includes(item.index) ? `${singularType}-chip selected` : `${singularType}-chip`}>
               {item.name}
             </span>
           </label>
@@ -94,8 +94,8 @@ export const MultiSelector = ({ type, data, selectedItems, label, placeholder }:
  */
 export interface HierarchicalMultiSelectorProps {
   type: string
-  data: Array<{ uuid: string; name: string; children?: any[]; [key: string]: any }>
-  selectedItems: Array<{ uuid: string; [key: string]: any }>
+  data: Array<{ index: string; name: string; children?: any[]; [key: string]: any }>
+  selectedItems: Array<{ index: string; [key: string]: any }>
   label: string
   placeholder: string
 }
@@ -105,7 +105,7 @@ export const HierarchicalMultiSelector = ({ type, data, selectedItems, label, pl
     return <p>暂无可用{label}</p>
   }
 
-  const selectedIds = selectedItems.map(item => item.uuid)
+  const selectedIds = selectedItems.map(item => item.index)
 
   // 将复数形式转换为单数形式以匹配 CSS 类名
   const singularType = type === 'tags' ? 'tag' : type === 'categories' ? 'category' : type
@@ -122,10 +122,10 @@ export const HierarchicalMultiSelector = ({ type, data, selectedItems, label, pl
             <input
               type="checkbox"
               name={`selected_${type}`}
-              value={item.uuid}
-              checked={selectedIds.includes(item.uuid) ? true : undefined}
+              value={item.index}
+              checked={selectedIds.includes(item.index) ? true : undefined}
             />
-            <span class={`${singularType}-name ${selectedIds.includes(item.uuid) ? 'selected' : ''}`}>
+            <span class={`${singularType}-name ${selectedIds.includes(item.index) ? 'selected' : ''}`}>
               {indent}{item.name}
             </span>
           </label>

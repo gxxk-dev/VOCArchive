@@ -1,31 +1,31 @@
-import { eq, and } from 'drizzle-orm';
+﻿import { eq, and } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { externalSource } from '../schema';
 import type { ExternalSource, NewExternalSource, ExternalSourceApiInput } from '../types';
-import { validateUUID } from '../utils';
+import { validateIndex } from '../utils';
 
 /**
- * Get external source by UUID
+ * Get external source by index 
  */
-export async function getExternalSourceByUUID(
+export async function getExternalSourceByIndex(
     db: DrizzleDB,
-    sourceUuid: string
+    sourceindex: string
 ): Promise<ExternalSource | null> {
-    if (!validateUUID(sourceUuid)) {
+    if (!validateIndex(sourceindex)) {
         return null;
     }
 
     const sourceResult = await db
         .select({
             id: externalSource.id,
-            uuid: externalSource.uuid,
+            index: externalSource.index,
             type: externalSource.type,
             name: externalSource.name,
             endpoint: externalSource.endpoint,
             isIPFS: externalSource.isIPFS,
         })
         .from(externalSource)
-        .where(eq(externalSource.uuid, sourceUuid))
+        .where(eq(externalSource.index, sourceindex))
         .limit(1);
 
     return sourceResult[0] || null;
@@ -48,7 +48,7 @@ export async function listExternalSources(
     const sources = await db
         .select({
             id: externalSource.id,
-            uuid: externalSource.uuid,
+            index: externalSource.index,
             type: externalSource.type,
             name: externalSource.name,
             endpoint: externalSource.endpoint,
@@ -69,7 +69,7 @@ export async function inputExternalSource(
     sourceData: ExternalSourceApiInput
 ): Promise<void> {
     await db.insert(externalSource).values({
-        uuid: sourceData.uuid,
+        index: sourceData.index,
         type: sourceData.type,
         name: sourceData.name,
         endpoint: sourceData.endpoint,
@@ -82,21 +82,54 @@ export async function inputExternalSource(
  */
 export async function updateExternalSource(
     db: DrizzleDB,
-    sourceUuid: string,
-    sourceData: Omit<ExternalSourceApiInput, 'uuid'>
+    sourceindex: string,
+    sourceData: ExternalSourceApiInput
 ): Promise<boolean> {
-    if (!validateUUID(sourceUuid)) return false;
+    if (!validateIndex(sourceindex)) return false;
 
     try {
-        await db
-            .update(externalSource)
-            .set({
-                type: sourceData.type,
-                name: sourceData.name,
-                endpoint: sourceData.endpoint,
-                isIPFS: sourceData.isIPFS,
-            })
-            .where(eq(externalSource.uuid, sourceUuid));
+        // Check if index is being changed
+        const newIndex = sourceData.index;
+        if (newIndex && newIndex !== sourceindex) {
+            // Validate new index
+            if (!validateIndex(newIndex)) {
+                throw new Error(`Invalid new index: ${newIndex}`);
+            }
+
+            // Check if new index already exists
+            const existingSource = await db
+                .select({ id: externalSource.id })
+                .from(externalSource)
+                .where(eq(externalSource.index, newIndex))
+                .limit(1);
+
+            if (existingSource.length > 0) {
+                throw new Error(`Index already exists: ${newIndex}`);
+            }
+
+            // Update external source with new index and other fields
+            await db
+                .update(externalSource)
+                .set({
+                    index: newIndex,
+                    type: sourceData.type,
+                    name: sourceData.name,
+                    endpoint: sourceData.endpoint,
+                    isIPFS: sourceData.isIPFS,
+                })
+                .where(eq(externalSource.index, sourceindex));
+        } else {
+            // Update external source without changing index
+            await db
+                .update(externalSource)
+                .set({
+                    type: sourceData.type,
+                    name: sourceData.name,
+                    endpoint: sourceData.endpoint,
+                    isIPFS: sourceData.isIPFS,
+                })
+                .where(eq(externalSource.index, sourceindex));
+        }
 
         return true;
     } catch (error) {
@@ -108,12 +141,12 @@ export async function updateExternalSource(
 /**
  * Delete an external source
  */
-export async function deleteExternalSource(db: DrizzleDB, sourceUuid: string): Promise<boolean> {
-    if (!validateUUID(sourceUuid)) return false;
+export async function deleteExternalSource(db: DrizzleDB, sourceindex: string): Promise<boolean> {
+    if (!validateIndex(sourceindex)) return false;
 
     try {
         // Delete external source (cascade will handle related external objects)
-        await db.delete(externalSource).where(eq(externalSource.uuid, sourceUuid));
+        await db.delete(externalSource).where(eq(externalSource.index, sourceindex));
         
         return true;
     } catch (error) {
@@ -146,7 +179,7 @@ export async function getIPFSSourcesByName(
         const sources = await db
             .select({
                 id: externalSource.id,
-                uuid: externalSource.uuid,
+                index: externalSource.index,
                 type: externalSource.type,
                 name: externalSource.name,
                 endpoint: externalSource.endpoint,

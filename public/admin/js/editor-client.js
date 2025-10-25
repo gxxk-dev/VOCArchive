@@ -1,4 +1,4 @@
-// 管理后台编辑器客户端逻辑
+﻿// 管理后台编辑器客户端逻辑
 // 极简实现 - 零 HTML 字符串生成
 
 // 通用的从 template 添加行的函数
@@ -68,9 +68,10 @@ async function handleFormSave(form, config) {
 
     console.log('API endpoint:', endpoint);
 
-    // 添加 UUID（用于更新）
+    // 添加原始 Index（用于查找记录）
     if (!config.isNew) {
-      data.uuid = config.uuid;
+      data.original_index = config.index;  // 保存原始 index 用于查找
+      // data.index 保持不变，包含表单中可能修改过的新值
     }
 
     // 获取 token（从 URL 参数）
@@ -101,13 +102,16 @@ async function handleFormSave(form, config) {
 
     console.log('Save successful:', result);
 
+    // 获取新的 index（优先使用表单中的值，可能已被修改）
+    const newIndex = data.index || config.index || result.index;
+
     // 通知父窗口保存成功
     window.parent.postMessage({
       type: 'editor-save-success',
       data: {
         action: config.isNew ? 'create' : 'update',
         type: config.type,
-        uuid: config.uuid || result.uuid,
+        index: newIndex,  // 使用新的 index
         result: result
       }
     }, '*');
@@ -129,7 +133,7 @@ function handleFormCancel(config) {
     type: 'editor-cancel',
     data: {
       type: config.type,
-      uuid: config.uuid
+      index: config.index
     }
   }, '*');
 }
@@ -189,7 +193,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 通知父窗口 iframe 就绪
   window.parent.postMessage({
     type: 'editor-iframe-ready',
-    data: { type: config.type, uuid: config.uuid }
+    data: { type: config.type, index: config.index }
   }, '*');
 
   console.log('Editor iframe loaded, config:', config);

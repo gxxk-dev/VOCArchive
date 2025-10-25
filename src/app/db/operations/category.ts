@@ -1,4 +1,4 @@
-import { eq, count, inArray, and, isNull } from 'drizzle-orm';
+﻿import { eq, count, inArray, and, isNull } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { 
     category, 
@@ -9,25 +9,25 @@ import {
     creator, 
     asset 
 } from '../schema';
-import { convertCategoryData, convertAssetData, convertCreatorData, validateUUID } from '../utils';
-import { workUuidToId, categoryUuidToId, creatorUuidToId } from '../utils/uuid-id-converter';
+import { convertCategoryData, convertAssetData, convertCreatorData, validateIndex } from '../utils';
+import { workIndexToId, categoryIndexToId, creatorIndexToId } from '../utils/index-id-converter';
 
 import { Category, WorkTitle, CreatorWithRole, Asset, Tag, WorkListItem, CategoryWithCount, CategoryApi, WorkTitleApi } from '../types';
 
 /**
  * Get work titles for API layer (complete with all fields)
  */
-async function getWorkTitlesApi(db: DrizzleDB, workUUID: string): Promise<WorkTitleApi[]> {
-    // Convert work UUID to ID
-    const workId = await workUuidToId(db, workUUID);
+async function getWorkTitlesApi(db: DrizzleDB, workindex: string): Promise<WorkTitleApi[]> {
+    // Convert work index to ID
+    const workId = await workIndexToId(db, workindex);
     if (!workId) {
         return [];
     }
 
     const titles = await db
         .select({
-            uuid: workTitle.uuid,
-            work_uuid: workTitle.uuid, // We'll fix this below
+            index: workTitle.index,
+            work_index: workTitle.index, // We'll fix this below
             is_official: workTitle.is_official,
             is_for_search: workTitle.is_for_search,
             language: workTitle.language,
@@ -36,10 +36,10 @@ async function getWorkTitlesApi(db: DrizzleDB, workUUID: string): Promise<WorkTi
         .from(workTitle)
         .where(eq(workTitle.work_id, workId));
 
-    // Convert to API format with work_uuid
+    // Convert to API format with work_index 
     return titles.map(title => ({
-        uuid: title.uuid,
-        work_uuid: workUUID, // Use the provided work UUID
+        index: title.index,
+        work_index: workindex, // Use the provided work index 
         is_official: title.is_official,
         is_for_search: title.is_for_search,
         language: title.language,
@@ -51,20 +51,20 @@ async function getWorkTitlesApi(db: DrizzleDB, workUUID: string): Promise<WorkTi
  * Convert Category (DB layer) to CategoryApi (API layer)
  */
 async function convertCategoryToApi(db: DrizzleDB, cat: Category): Promise<CategoryApi> {
-    let parent_uuid: string | null = null;
+    let parent_index: string | null = null;
     if (cat.parent_id !== null) {
-        // Get parent UUID from parent ID
-        const parentResult = await db.select({ uuid: category.uuid })
+        // Get parent index from parent ID
+        const parentResult = await db.select({ index: category.index })
             .from(category)
             .where(eq(category.id, cat.parent_id))
             .limit(1);
-        parent_uuid = parentResult[0]?.uuid || null;
+        parent_index = parentResult[0]?.index || null;
     }
 
     return {
-        uuid: cat.uuid,
+        index: cat.index,
         name: cat.name,
-        parent_uuid: parent_uuid,
+        parent_index: parent_index,
     };
 }
 
@@ -77,18 +77,18 @@ function buildCategoryTree(categories: CategoryApi[]): CategoryApi[] {
 
     // Initialize all categories with empty children array
     categories.forEach(cat => {
-        categoryMap.set(cat.uuid, { ...cat, children: [] });
+        categoryMap.set(cat.index, { ...cat, children: [] });
     });
 
     // Build the tree
     categories.forEach(cat => {
-        if (cat.parent_uuid) {
-            const parent = categoryMap.get(cat.parent_uuid);
+        if (cat.parent_index) {
+            const parent = categoryMap.get(cat.parent_index);
             if (parent) {
-                parent.children!.push(categoryMap.get(cat.uuid)!);
+                parent.children!.push(categoryMap.get(cat.index)!);
             }
         } else {
-            rootCategories.push(categoryMap.get(cat.uuid)!);
+            rootCategories.push(categoryMap.get(cat.index)!);
         }
     });
 
@@ -101,34 +101,34 @@ function buildCategoryTree(categories: CategoryApi[]): CategoryApi[] {
 export async function listCategories(db: DrizzleDB): Promise<CategoryApi[]> {
     const categories = await db
         .select({
-            uuid: category.uuid,
+            index: category.index,
             name: category.name,
             parent_id: category.parent_id,
         })
         .from(category)
         .orderBy(category.name);
 
-    // Convert parent_id to parent_uuid for API compatibility
-    const categoriesWithParentUuid = await Promise.all(
+    // Convert parent_id to parent_index for API compatibility
+    const categoriesWithparentIndex = await Promise.all(
         categories.map(async (cat) => {
-            let parent_uuid: string | null = null;
+            let parent_index: string | null = null;
             if (cat.parent_id !== null) {
-                // Get parent UUID from parent ID
-                const parentResult = await db.select({ uuid: category.uuid })
+                // Get parent index from parent ID
+                const parentResult = await db.select({ index: category.index })
                     .from(category)
                     .where(eq(category.id, cat.parent_id))
                     .limit(1);
-                parent_uuid = parentResult[0]?.uuid || null;
+                parent_index = parentResult[0]?.index || null;
             }
             return {
-                uuid: cat.uuid,
+                index: cat.index,
                 name: cat.name,
-                parent_uuid: parent_uuid,
+                parent_index: parent_index,
             };
         })
     );
 
-    return buildCategoryTree(categoriesWithParentUuid);
+    return buildCategoryTree(categoriesWithparentIndex);
 }
 
 /**
@@ -137,41 +137,41 @@ export async function listCategories(db: DrizzleDB): Promise<CategoryApi[]> {
 export async function listCategoriesWithCounts(db: DrizzleDB): Promise<CategoryWithCount[]> {
     const categories = await db
         .select({
-            uuid: category.uuid,
+            index: category.index,
             name: category.name,
-            parent_id: category.parent_id, // Get parent_id to convert to UUID later
+            parent_id: category.parent_id, // Get parent_id to convert to index later
             work_count: count(workCategory.work_id)
         })
         .from(category)
         .leftJoin(workCategory, eq(category.id, workCategory.category_id)) // Use ID fields for JOIN
-        .groupBy(category.uuid, category.name, category.parent_id)
+        .groupBy(category.index, category.name, category.parent_id)
         .orderBy(category.name);
 
-    // Convert parent_id to parent_uuid for API compatibility
-    const categoriesWithParentUuid = await Promise.all(
+    // Convert parent_id to parent_index for API compatibility
+    const categoriesWithparentIndex = await Promise.all(
         categories.map(async (cat) => {
-            let parent_uuid: string | null = null;
+            let parent_index: string | null = null;
             if (cat.parent_id !== null) {
-                // Get parent UUID from parent ID
-                const parentResult = await db.select({ uuid: category.uuid })
+                // Get parent index from parent ID
+                const parentResult = await db.select({ index: category.index })
                     .from(category)
                     .where(eq(category.id, cat.parent_id))
                     .limit(1);
-                parent_uuid = parentResult[0]?.uuid || null;
+                parent_index = parentResult[0]?.index || null;
             }
             return {
-                uuid: cat.uuid,
+                index: cat.index,
                 name: cat.name,
-                parent_uuid: parent_uuid,
+                parent_index: parent_index,
                 work_count: cat.work_count,
             };
         })
     );
 
-    const categoriesWithCounts = categoriesWithParentUuid.map(cat => ({
-        uuid: cat.uuid,
+    const categoriesWithCounts = categoriesWithparentIndex.map(cat => ({
+        index: cat.index,
         name: cat.name,
-        parent_uuid: cat.parent_uuid,
+        parent_index: cat.parent_index,
         work_count: cat.work_count,
         children: [] as CategoryWithCount[]
     }));
@@ -188,18 +188,18 @@ function buildCategoryTreeWithCounts(categories: CategoryWithCount[]): CategoryW
 
     // Initialize all categories with empty children array
     categories.forEach(cat => {
-        categoryMap.set(cat.uuid, { ...cat, children: [] });
+        categoryMap.set(cat.index, { ...cat, children: [] });
     });
 
     // Build the tree
     categories.forEach(cat => {
-        if (cat.parent_uuid) {
-            const parent = categoryMap.get(cat.parent_uuid);
+        if (cat.parent_index) {
+            const parent = categoryMap.get(cat.parent_index);
             if (parent) {
-                parent.children!.push(categoryMap.get(cat.uuid)!);
+                parent.children!.push(categoryMap.get(cat.index)!);
             }
         } else {
-            rootCategories.push(categoryMap.get(cat.uuid)!);
+            rootCategories.push(categoryMap.get(cat.index)!);
         }
     });
 
@@ -207,15 +207,15 @@ function buildCategoryTreeWithCounts(categories: CategoryWithCount[]): CategoryW
 }
 
 /**
- * Get category by UUID
+ * Get category by index 
  */
-export async function getCategoryByUUID(db: DrizzleDB, categoryUuid: string): Promise<CategoryApi | null> {
-    if (!validateUUID(categoryUuid)) return null;
+export async function getCategoryByIndex(db: DrizzleDB, categoryIndex: string): Promise<CategoryApi | null> {
+    if (!validateIndex(categoryIndex)) return null;
 
     const categoryResult = await db
         .select()
         .from(category)
-        .where(eq(category.uuid, categoryUuid))
+        .where(eq(category.index, categoryIndex))
         .limit(1);
 
     if (!categoryResult[0]) return null;
@@ -228,23 +228,24 @@ export async function getCategoryByUUID(db: DrizzleDB, categoryUuid: string): Pr
  */
 export async function getWorksByCategory(
     db: DrizzleDB, 
-    categoryUuid: string, 
+    categoryIndex: string, 
     page: number, 
     pageSize: number = 20
 ): Promise<WorkListItem[]> {
     if (page < 1 || pageSize < 1) return [];
-    if (!validateUUID(categoryUuid)) return [];
+    if (!validateIndex(categoryIndex)) return [];
 
     const offset = (page - 1) * pageSize;
 
-    // Convert category UUID to ID for database query
-    const categoryId = await categoryUuidToId(db, categoryUuid);
+    // Convert category index to ID for database query
+    const categoryId = await categoryIndexToId(db, categoryIndex);
     if (!categoryId) return [];
 
     // Get work UUIDs for this category
-    const workUuids = await db
+    const workIndexs = await db
         .select({
-            work_uuid: work.uuid // Select work UUID for API compatibility
+            work_id: work.id, // Select work ID for WorkListItem
+            work_index: work.index // Select work index for API compatibility
         })
         .from(workCategory)
         .innerJoin(work, eq(workCategory.work_id, work.id)) // JOIN using ID fields
@@ -252,32 +253,33 @@ export async function getWorksByCategory(
         .limit(pageSize)
         .offset(offset);
 
-    if (workUuids.length === 0) return [];
+    if (workIndexs.length === 0) return [];
 
-    const workUuidList = workUuids.map(w => w.work_uuid);
+    const workIndexList = workIndexs.map(w => w.work_index);
+    const workIdMap = new Map(workIndexs.map(w => [w.work_index, w.work_id]));
 
     // Get creators for these works
     const creators = await db
         .select({
-            work_uuid: work.uuid, // Get work UUID through JOIN
-            creator_uuid: creator.uuid,
+            work_index: work.index, // Get work index through JOIN
+            creator_index: creator.index,
             creator_name: creator.name,
             creator_type: creator.type,
             role: workCreator.role,
         })
         .from(workCreator)
         .innerJoin(creator, eq(workCreator.creator_id, creator.id)) // Use ID fields for JOIN
-        .innerJoin(work, eq(workCreator.work_id, work.id)) // JOIN with work to get UUID
-        .where(inArray(work.uuid, workUuidList)); // Filter by work UUIDs
+        .innerJoin(work, eq(workCreator.work_id, work.id)) // JOIN with work to get index 
+        .where(inArray(work.index, workIndexList)); // Filter by work UUIDs
 
-    // Group creators by work UUID
+    // Group creators by work index 
     const creatorMap = new Map<string, CreatorWithRole[]>();
     creators.forEach(row => {
-        if (!creatorMap.has(row.work_uuid)) {
-            creatorMap.set(row.work_uuid, []);
+        if (!creatorMap.has(row.work_index)) {
+            creatorMap.set(row.work_index, []);
         }
-        creatorMap.get(row.work_uuid)!.push({
-            creator_uuid: row.creator_uuid,
+        creatorMap.get(row.work_index)!.push({
+            creator_index: row.creator_index,
             creator_name: row.creator_name,
             creator_type: row.creator_type,
             role: row.role
@@ -285,26 +287,26 @@ export async function getWorksByCategory(
     });
 
     // Get work details for each work
-    const workListPromises = workUuidList.map(async (work_uuid) => {
+    const workListPromises = workIndexList.map(async (work_index) => {
         // Get titles
-        const titles = await getWorkTitlesApi(db, work_uuid);
+        const titles = await getWorkTitlesApi(db, work_index);
 
         // Get assets
         const previewAssets = await db
             .select({
-                uuid: asset.uuid,
+                index: asset.index,
                 // file_id: asset.file_id, // Removed - use external objects for file info
-                work_uuid: work.uuid, // Get work UUID through JOIN
+                work_index: work.index, // Get work index through JOIN
                 asset_type: asset.asset_type,
                 file_name: asset.file_name,
                 is_previewpic: asset.is_previewpic,
                 language: asset.language,
             })
             .from(asset)
-            .innerJoin(work, eq(asset.work_id, work.id)) // JOIN with work to get UUID
+            .innerJoin(work, eq(asset.work_id, work.id)) // JOIN with work to get index 
             .where(
                 and(
-                    eq(work.uuid, work_uuid), // Use work UUID from JOIN
+                    eq(work.index, work_index), // Use work index from JOIN
                     eq(asset.asset_type, 'picture'),
                     eq(asset.is_previewpic, true)
                 )
@@ -313,30 +315,31 @@ export async function getWorksByCategory(
 
         const nonPreviewAssets = await db
             .select({
-                uuid: asset.uuid,
+                index: asset.index,
                 // file_id: asset.file_id, // Removed - use external objects for file info
-                work_uuid: work.uuid, // Get work UUID through JOIN
+                work_index: work.index, // Get work index through JOIN
                 asset_type: asset.asset_type,
                 file_name: asset.file_name,
                 is_previewpic: asset.is_previewpic,
                 language: asset.language,
             })
             .from(asset)
-            .innerJoin(work, eq(asset.work_id, work.id)) // JOIN with work to get UUID
+            .innerJoin(work, eq(asset.work_id, work.id)) // JOIN with work to get index 
             .where(
                 and(
-                    eq(work.uuid, work_uuid), // Use work UUID from JOIN
+                    eq(work.index, work_index), // Use work index from JOIN
                     eq(asset.asset_type, 'picture')
                 )
             )
             .limit(1);
 
         return {
-            work_uuid,
+            work_id: workIdMap.get(work_index)!,
+            work_index,
             titles,
             preview_asset: previewAssets[0] ? convertAssetData(previewAssets[0]) : undefined,
             non_preview_asset: nonPreviewAssets[0] ? convertAssetData(nonPreviewAssets[0]) : undefined,
-            creator: creatorMap.get(work_uuid) || [],
+            creator: creatorMap.get(work_index) || [],
             tags: [], // We'll populate this if needed
             categories: [], // We'll populate this if needed
         };
@@ -348,11 +351,11 @@ export async function getWorksByCategory(
 /**
  * Get work count by category
  */
-export async function getWorkCountByCategory(db: DrizzleDB, categoryUuid: string): Promise<number> {
-    if (!validateUUID(categoryUuid)) return 0;
+export async function getWorkCountByCategory(db: DrizzleDB, categoryIndex: string): Promise<number> {
+    if (!validateIndex(categoryIndex)) return 0;
 
-    // Convert category UUID to ID
-    const categoryId = await categoryUuidToId(db, categoryUuid);
+    // Convert category index to ID
+    const categoryId = await categoryIndexToId(db, categoryIndex);
     if (!categoryId) return 0;
 
     const result = await db
@@ -368,16 +371,16 @@ export async function getWorkCountByCategory(db: DrizzleDB, categoryUuid: string
  */
 export async function inputCategory(db: DrizzleDB, categoryData: CategoryApi): Promise<boolean> {
     try {
-        // Convert parent UUID to ID if provided
+        // Convert parent index to ID if provided
         let parent_id: number | null = null;
-        if (categoryData.parent_uuid) {
-            if (!validateUUID(categoryData.parent_uuid)) return false;
-            parent_id = await categoryUuidToId(db, categoryData.parent_uuid);
+        if (categoryData.parent_index) {
+            if (!validateIndex(categoryData.parent_index)) return false;
+            parent_id = await categoryIndexToId(db, categoryData.parent_index);
             if (!parent_id) return false; // Parent category not found
         }
 
         await db.insert(category).values({
-            uuid: categoryData.uuid,
+            index: categoryData.index,
             name: categoryData.name,
             parent_id: parent_id,
         });
@@ -392,29 +395,65 @@ export async function inputCategory(db: DrizzleDB, categoryData: CategoryApi): P
  * Update a category
  */
 export async function updateCategory(
-    db: DrizzleDB, 
-    categoryUuid: string, 
-    name: string, 
-    parentUuid?: string
+    db: DrizzleDB,
+    categoryIndex: string,
+    categoryData: CategoryApi
 ): Promise<boolean> {
-    if (!validateUUID(categoryUuid)) return false;
+    if (!validateIndex(categoryIndex)) return false;
 
     try {
-        // Convert parent UUID to ID if provided
-        let parent_id: number | null = null;
-        if (parentUuid) {
-            if (!validateUUID(parentUuid)) return false;
-            parent_id = await categoryUuidToId(db, parentUuid);
-            if (!parent_id) return false; // Parent category not found
+        // Check if index is being changed
+        const newIndex = categoryData.index;
+        if (newIndex && newIndex !== categoryIndex) {
+            // Validate new index
+            if (!validateIndex(newIndex)) {
+                throw new Error(`Invalid new index: ${newIndex}`);
+            }
+
+            // Check if new index already exists
+            const existingCategory = await db
+                .select({ id: category.id })
+                .from(category)
+                .where(eq(category.index, newIndex))
+                .limit(1);
+
+            if (existingCategory.length > 0) {
+                throw new Error(`Index already exists: ${newIndex}`);
+            }
         }
 
-        await db
-            .update(category)
-            .set({
-                name,
-                parent_id: parent_id
-            })
-            .where(eq(category.uuid, categoryUuid));
+        // Convert parent index to ID if provided
+        let parent_id: number | null = null;
+        if (categoryData.parent_index) {
+            if (!validateIndex(categoryData.parent_index)) {
+                throw new Error(`Invalid parent index: ${categoryData.parent_index}`);
+            }
+            parent_id = await categoryIndexToId(db, categoryData.parent_index);
+            if (!parent_id) {
+                throw new Error(`Parent category not found: ${categoryData.parent_index}`);
+            }
+        }
+
+        // Update category with or without new index
+        if (newIndex && newIndex !== categoryIndex) {
+            await db
+                .update(category)
+                .set({
+                    index: newIndex,
+                    name: categoryData.name,
+                    parent_id: parent_id
+                })
+                .where(eq(category.index, categoryIndex));
+        } else {
+            await db
+                .update(category)
+                .set({
+                    name: categoryData.name,
+                    parent_id: parent_id
+                })
+                .where(eq(category.index, categoryIndex));
+        }
+
         return true;
     } catch (error) {
         console.error('Error updating category:', error);
@@ -425,11 +464,11 @@ export async function updateCategory(
 /**
  * Delete a category
  */
-export async function deleteCategory(db: DrizzleDB, categoryUuid: string): Promise<boolean> {
-    if (!validateUUID(categoryUuid)) return false;
+export async function deleteCategory(db: DrizzleDB, categoryIndex: string): Promise<boolean> {
+    if (!validateIndex(categoryIndex)) return false;
 
     try {
-        await db.delete(category).where(eq(category.uuid, categoryUuid));
+        await db.delete(category).where(eq(category.index, categoryIndex));
         return true;
     } catch (error) {
         console.error('Error deleting category:', error);
@@ -442,21 +481,21 @@ export async function deleteCategory(db: DrizzleDB, categoryUuid: string): Promi
  */
 export async function addWorkCategories(
     db: DrizzleDB,
-    workUuid: string,
-    categoryUuids: string[]
+    workindex: string,
+    categoryIndexs: string[]
 ): Promise<boolean> {
-    if (!validateUUID(workUuid) || categoryUuids.length === 0) return false;
+    if (!validateIndex(workindex) || categoryIndexs.length === 0) return false;
 
     try {
-        // Convert work UUID to ID
-        const workId = await workUuidToId(db, workUuid);
+        // Convert work index to ID
+        const workId = await workIndexToId(db, workindex);
         if (!workId) return false;
 
         // Convert category UUIDs to IDs and prepare insert data
         const insertData: { work_id: number; category_id: number }[] = [];
-        for (const categoryUuid of categoryUuids) {
-            if (!validateUUID(categoryUuid)) continue;
-            const categoryId = await categoryUuidToId(db, categoryUuid);
+        for (const categoryIndex of categoryIndexs) {
+            if (!validateIndex(categoryIndex)) continue;
+            const categoryId = await categoryIndexToId(db, categoryIndex);
             if (categoryId) {
                 insertData.push({
                     work_id: workId,
@@ -480,21 +519,21 @@ export async function addWorkCategories(
  */
 export async function removeWorkCategories(
     db: DrizzleDB,
-    workUuid: string,
-    categoryUuids: string[]
+    workindex: string,
+    categoryIndexs: string[]
 ): Promise<boolean> {
-    if (!validateUUID(workUuid) || categoryUuids.length === 0) return false;
+    if (!validateIndex(workindex) || categoryIndexs.length === 0) return false;
 
     try {
-        // Convert work UUID to ID
-        const workId = await workUuidToId(db, workUuid);
+        // Convert work index to ID
+        const workId = await workIndexToId(db, workindex);
         if (!workId) return false;
 
         // Convert category UUIDs to IDs
         const categoryIds: number[] = [];
-        for (const categoryUuid of categoryUuids) {
-            if (!validateUUID(categoryUuid)) continue;
-            const categoryId = await categoryUuidToId(db, categoryUuid);
+        for (const categoryIndex of categoryIndexs) {
+            if (!validateIndex(categoryIndex)) continue;
+            const categoryId = await categoryIndexToId(db, categoryIndex);
             if (categoryId) categoryIds.push(categoryId);
         }
 
@@ -518,12 +557,12 @@ export async function removeWorkCategories(
 /**
  * Remove all categories from a work
  */
-export async function removeAllWorkCategories(db: DrizzleDB, workUuid: string): Promise<boolean> {
-    if (!validateUUID(workUuid)) return false;
+export async function removeAllWorkCategories(db: DrizzleDB, workindex: string): Promise<boolean> {
+    if (!validateIndex(workindex)) return false;
 
     try {
-        // Convert work UUID to ID
-        const workId = await workUuidToId(db, workUuid);
+        // Convert work index to ID
+        const workId = await workIndexToId(db, workindex);
         if (!workId) return false;
 
         await db.delete(workCategory).where(eq(workCategory.work_id, workId));

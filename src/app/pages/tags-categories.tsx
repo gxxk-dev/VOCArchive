@@ -14,7 +14,7 @@ export interface TagsCategoriesPageProps {
 }
 
 const TagCard = ({ tag }: { tag: TagWithCount }) => (
-    <a href={`/?tag=${tag.uuid}`} class="tag-card">
+    <a href={`/?tag=${tag.index}`} class="tag-card">
         <div class="tag-card-content">
             <div class="tag-icon">
                 <i class="fas fa-tag"></i>
@@ -29,7 +29,7 @@ const TagCard = ({ tag }: { tag: TagWithCount }) => (
 
 const CategoryTreeNode = ({ category, level = 0 }: { category: CategoryWithCount, level?: number }) => (
     <div class={`category-node level-${level}`}>
-        <a href={`/?category=${category.uuid}`} class="category-link">
+        <a href={`/?category=${category.index}`} class="category-link">
             <div class="category-content">
                 <div class="category-icon">
                     <i class={`fas ${level === 0 ? 'fa-folder' : 'fa-folder-open'}`}></i>

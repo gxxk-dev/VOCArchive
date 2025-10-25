@@ -1,26 +1,26 @@
-import { eq } from 'drizzle-orm';
+﻿import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { asset, assetCreator, creator, assetExternalObject, externalObject, externalSource, work } from '../schema';
-import { convertAssetData, validateUUID } from '../utils';
-import { assetUuidToId, workUuidToId, creatorUuidToId, externalObjectUuidToId, externalSourceUuidToId } from '../utils/uuid-id-converter';
+import { convertAssetData, validateIndex } from '../utils';
+import { assetIndexToId, workIndexToId, creatorIndexToId, externalObjectIndexToId, externalSourceIndexToId } from '../utils/index-id-converter';
 import type { Asset, AssetForApplication, CreatorWithRole, AssetWithCreators, ExternalObject, AssetApiInput } from '../types';
 
 /**
- * Get asset by UUID with creator information and external objects
+ * Get asset by index with creator information and external objects
  */
-export async function getAssetByUUID(
+export async function getAssetByIndex(
     db: DrizzleDB, 
-    assetUuid: string
+    assetIndex: string
 ): Promise<AssetWithCreators | null> {
-    if (!validateUUID(assetUuid)) {
+    if (!validateIndex(assetIndex)) {
         return null;
     }
 
     // Get asset with work information
     const assetResult = await db
         .select({
-            uuid: asset.uuid,
-            work_uuid: work.uuid,
+            index: asset.index,
+            work_index: work.index,
             asset_type: asset.asset_type,
             file_name: asset.file_name,
             is_previewpic: asset.is_previewpic,
@@ -28,7 +28,7 @@ export async function getAssetByUUID(
         })
         .from(asset)
         .innerJoin(work, eq(asset.work_id, work.id))
-        .where(eq(asset.uuid, assetUuid))
+        .where(eq(asset.index, assetIndex))
         .limit(1);
 
     if (assetResult.length === 0) {
@@ -38,7 +38,7 @@ export async function getAssetByUUID(
     // Get asset creators
     const assetCreators = await db
         .select({
-            creator_uuid: creator.uuid,
+            creator_index: creator.index,
             creator_name: creator.name,
             creator_type: creator.type,
             role: assetCreator.role,
@@ -46,13 +46,13 @@ export async function getAssetByUUID(
         .from(assetCreator)
         .innerJoin(creator, eq(assetCreator.creator_id, creator.id))
         .innerJoin(asset, eq(assetCreator.asset_id, asset.id))
-        .where(eq(asset.uuid, assetUuid));
+        .where(eq(asset.index, assetIndex));
 
     // Get external objects for this asset
     const externalObjects = await db
         .select({
-            uuid: externalObject.uuid,
-            external_source_uuid: externalSource.uuid,
+            index: externalObject.index,
+            external_source_index: externalSource.index,
             mime_type: externalObject.mime_type,
             file_id: externalObject.file_id,
             source_type: externalSource.type,
@@ -63,16 +63,16 @@ export async function getAssetByUUID(
         .innerJoin(externalObject, eq(assetExternalObject.external_object_id, externalObject.id))
         .innerJoin(externalSource, eq(externalObject.external_source_id, externalSource.id))
         .innerJoin(asset, eq(assetExternalObject.asset_id, asset.id))
-        .where(eq(asset.uuid, assetUuid));
+        .where(eq(asset.index, assetIndex));
 
     const externalObjectsWithSource: ExternalObject[] = externalObjects.map(row => ({
         id: 0, // Will be filled with actual ID if needed
-        uuid: row.uuid,
+        index: row.index,
         external_source_id: 0, // Will be filled with actual ID if needed
         mime_type: row.mime_type,
         file_id: row.file_id,
         source: {
-            uuid: row.external_source_uuid,
+            index: row.external_source_index,
             type: row.source_type,
             name: row.source_name,
             endpoint: row.source_endpoint,
@@ -104,9 +104,9 @@ export async function listAssets(
     const assets = await db
         .select({
             id: asset.id,
-            uuid: asset.uuid,
+            index: asset.index,
             work_id: work.id,
-            work_uuid: work.uuid,
+            work_index: work.index,
             asset_type: asset.asset_type,
             file_name: asset.file_name,
             is_previewpic: asset.is_previewpic,
@@ -122,8 +122,8 @@ export async function listAssets(
         return {
             id: asset.id,
             work_id: asset.work_id,
-            work_uuid: converted.work_uuid,
-            uuid: converted.uuid,
+            work_index: converted.work_index,
+            index: converted.index,
             asset_type: converted.asset_type,
             file_name: converted.file_name,
             is_previewpic: converted.is_previewpic,
@@ -139,19 +139,19 @@ export async function inputAsset(
     db: DrizzleDB,
     assetData: AssetApiInput,
     creators?: CreatorWithRole[],
-    externalObjectUuids?: string[]
+    externalObjectIndexs?: string[]
 ): Promise<void> {
     // For D1 compatibility, execute operations sequentially without transactions
 
-    // Convert work UUID to ID
-    const workId = await workUuidToId(db, assetData.work_uuid);
+    // Convert work index to ID
+    const workId = await workIndexToId(db, assetData.work_index);
     if (!workId) {
-        throw new Error(`Work not found: ${assetData.work_uuid}`);
+        throw new Error(`Work not found: ${assetData.work_index}`);
     }
 
     // Insert asset
     await db.insert(asset).values({
-        uuid: assetData.uuid,
+        index: assetData.index,
         file_id: assetData.file_id || null, // Made optional - use external objects for file info
         work_id: workId,
         asset_type: assetData.asset_type,
@@ -163,16 +163,16 @@ export async function inputAsset(
     // Insert asset creators
     if (creators && creators.length > 0) {
         // Convert UUIDs to IDs
-        const assetId = await assetUuidToId(db, assetData.uuid);
+        const assetId = await assetIndexToId(db, assetData.index);
         if (!assetId) {
-            throw new Error(`Asset not found: ${assetData.uuid}`);
+            throw new Error(`Asset not found: ${assetData.index}`);
         }
 
         const creatorInserts = [];
         for (const creator of creators) {
-            const creatorId = await creatorUuidToId(db, creator.creator_uuid);
+            const creatorId = await creatorIndexToId(db, creator.creator_index);
             if (!creatorId) {
-                throw new Error(`Creator not found: ${creator.creator_uuid}`);
+                throw new Error(`Creator not found: ${creator.creator_index}`);
             }
             creatorInserts.push({
                 asset_id: assetId,
@@ -185,18 +185,18 @@ export async function inputAsset(
     }
 
     // Insert asset-external_object associations
-    if (externalObjectUuids && externalObjectUuids.length > 0) {
+    if (externalObjectIndexs && externalObjectIndexs.length > 0) {
         // Convert UUIDs to IDs
-        const assetId = await assetUuidToId(db, assetData.uuid);
+        const assetId = await assetIndexToId(db, assetData.index);
         if (!assetId) {
-            throw new Error(`Asset not found: ${assetData.uuid}`);
+            throw new Error(`Asset not found: ${assetData.index}`);
         }
 
         const objectInserts = [];
-        for (const objectUuid of externalObjectUuids) {
-            const objectId = await externalObjectUuidToId(db, objectUuid);
+        for (const objectindex of externalObjectIndexs) {
+            const objectId = await externalObjectIndexToId(db, objectindex);
             if (!objectId) {
-                throw new Error(`External object not found: ${objectUuid}`);
+                throw new Error(`External object not found: ${objectindex}`);
             }
             objectInserts.push({
                 asset_id: assetId,
@@ -213,76 +213,114 @@ export async function inputAsset(
  */
 export async function updateAsset(
     db: DrizzleDB,
-    assetUuid: string,
+    assetIndex: string,
     assetData: AssetApiInput,
     creators?: CreatorWithRole[],
-    externalObjectUuids?: string[]
+    externalObjectIndexs?: string[]
 ): Promise<boolean> {
-    if (!validateUUID(assetUuid)) return false;
+    if (!validateIndex(assetIndex)) return false;
 
     try {
         // For D1 compatibility, execute operations sequentially without transactions
-        // Convert work UUID to ID
-        const workId = await workUuidToId(db, assetData.work_uuid);
+        // Convert work index to ID
+        const workId = await workIndexToId(db, assetData.work_index);
         if (!workId) {
-            throw new Error(`Work not found: ${assetData.work_uuid}`);
+            throw new Error(`Work not found: ${assetData.work_index}`);
         }
 
-        // Update asset
-        await db
-            .update(asset)
-            .set({
-                file_id: assetData.file_id || null, // Made optional - use external objects for file info
-                work_id: workId,
-                asset_type: assetData.asset_type,
-                file_name: assetData.file_name,
-                is_previewpic: assetData.is_previewpic || null,
-                language: assetData.language || null,
-            })
-            .where(eq(asset.uuid, assetUuid));
-
-        // Get asset ID for foreign key operations
-        const assetId = await assetUuidToId(db, assetUuid);
-        if (!assetId) {
-            throw new Error(`Asset not found: ${assetUuid}`);
-        }
-
-        // Delete old asset creators
-        await db
-            .delete(assetCreator)
-            .where(eq(assetCreator.asset_id, assetId));
-
-        // Insert new asset creators
-        if (creators && creators.length > 0) {
-            const creatorInserts = [];
-            for (const creator of creators) {
-                const creatorId = await creatorUuidToId(db, creator.creator_uuid);
-                if (!creatorId) {
-                    throw new Error(`Creator not found: ${creator.creator_uuid}`);
-                }
-                creatorInserts.push({
-                    asset_id: assetId,
-                    creator_id: creatorId,
-                    role: creator.role,
-                });
+        // Check if index is being changed
+        const newIndex = assetData.index;
+        if (newIndex && newIndex !== assetIndex) {
+            // Validate new index
+            if (!validateIndex(newIndex)) {
+                throw new Error(`Invalid new index: ${newIndex}`);
             }
-            await db.insert(assetCreator).values(creatorInserts);
+
+            // Check if new index already exists
+            const existingAsset = await db
+                .select({ id: asset.id })
+                .from(asset)
+                .where(eq(asset.index, newIndex))
+                .limit(1);
+
+            if (existingAsset.length > 0) {
+                throw new Error(`Index already exists: ${newIndex}`);
+            }
+
+            // Update asset with new index and other fields
+            await db
+                .update(asset)
+                .set({
+                    index: newIndex,
+                    file_id: assetData.file_id || null,
+                    work_id: workId,
+                    asset_type: assetData.asset_type,
+                    file_name: assetData.file_name,
+                    is_previewpic: assetData.is_previewpic || null,
+                    language: assetData.language || null,
+                })
+                .where(eq(asset.index, assetIndex));
+        } else {
+            // Update asset without changing index
+            await db
+                .update(asset)
+                .set({
+                    file_id: assetData.file_id || null,
+                    work_id: workId,
+                    asset_type: assetData.asset_type,
+                    file_name: assetData.file_name,
+                    is_previewpic: assetData.is_previewpic || null,
+                    language: assetData.language || null,
+                })
+                .where(eq(asset.index, assetIndex));
         }
 
-        // Update asset-external_object associations
-        if (externalObjectUuids !== undefined) {
+        // Get asset ID for foreign key operations (use newIndex if changed, otherwise assetIndex)
+        const currentIndex = (newIndex && newIndex !== assetIndex) ? newIndex : assetIndex;
+        const assetId = await assetIndexToId(db, currentIndex);
+        if (!assetId) {
+            throw new Error(`Asset not found: ${assetIndex}`);
+        }
+
+        // Update asset creators (only if creators parameter is provided)
+        if (creators !== undefined) {
+            // Delete old asset creators
+            await db
+                .delete(assetCreator)
+                .where(eq(assetCreator.asset_id, assetId));
+
+            // Insert new asset creators
+            if (creators.length > 0) {
+                const creatorInserts = [];
+                for (const creator of creators) {
+                    const creatorId = await creatorIndexToId(db, creator.creator_index);
+                    if (!creatorId) {
+                        throw new Error(`Creator not found: ${creator.creator_index}`);
+                    }
+                    creatorInserts.push({
+                        asset_id: assetId,
+                        creator_id: creatorId,
+                        role: creator.role,
+                    });
+                }
+                await db.insert(assetCreator).values(creatorInserts);
+            }
+        }
+
+        // Update asset-external_object associations (only if externalObjectIndexs parameter is provided)
+        if (externalObjectIndexs !== undefined) {
             // Delete old external object associations
             await db
                 .delete(assetExternalObject)
                 .where(eq(assetExternalObject.asset_id, assetId));
 
             // Insert new external object associations
-            if (externalObjectUuids.length > 0) {
+            if (externalObjectIndexs.length > 0) {
                 const objectInserts = [];
-                for (const objectUuid of externalObjectUuids) {
-                    const objectId = await externalObjectUuidToId(db, objectUuid);
+                for (const objectindex of externalObjectIndexs) {
+                    const objectId = await externalObjectIndexToId(db, objectindex);
                     if (!objectId) {
-                        throw new Error(`External object not found: ${objectUuid}`);
+                        throw new Error(`External object not found: ${objectindex}`);
                     }
                     objectInserts.push({
                         asset_id: assetId,
@@ -303,12 +341,12 @@ export async function updateAsset(
 /**
  * Delete an asset and all related data
  */
-export async function deleteAsset(db: DrizzleDB, assetUuid: string): Promise<boolean> {
-    if (!validateUUID(assetUuid)) return false;
+export async function deleteAsset(db: DrizzleDB, assetIndex: string): Promise<boolean> {
+    if (!validateIndex(assetIndex)) return false;
 
     try {
         // Delete asset (cascade will handle related tables)
-        await db.delete(asset).where(eq(asset.uuid, assetUuid));
+        await db.delete(asset).where(eq(asset.index, assetIndex));
         
         return true;
     } catch (error) {

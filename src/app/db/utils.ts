@@ -5,6 +5,7 @@ import type {
     CategoryApi,
     CreatorWithRole
 } from './types';
+import { validateIndex as validateIndexFromUtils } from './utils/index-utils';
 
 /**
  * Convert null values to undefined to match interface expectations
@@ -17,17 +18,17 @@ export function nullToUndefined<T>(value: T | null): T | undefined {
  * Convert asset data from database format to interface format
  */
 export function convertAssetData(asset: {
-    uuid: string;
+    index: string;
     file_id?: string;
-    work_uuid: string;
+    work_index: string;
     asset_type: 'lyrics' | 'picture';
     file_name: string;
     is_previewpic: boolean | null;
     language: string | null;
 }): AssetApi {
     return {
-        uuid: asset.uuid,
-        work_uuid: asset.work_uuid,
+        index: asset.index,
+        work_index: asset.work_index,
         asset_type: asset.asset_type,
         file_name: asset.file_name,
         is_previewpic: nullToUndefined(asset.is_previewpic),
@@ -39,14 +40,14 @@ export function convertAssetData(asset: {
  * Convert category data from database format to interface format
  */
 export function convertCategoryData(category: {
-    uuid: string;
+    index: string;
     name: string;
-    parent_uuid: string | null;
+    parent_index: string | null;
 }): CategoryApi {
     return {
-        uuid: category.uuid,
+        index: category.index,
         name: category.name,
-        parent_uuid: nullToUndefined(category.parent_uuid),
+        parent_index: nullToUndefined(category.parent_index),
     };
 }
 
@@ -54,7 +55,7 @@ export function convertCategoryData(category: {
  * Convert creator data from database format to interface format
  */
 export function convertCreatorData(creator: {
-    creator_uuid: string;
+    creator_index: string;
     creator_name: string | null;
     creator_type: 'human' | 'virtual' | null;
     role: string | null;
@@ -65,7 +66,7 @@ export function convertCreatorData(creator: {
     }
 
     return {
-        creator_uuid: creator.creator_uuid,
+        creator_index: creator.creator_index,
         creator_name: nullToUndefined(creator.creator_name),
         creator_type: creator.creator_type,
         role: creator.role,
@@ -73,9 +74,9 @@ export function convertCreatorData(creator: {
 }
 
 /**
- * Validate UUID format
+ * Validate Index format
  */
-const UUID_PATTERNS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export function validateUUID(uuid: string): boolean {
-    return UUID_PATTERNS.test(uuid);
+export function validateIndex(index: string): boolean {
+    const result = validateIndexFromUtils(index);
+    return result.valid;
 }

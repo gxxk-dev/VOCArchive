@@ -28,12 +28,12 @@ import { UnauthorizedPage } from './pages/unauthorized'
 import type { FormOptions } from './pages/components/admin/form/form-field-types'
 import { loadAdminData, isValidAdminType } from './admin/data-loader'
 import { createDrizzleClient } from './db/client'
-import { getFooterSettings, getFooterByUUID, initializeDatabaseWithMigrations, isDatabaseInitialized } from './db/operations/admin'
+import { getFooterSettings, getFooterByIndex, initializeDatabaseWithMigrations, isDatabaseInitialized } from './db/operations/admin'
 import { getPublicSiteConfig, getSiteConfig } from './db/operations/config'
-import { getWorkByUUID, getWorkListWithPagination, getTotalWorkCount } from './db/operations/work'
+import { getWorkByIndex, getWorkListWithPagination, getTotalWorkCount } from './db/operations/work'
 import { searchWorks, getAvailableLanguages } from './db/operations/search'
-import { getWorksByTag, getWorkCountByTag, getTagByUUID, listTagsWithCounts } from './db/operations/tag'
-import { getWorksByCategory, getWorkCountByCategory, getCategoryByUUID, listCategoriesWithCounts } from './db/operations/category'
+import { getWorksByTag, getWorkCountByTag, getTagByIndex, listTagsWithCounts } from './db/operations/tag'
+import { getWorksByCategory, getWorkCountByCategory, getCategoryByIndex, listCategoriesWithCounts } from './db/operations/category'
 import { listExternalSources } from './db/operations/external_source'
 import { eq } from 'drizzle-orm'
 import { tag, workTag, category, workCategory, work } from './db/schema'
@@ -45,7 +45,7 @@ apiApp.get('/', (c) => {
 })
 
 
-// ========== 中间件 ==========
+// ========== 中间�?==========
 const middleware = async (c: any, next: any) => {
     try {
         const db = createDrizzleClient(c.env.DB);
@@ -116,14 +116,14 @@ apiApp.route('/update', updateInfo)
 // ---------- 录入信息 ----------
 apiApp.use("/input/*",middleware)
 apiApp.route('/input', inputInfo)
-// ========== 数据库迁移 ==========
+// ========== 数据库迁�?==========
 apiApp.use("/migration/*", middleware)
 apiApp.route('/migration', migration)
 
 // ========== 配置/权限 ==========
 apiApp.route('/auth', auth)
 
-// ========== 初始化 API（无需认证）==========
+// ========== 初始�?API（无需认证�?=========
 apiApp.route('/init', initRoutes)
 
 // ========== 站点配置 ==========
@@ -142,11 +142,11 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 app.route('/api', apiApp)
 
 // ========== 数据库版本检查中间件 ==========
-// 检查数据库版本是否匹配最新迁移版本
+// 检查数据库版本是否匹配最新迁移版�?
 app.use('/*', async (c, next) => {
   const path = c.req.path;
 
-  // 跳过对 /init、/migration、/api/init、/api/migration、静态资源的检查
+  // 跳过�?/init�?migration�?api/init�?api/migration、静态资源的检�?
   if (path.startsWith('/init') || path.startsWith('/migration') ||
       path.startsWith('/api/init') || path.startsWith('/api/migration') ||
       path.startsWith('/static') || path.includes('.')) {
@@ -157,7 +157,7 @@ app.use('/*', async (c, next) => {
     const db = createDrizzleClient(c.env.DB);
     const isInitialized = await isDatabaseInitialized(db);
 
-    // 如果未初始化,跳过版本检查(由下一个中间件处理)
+    // 如果未初始化,跳过版本检�?由下一个中间件处理)
     if (!isInitialized) {
       return next();
     }
@@ -173,8 +173,8 @@ app.use('/*', async (c, next) => {
       } else {
         // 其他主页路由 -> 返回 501 错误
         return c.text(
-          `数据库版本不匹配。当前版本: ${migrationStatus.currentVersion}, 预期版本: ${migrationStatus.latestVersion}。\n` +
-          `此功能需要数据库迁移才能使用。请联系管理员访问 /migration 页面进行数据库迁移。`,
+          `数据库版本不匹配。当前版�? ${migrationStatus.currentVersion}, 预期版本: ${migrationStatus.latestVersion}。\n` +
+          `此功能需要数据库迁移才能使用。请联系管理员访�?/migration 页面进行数据库迁移。`,
           501
         );
       }
@@ -192,7 +192,7 @@ app.use('/*', async (c, next) => {
 app.use('/*', async (c, next) => {
   const path = c.req.path;
   
-  // 跳过对 /init、/api/init、静态资源的检查
+  // 跳过�?/init�?api/init、静态资源的检�?
   if (path.startsWith('/init') || path.startsWith('/api/init') || path.startsWith('/admin') || path.startsWith('/static') || path.includes('.')) {
     return next();
   }
@@ -214,7 +214,7 @@ app.use('/*', async (c, next) => {
   return next();
 });
 
-// ========== 初始化页面路由 ==========
+// ========== 初始化页面路�?==========
 app.get('/init', async (c) => {
   return c.html(<InitPage />);
 });
@@ -237,23 +237,23 @@ app.get('/', async (c) => {
   } else if (tag) {
     works = await getWorksByTag(db, tag, currentPage, pageSize)
     totalCount = await getWorkCountByTag(db, tag)
-    const tagInfo = await getTagByUUID(db, tag)
+    const tagInfo = await getTagByIndex(db, tag)
     if (tagInfo) {
       filterInfo = {
         type: 'tag' as const,
         name: tagInfo.name,
-        uuid: tag
+        index: tag
       }
     }
   } else if (category) {
     works = await getWorksByCategory(db, category, currentPage, pageSize)
     totalCount = await getWorkCountByCategory(db, category)
-    const categoryInfo = await getCategoryByUUID(db, category)
+    const categoryInfo = await getCategoryByIndex(db, category)
     if (categoryInfo) {
       filterInfo = {
-        type: 'category' as const, 
+        type: 'category' as const,
         name: categoryInfo.name,
-        uuid: category
+        index: category
       }
     }
   } else {
@@ -279,12 +279,13 @@ app.get('/', async (c) => {
 })
 
 app.get('/player', async (c) => {
-    const { uuid } = c.req.query()
-    if (!uuid) {
+    const { index, uuid } = c.req.query()
+    const workIndex = index || uuid  // Support both 'index' and 'uuid' query params for backward compatibility
+    if (!workIndex) {
         return c.notFound()
     }
     const db = createDrizzleClient(c.env.DB);
-    const workInfo = await getWorkByUUID(db, uuid)
+    const workInfo = await getWorkByIndex(db, workIndex)
     if (!workInfo) {
         return c.notFound()
     }
@@ -347,7 +348,7 @@ app.get('/admin/content/:type', adminContentMiddleware, async (c) => {
 })
 
 app.get('/admin/editor', adminContentMiddleware, async (c) => {
-    const { type, uuid } = c.req.query()
+    const { type, index } = c.req.query()
     const db = createDrizzleClient(c.env.DB);
 
     let data = undefined;
@@ -361,58 +362,54 @@ app.get('/admin/editor', adminContentMiddleware, async (c) => {
     };
 
     try {
-        // 根据type和uuid获取数据
-        if (uuid && type) {
-            console.log(`Loading data for ${type} with UUID: ${uuid}`);
+        // 根据type和index获取数据
+        if (index && type) {
+            console.log(`Loading data for ${type} with index: ${index}`);
 
             switch (type) {
                 case 'work':
-                    const workData = await getWorkByUUID(db, uuid);
-                    console.log('Loaded work data:', workData);
-                    data = workData ? { work: workData } : undefined;
+                    data = await getWorkByIndex(db, index);
+                    console.log('Loaded work data:', data);
                     break;
                 case 'creator':
-                    const { getCreatorByUUID } = await import('./db/operations/creator');
-                    const creatorData = await getCreatorByUUID(db, uuid);
-                    console.log('Loaded creator data:', creatorData);
-                    data = creatorData ? { creator: creatorData } : undefined;
+                    const { getCreatorByIndex } = await import('./db/operations/creator');
+                    data = await getCreatorByIndex(db, index);
+                    console.log('Loaded creator data:', data);
                     break;
                 case 'tag':
-                    const tagData = await getTagByUUID(db, uuid);
-                    console.log('Loaded tag data:', tagData);
-                    data = tagData ? { tag: tagData } : undefined;
+                    data = await getTagByIndex(db, index);
+                    console.log('Loaded tag data:', data);
                     break;
                 case 'category':
-                    const categoryData = await getCategoryByUUID(db, uuid);
-                    console.log('Loaded category data:', categoryData);
-                    data = categoryData ? { category: categoryData } : undefined;
+                    data = await getCategoryByIndex(db, index);
+                    console.log('Loaded category data:', data);
                     break;
                 case 'asset':
-                    const { getAssetByUUID } = await import('./db/operations/asset');
-                    const assetData = await getAssetByUUID(db, uuid);
+                    const { getAssetByIndex } = await import('./db/operations/asset');
+                    const assetData = await getAssetByIndex(db, index);
                     console.log('Loaded asset data:', assetData);
 
                     // Load work's tags and categories
-                    if (assetData && assetData.work_uuid) {
+                    if (assetData && assetData.work_index) {
                         const workTags = await db
                             .select({
-                                uuid: tag.uuid,
+                                index: tag.index,
                                 name: tag.name,
                             })
                             .from(tag)
                             .innerJoin(workTag, eq(tag.id, workTag.tag_id))
                             .innerJoin(work, eq(workTag.work_id, work.id))
-                            .where(eq(work.uuid, assetData.work_uuid));
+                            .where(eq(work.index, assetData.work_index));
 
                         const workCategories = await db
                             .select({
-                                uuid: category.uuid,
+                                index: category.index,
                                 name: category.name,
                             })
                             .from(category)
                             .innerJoin(workCategory, eq(category.id, workCategory.category_id))
                             .innerJoin(work, eq(workCategory.work_id, work.id))
-                            .where(eq(work.uuid, assetData.work_uuid));
+                            .where(eq(work.index, assetData.work_index));
 
                         data = {
                             asset: assetData,
@@ -420,35 +417,35 @@ app.get('/admin/editor', adminContentMiddleware, async (c) => {
                             work_categories: workCategories
                         };
                     } else {
-                        data = assetData ? { asset: assetData } : undefined;
+                        data = assetData;
                     }
                     break;
                 case 'media':
-                    const { getMediaByUUID } = await import('./db/operations/media');
-                    const mediaData = await getMediaByUUID(db, uuid);
+                    const { getMediaByIndex } = await import('./db/operations/media');
+                    const mediaData = await getMediaByIndex(db, index);
                     console.log('Loaded media data:', mediaData);
 
                     // Load work's tags and categories
-                    if (mediaData && mediaData.work_uuid) {
+                    if (mediaData && mediaData.work_index) {
                         const workTags = await db
                             .select({
-                                uuid: tag.uuid,
+                                index: tag.index,
                                 name: tag.name,
                             })
                             .from(tag)
                             .innerJoin(workTag, eq(tag.id, workTag.tag_id))
                             .innerJoin(work, eq(workTag.work_id, work.id))
-                            .where(eq(work.uuid, mediaData.work_uuid));
+                            .where(eq(work.index, mediaData.work_index));
 
                         const workCategories = await db
                             .select({
-                                uuid: category.uuid,
+                                index: category.index,
                                 name: category.name,
                             })
                             .from(category)
                             .innerJoin(workCategory, eq(category.id, workCategory.category_id))
                             .innerJoin(work, eq(workCategory.work_id, work.id))
-                            .where(eq(work.uuid, mediaData.work_uuid));
+                            .where(eq(work.index, mediaData.work_index));
 
                         data = {
                             media: mediaData,
@@ -456,54 +453,48 @@ app.get('/admin/editor', adminContentMiddleware, async (c) => {
                             work_categories: workCategories
                         };
                     } else {
-                        data = mediaData ? { media: mediaData } : undefined;
+                        data = mediaData;
                     }
                     break;
                 case 'relation':
-                    const { getRelationByUUID } = await import('./db/operations/relation');
-                    const relationData = await getRelationByUUID(db, uuid);
-                    console.log('Loaded relation data:', relationData);
-                    data = relationData ? { relation: relationData } : undefined;
+                    const { getRelationByIndex } = await import('./db/operations/relation');
+                    data = await getRelationByIndex(db, index);
+                    console.log('Loaded relation data:', data);
                     break;
                 case 'external_source':
-                    const { getExternalSourceByUUID } = await import('./db/operations/external_source');
-                    const externalSourceData = await getExternalSourceByUUID(db, uuid);
-                    console.log('Loaded external_source data:', externalSourceData);
-                    data = externalSourceData ? { external_source: externalSourceData } : undefined;
+                    const { getExternalSourceByIndex } = await import('./db/operations/external_source');
+                    data = await getExternalSourceByIndex(db, index);
+                    console.log('Loaded external_source data:', data);
                     break;
                 case 'external_object':
-                    const { getExternalObjectByUUID } = await import('./db/operations/external_object');
-                    const externalObjectData = await getExternalObjectByUUID(db, uuid);
-                    console.log('Loaded external_object data:', externalObjectData);
-                    data = externalObjectData ? { external_object: externalObjectData } : undefined;
+                    const { getExternalObjectByIndex } = await import('./db/operations/external_object');
+                    data = await getExternalObjectByIndex(db, index);
+                    console.log('Loaded external_object data:', data);
                     break;
                 case 'site_config':
-                    // Site config使用key而不是UUID
+                    // Site config使用key而不是index
                     try {
-                        const configData = await getSiteConfig(db, uuid);
-                        console.log('Loaded site_config data:', configData);
-                        data = configData ? { site_config: configData } : undefined;
+                        data = await getSiteConfig(db, index);
+                        console.log('Loaded site_config data:', data);
                     } catch (error) {
                         console.error('Error loading site_config:', error);
                         data = undefined;
                     }
                     break;
                 case 'wiki_platform':
-                    // Wiki platform使用platform_key而不是UUID
+                    // Wiki platform使用platform_key而不是index
                     try {
                         const { getWikiPlatformByKey } = await import('./db/operations/wiki-platforms');
-                        const wikiData = await getWikiPlatformByKey(db, uuid);
-                        console.log('Loaded wiki_platform data:', wikiData);
-                        data = wikiData ? { wiki_platform: wikiData } : undefined;
+                        data = await getWikiPlatformByKey(db, index);
+                        console.log('Loaded wiki_platform data:', data);
                     } catch (error) {
                         console.error('Error loading wiki_platform:', error);
                         data = undefined;
                     }
                     break;
                 case 'footer':
-                    const footerData = await getFooterByUUID(db, uuid);
-                    console.log('Loaded footer data:', footerData);
-                    data = footerData ? { footer: footerData } : undefined;
+                    data = await getFooterByIndex(db, index);
+                    console.log('Loaded footer data:', data);
                     break;
                 default:
                     console.warn(`Unsupported type for data loading: ${type}`);
@@ -517,7 +508,7 @@ app.get('/admin/editor', adminContentMiddleware, async (c) => {
 
         // 根据表单类型加载相应的选项数据
         if (['work', 'asset'].includes(type)) {
-            // 加载所有创作者
+            // 加载所有创作�?
             try {
                 const { listCreators } = await import('./db/operations/creator');
                 const allCreators = await listCreators(db, 1, 999);
@@ -530,7 +521,7 @@ app.get('/admin/editor', adminContentMiddleware, async (c) => {
         }
 
         if (['media', 'asset', 'relation'].includes(type)) {
-            // 加载所有作品
+            // 加载所有作�?
             try {
                 const allWorks = await getWorkListWithPagination(db, 1, 999);
                 options.works = allWorks || [];
@@ -542,7 +533,7 @@ app.get('/admin/editor', adminContentMiddleware, async (c) => {
         }
 
         if (type === 'work') {
-            // 为work表单加载标签和分类
+            // 为work表单加载标签和分�?
             try {
                 const tags = await listTagsWithCounts(db);
                 options.tags = tags || [];
@@ -559,7 +550,7 @@ app.get('/admin/editor', adminContentMiddleware, async (c) => {
         }
 
         if (type === 'category') {
-            // 为category表单加载分类（用于父分类选择）
+            // 为category表单加载分类（用于父分类选择�?
             try {
                 const categories = await listCategoriesWithCounts(db);
                 options.categories = categories || [];
@@ -580,7 +571,7 @@ app.get('/admin/editor', adminContentMiddleware, async (c) => {
             options.allExternalSources = [];
         }
 
-        // 加载外部对象（用于media和asset表单）
+        // 加载外部对象（用于media和asset表单�?
         try {
             const { listExternalObjects } = await import('./db/operations/external_object');
             const externalObjects = await listExternalObjects(db, 1, 999);
@@ -598,7 +589,7 @@ app.get('/admin/editor', adminContentMiddleware, async (c) => {
 
     console.log(`Final data being passed to AdminEditorPage:`, {
         type,
-        uuid,
+        index,
         hasData: !!data,
         dataKeys: data ? Object.keys(data) : [],
         data: data ? JSON.stringify(data, null, 2) : 'undefined'
@@ -606,8 +597,8 @@ app.get('/admin/editor', adminContentMiddleware, async (c) => {
 
     return c.html(<AdminEditorPage
         type={type}
-        uuid={uuid}
-        data={data}
+        index={index}
+        data={data ?? undefined}
         options={options}
     />)
 })

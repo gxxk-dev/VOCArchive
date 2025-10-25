@@ -1,6 +1,6 @@
-import { jsx } from 'hono/jsx'
+﻿import { jsx } from 'hono/jsx'
 import { Creator } from '../../../db/types'
-import { AdminHeader, EmptyState, UuidTableCell, TableActionButtons } from './base'
+import { AdminHeader, EmptyState, IndexTableCell, TableActionButtons } from './base'
 
 export interface CreatorTableProps {
     creators: Creator[]
@@ -40,8 +40,8 @@ export const CreatorTable = (props: CreatorTableProps) => {
                     <tbody>
                         {creators.map(creator => {
                             return (
-                                <tr data-uuid={creator.uuid}>
-                                    <UuidTableCell uuid={creator.uuid} />
+                                <tr data-index={creator.index}>
+                                    <IndexTableCell index={creator.index} />
                                     <td class="creator-name">
                                         {creator.name ? (
                                             creator.name
@@ -52,7 +52,7 @@ export const CreatorTable = (props: CreatorTableProps) => {
                                     <td class="creator-type">{creator.type}</td>
                                     <TableActionButtons
                                         target="creator"
-                                        uuid={creator.uuid}
+                                        index={creator.index}
                                         editText="编辑"
                                         deleteText="删除"
                                     />

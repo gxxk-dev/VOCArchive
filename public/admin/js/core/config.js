@@ -1,4 +1,4 @@
-// Configuration and state management module
+﻿// Configuration and state management module
 
 // --- Configuration ---
 export const API_BASE_URL = '/api';
@@ -6,7 +6,7 @@ export const API_BASE_URL = '/api';
 // --- Global State ---
 export let jwtToken = localStorage.getItem('jwtToken');
 export let currentTab = 'work';
-export let currentEditUUID = null; // To track the item being edited
+export let currentEditIndex = null; // To track the item being edited
 export let allCreators = [];
 export let allWorks = [];
 export let allExternalSources = [];
@@ -45,8 +45,8 @@ export function setCurrentTab(tab, updateUrl = true) {
     // updateUrl 参数控制是否更新URL，用于避免在某些场景下的循环更新
 }
 
-export function setCurrentEditUUID(uuid) {
-    currentEditUUID = uuid;
+export function setCurrentEditIndex(index) {
+    currentEditIndex = index;
 }
 
 export function setAllCreators(creators) {

@@ -1,22 +1,22 @@
-// General utility functions module
+﻿// General utility functions module
 
 import { adminTitleTemplate, tabNames, allExternalSources, allExternalObjects } from '../core/config.js';
 import { apiFetch } from '../api/index.js';
 
-let generateUuidButton, generatedUuidResult;
+let generateIndexButton, generatedIndexResult;
 
 // Initialize DOM elements for tools
 export function initializeToolElements() {
     // Tool Zone elements
-    generateUuidButton = document.getElementById('generate-uuid-button');
-    generatedUuidResult = document.getElementById('generated-uuid-result');
+    generateIndexButton = document.getElementById('generate-index-button');
+    generatedIndexResult = document.getElementById('generated-index-result');
 }
 
-// --- UUID Generation ---
-export function setupUuidGeneration() {
-    if (generateUuidButton && generatedUuidResult) {
-        generateUuidButton.addEventListener('click', () => {
-            generatedUuidResult.value = crypto.randomUUID();
+// --- Index Generation ---
+export function setupIndexGeneration() {
+    if (generateIndexButton && generatedIndexResult) {
+        generateIndexButton.addEventListener('click', () => {
+            generatedIndexResult.value = crypto.randomUUID();
         });
     }
 }
@@ -32,7 +32,7 @@ export function renderCellContent(data) {
     if (typeof data === 'string') {
         // Truncate long strings like UUIDs
         if (data.length > 30 && data.includes('-')) {
-             return `<span class="string-value uuid" title="${data}">${data.substring(0, 8)}...</span>`;
+             return `<span class="string-value index" title="${data}">${data.substring(0, 8)}...</span>`;
         }
         // Check if it's a URL
         if (data.startsWith('http')) {
@@ -111,24 +111,24 @@ export function renderExternalObjectsList(objects, container, selectedObjects = 
     }
 
     // Create a Set of selected UUIDs for faster lookup
-    const selectedUuids = new Set(selectedObjects.map(obj => obj.uuid));
+    const selectedIndices = new Set(selectedObjects.map(obj => obj.index));
 
     container.innerHTML = objects.map(obj => {
-        const sourceName = obj.source?.name || allExternalSources.find(s => s.uuid === obj.external_source_uuid)?.name || '未知源';
-        const isSelected = selectedUuids.has(obj.uuid);
+        const sourceName = obj.source?.name || allExternalSources.find(s => s.index === obj.external_source_index)?.name || '未知源';
+        const isSelected = selectedIndices.has(obj.index);
 
         return `
             <div class="external-object-item">
                 <label>
-                    <input type="checkbox" name="external_objects" value="${obj.uuid}" ${isSelected ? 'checked' : ''}>
+                    <input type="checkbox" name="external_objects" value="${obj.index}" ${isSelected ? 'checked' : ''}>
                     <div class="external-object-details">
                         <div class="external-object-info">
                             <strong>文件ID:</strong> ${obj.file_id}<br>
                             <strong>存储源:</strong> ${sourceName}<br>
                             <strong>MIME类型:</strong> ${obj.mime_type}
                         </div>
-                        <div class="external-object-uuid">
-                            <span class="uuid" title="${obj.uuid}">${obj.uuid.substring(0, 8)}...</span>
+                        <div class="external-object-index">
+                            <span class="index" title="${obj.index}">${obj.index.substring(0, 8)}...</span>
                         </div>
                     </div>
                 </label>

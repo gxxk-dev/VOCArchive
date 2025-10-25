@@ -1,4 +1,4 @@
-// 数据库表结构修复脚本
+﻿// 数据库表结构修复脚本
 // 用于修复数据库表结构不匹配问题
 
 import type { DrizzleDB } from '../client';
@@ -20,7 +20,7 @@ export async function fixWorkTitleTable(db: DrizzleDB): Promise<void> {
         const createWorkTitleSQL = `
             CREATE TABLE work_title (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                uuid TEXT NOT NULL UNIQUE,
+                index TEXT NOT NULL UNIQUE,
                 work_id INTEGER NOT NULL,
                 is_official INTEGER NOT NULL,
                 is_for_search INTEGER NOT NULL DEFAULT 0,

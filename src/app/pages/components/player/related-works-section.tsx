@@ -1,4 +1,4 @@
-import { jsx } from 'hono/jsx'
+﻿import { jsx } from 'hono/jsx'
 
 export interface RelatedWorksSectionProps {
     workInfo: any
@@ -21,8 +21,8 @@ export const RelatedWorksSection = (props: RelatedWorksSectionProps) => {
             <div class="content-box" id="relatedContent" style="">
                 <div class="related-works-grid">
                     {workInfo.relation.map((relation: any) => {
-                        const isFromWork = workInfo.work.uuid === relation.from_work_uuid;
-                        const otherWorkUUID = isFromWork ? relation.to_work_uuid : relation.from_work_uuid;
+                        const isFromWork = workInfo.work.index === relation.from_work_index;
+                        const otherWorkIndex = isFromWork ? relation.to_work_index : relation.from_work_index;
                         const titles = isFromWork
                             ? relation.related_work_titles?.to_work_titles || []
                             : relation.related_work_titles?.from_work_titles || [];
@@ -31,11 +31,11 @@ export const RelatedWorksSection = (props: RelatedWorksSectionProps) => {
                             const userLangTitle = titles.find((t: any) => t.language === userLang);
                             otherWorkTitle = userLangTitle ? userLangTitle.title : titles[0].title;
                         }
-                        
+
                         let relationType = isFromWork ? relation.relation_type : "original";
-                        
+
                         return (
-                            <a href={`/player?uuid=${otherWorkUUID}`} class="related-work-chip">
+                            <a href={`/player?index=${otherWorkIndex}`} class="related-work-chip">
                                 <span class="relation-type-badge">{relationType}</span>
                                 <span class="relation-title">{otherWorkTitle}</span>
                             </a>

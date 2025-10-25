@@ -22,7 +22,7 @@ export * as ExternalObjectOperations from './operations/external_object';
 export {
     // Work operations
     getWorkListWithPagination,
-    getWorkByUUID,
+    getWorkByIndex,
     getTotalWorkCount,
     inputWork,
     updateWork,
@@ -31,7 +31,7 @@ export {
 
 export {
     // Creator operations
-    getCreatorByUUID,
+    getCreatorByIndex,
     listCreators,
     inputCreator,
     updateCreator,
@@ -40,17 +40,17 @@ export {
 
 export {
     // Media operations
-    getMediaByUUID,
+    getMediaByIndex,
     listMedia,
     inputMedia,
     updateMedia,
     deleteMedia,
-    getFileURLByUUIDWithExternalStorage
+    getFileURLByIndexWithExternalStorage
 } from './operations/media';
 
 export {
     // Asset operations
-    getAssetByUUID,
+    getAssetByIndex,
     listAssets,
     inputAsset,
     updateAsset,
@@ -60,7 +60,7 @@ export {
 export {
     // Tag operations
     listTags,
-    getTagByUUID,
+    getTagByIndex,
     getWorksByTag,
     getWorkCountByTag,
     inputTag,
@@ -74,7 +74,7 @@ export {
 export {
     // Category operations
     listCategories,
-    getCategoryByUUID,
+    getCategoryByIndex,
     getWorksByCategory,
     getWorkCountByCategory,
     inputCategory,
@@ -87,7 +87,7 @@ export {
 
 export {
     // Work title operations
-    getWorkTitleByUUID,
+    getWorkTitleByIndex,
     listWorkTitles,
     inputWorkTitle,
     updateWorkTitle,
@@ -129,7 +129,7 @@ export {
 
 export {
     // External source operations
-    getExternalSourceByUUID,
+    getExternalSourceByIndex,
     listExternalSources,
     inputExternalSource,
     updateExternalSource,
@@ -140,7 +140,7 @@ export {
 
 export {
     // External object operations
-    getExternalObjectByUUID,
+    getExternalObjectByIndex,
     listExternalObjects,
     getExternalObjectsBySource,
     inputExternalObject,

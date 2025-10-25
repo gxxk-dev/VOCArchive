@@ -1,4 +1,4 @@
-// Admin components for Server-Side Rendering
+﻿// Admin components for Server-Side Rendering
 export { WorkCard } from './work-card'
 export { DataTable } from './data-table'
 export { TagsTable, CategoriesTable } from './tags-categories'
@@ -15,8 +15,8 @@ export {
     EmptyState,
     ActionButtons,
     TableActionButtons,
-    UuidCell,
-    UuidTableCell,
+    IndexCell,
+    IndexTableCell,
     TableCell,
     AdminTable
 } from './base'
@@ -37,7 +37,7 @@ export type {
     AdminHeaderProps,
     EmptyStateProps,
     ActionButtonsProps,
-    UuidCellProps,
+    IndexCellProps,
     TableCellProps,
     AdminTableProps
 } from './base'

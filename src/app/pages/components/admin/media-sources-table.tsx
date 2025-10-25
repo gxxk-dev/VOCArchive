@@ -1,6 +1,6 @@
-import { jsx } from 'hono/jsx'
+﻿import { jsx } from 'hono/jsx'
 import { MediaSourceApi } from '../../../db/types'
-import { AdminHeader, EmptyState, UuidTableCell, TableActionButtons } from './base'
+import { AdminHeader, EmptyState, IndexTableCell, TableActionButtons } from './base'
 
 export interface MediaSourcesTableProps {
     media: MediaSourceApi[]
@@ -52,10 +52,10 @@ export const MediaSourcesTable = (props: MediaSourcesTableProps) => {
                     </thead>
                     <tbody>
                         {media.map(mediaItem => (
-                            <tr data-uuid={mediaItem.uuid}>
-                                <UuidTableCell uuid={mediaItem.uuid} />
+                            <tr data-index={mediaItem.index}>
+                                <IndexTableCell index={mediaItem.index} />
                                 <td>
-                                    <UuidTableCell uuid={mediaItem.work_uuid || ''} />
+                                    <IndexTableCell index={mediaItem.work_index || ''} />
                                 </td>
                                 <td class="file-name">{mediaItem.file_name || ''}</td>
                                 <td class="mime-type">{mediaItem.mime_type || ''}</td>
@@ -65,7 +65,7 @@ export const MediaSourcesTable = (props: MediaSourcesTableProps) => {
                                 <td class="info">{mediaItem.info || ''}</td>
                                 <TableActionButtons
                                     target="media"
-                                    uuid={mediaItem.uuid}
+                                    index={mediaItem.index}
                                     editText="编辑"
                                     deleteText="删除"
                                 />

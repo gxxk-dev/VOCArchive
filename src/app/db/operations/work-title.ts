@@ -1,23 +1,23 @@
-import { eq, and } from 'drizzle-orm';
+﻿import { eq, and } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { workTitle, work } from '../schema';
-import { workUuidToId, workIdToUuid } from '../utils/uuid-id-converter';
-import { validateUUID } from '../utils';
+import { workIndexToId, workIdToIndex } from '../utils/index-id-converter';
+import { validateIndex } from '../utils';
 
 import { WorkTitle, WorkTitleApi, WorkTitleInput, WorkTitleUpdate } from '../types';
 
 /**
- * Get a single work title by UUID
+ * Get a single work title by index 
  */
-export async function getWorkTitleByUUID(db: DrizzleDB, titleUuid: string): Promise<WorkTitleApi | null> {
-    if (!validateUUID(titleUuid)) {
+export async function getWorkTitleByIndex(db: DrizzleDB, titleindex: string): Promise<WorkTitleApi | null> {
+    if (!validateIndex(titleindex)) {
         return null;
     }
 
     try {
         const result = await db
             .select({
-                uuid: workTitle.uuid,
+                index: workTitle.index,
                 work_id: workTitle.work_id,
                 is_official: workTitle.is_official,
                 is_for_search: workTitle.is_for_search,
@@ -25,18 +25,18 @@ export async function getWorkTitleByUUID(db: DrizzleDB, titleUuid: string): Prom
                 title: workTitle.title,
             })
             .from(workTitle)
-            .where(eq(workTitle.uuid, titleUuid))
+            .where(eq(workTitle.index, titleindex))
             .limit(1);
 
         if (!result[0]) return null;
 
-        // Convert work ID back to UUID for API compatibility
-        const workUuid = await workIdToUuid(db, result[0].work_id);
-        if (!workUuid) return null;
+        // Convert work ID back to index for API compatibility
+        const workindex = await workIdToIndex(db, result[0].work_id);
+        if (!workindex) return null;
 
         return {
-            uuid: result[0].uuid,
-            work_uuid: workUuid,
+            index: result[0].index,
+            work_index: workindex,
             is_official: result[0].is_official,
             is_for_search: result[0].is_for_search,
             language: result[0].language,
@@ -49,21 +49,21 @@ export async function getWorkTitleByUUID(db: DrizzleDB, titleUuid: string): Prom
 }
 
 /**
- * List all work titles for a specific work UUID
+ * List all work titles for a specific work index 
  */
-export async function listWorkTitles(db: DrizzleDB, workUuid: string, includeForSearch: boolean = true): Promise<WorkTitleApi[]> {
-    if (!validateUUID(workUuid)) {
+export async function listWorkTitles(db: DrizzleDB, workindex: string, includeForSearch: boolean = true): Promise<WorkTitleApi[]> {
+    if (!validateIndex(workindex)) {
         return [];
     }
 
     try {
-        // Convert work UUID to ID
-        const workId = await workUuidToId(db, workUuid);
+        // Convert work index to ID
+        const workId = await workIndexToId(db, workindex);
         if (!workId) return [];
 
         const query = db
             .select({
-                uuid: workTitle.uuid,
+                index: workTitle.index,
                 work_id: workTitle.work_id,
                 is_official: workTitle.is_official,
                 is_for_search: workTitle.is_for_search,
@@ -75,10 +75,10 @@ export async function listWorkTitles(db: DrizzleDB, workUuid: string, includeFor
 
         const allTitles = await query;
 
-        // Convert to API format with work UUID
-        const titlesWithWorkUuid = allTitles.map(title => ({
-            uuid: title.uuid,
-            work_uuid: workUuid,
+        // Convert to API format with work index 
+        const titlesWithWorkindex = allTitles.map(title => ({
+            index: title.index,
+            work_index: workindex,
             is_official: title.is_official,
             is_for_search: title.is_for_search,
             language: title.language,
@@ -87,10 +87,10 @@ export async function listWorkTitles(db: DrizzleDB, workUuid: string, includeFor
 
         // Filter out ForSearch titles if not explicitly requested
         if (!includeForSearch) {
-            return titlesWithWorkUuid.filter(title => !title.is_for_search);
+            return titlesWithWorkindex.filter(title => !title.is_for_search);
         }
 
-        return titlesWithWorkUuid;
+        return titlesWithWorkindex;
     } catch (error) {
         console.error('Error listing work titles:', error);
         return [];
@@ -101,22 +101,22 @@ export async function listWorkTitles(db: DrizzleDB, workUuid: string, includeFor
  * Create a new work title
  */
 export async function inputWorkTitle(db: DrizzleDB, titleData: WorkTitleInput): Promise<string | null> {
-    if (!validateUUID(titleData.work_uuid)) {
+    if (!validateIndex(titleData.work_index)) {
         return null;
     }
 
     try {
-        // Convert work UUID to ID
-        const workId = await workUuidToId(db, titleData.work_uuid);
+        // Convert work index to ID
+        const workId = await workIndexToId(db, titleData.work_index);
         if (!workId) {
-            console.error('Work not found:', titleData.work_uuid);
+            console.error('Work not found:', titleData.work_index);
             return null;
         }
 
-        const titleUuid = crypto.randomUUID();
+        const titleindex = crypto.randomUUID();
 
         await db.insert(workTitle).values({
-            uuid: titleUuid,
+            index: titleindex,
             work_id: workId,
             is_official: titleData.is_official,
             is_for_search: titleData.is_for_search || false,
@@ -124,7 +124,7 @@ export async function inputWorkTitle(db: DrizzleDB, titleData: WorkTitleInput): 
             title: titleData.title,
         });
 
-        return titleUuid;
+        return titleindex;
     } catch (error) {
         console.error('Error creating work title:', error);
         return null;
@@ -136,18 +136,18 @@ export async function inputWorkTitle(db: DrizzleDB, titleData: WorkTitleInput): 
  */
 export async function updateWorkTitle(
     db: DrizzleDB,
-    titleUuid: string,
+    titleindex: string,
     updates: WorkTitleUpdate
 ): Promise<boolean> {
-    if (!validateUUID(titleUuid)) {
+    if (!validateIndex(titleindex)) {
         return false;
     }
 
     // Check if title exists
     const existingTitle = await db
-        .select({ uuid: workTitle.uuid })
+        .select({ index: workTitle.index })
         .from(workTitle)
-        .where(eq(workTitle.uuid, titleUuid))
+        .where(eq(workTitle.index, titleindex))
         .limit(1);
 
     if (existingTitle.length === 0) {
@@ -179,7 +179,7 @@ export async function updateWorkTitle(
         await db
             .update(workTitle)
             .set(updateData)
-            .where(eq(workTitle.uuid, titleUuid));
+            .where(eq(workTitle.index, titleindex));
 
         return true;
     } catch (error) {
@@ -191,24 +191,24 @@ export async function updateWorkTitle(
 /**
  * Delete a work title
  */
-export async function deleteWorkTitle(db: DrizzleDB, titleUuid: string): Promise<boolean> {
-    if (!validateUUID(titleUuid)) {
+export async function deleteWorkTitle(db: DrizzleDB, titleindex: string): Promise<boolean> {
+    if (!validateIndex(titleindex)) {
         return false;
     }
 
     try {
         // Check if title exists
         const existingTitle = await db
-            .select({ uuid: workTitle.uuid })
+            .select({ index: workTitle.index })
             .from(workTitle)
-            .where(eq(workTitle.uuid, titleUuid))
+            .where(eq(workTitle.index, titleindex))
             .limit(1);
 
         if (existingTitle.length === 0) {
             return false;
         }
 
-        await db.delete(workTitle).where(eq(workTitle.uuid, titleUuid));
+        await db.delete(workTitle).where(eq(workTitle.index, titleindex));
         return true;
     } catch (error) {
         console.error('Error deleting work title:', error);
@@ -219,18 +219,18 @@ export async function deleteWorkTitle(db: DrizzleDB, titleUuid: string): Promise
 /**
  * Get total count of work titles for a work
  */
-export async function getWorkTitleCount(db: DrizzleDB, workUuid: string): Promise<number> {
-    if (!validateUUID(workUuid)) {
+export async function getWorkTitleCount(db: DrizzleDB, workindex: string): Promise<number> {
+    if (!validateIndex(workindex)) {
         return 0;
     }
 
     try {
-        // Convert work UUID to ID
-        const workId = await workUuidToId(db, workUuid);
+        // Convert work index to ID
+        const workId = await workIndexToId(db, workindex);
         if (!workId) return 0;
 
         const result = await db
-            .select({ uuid: workTitle.uuid })
+            .select({ index: workTitle.index })
             .from(workTitle)
             .where(eq(workTitle.work_id, workId));
 

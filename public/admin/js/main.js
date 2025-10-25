@@ -1,4 +1,4 @@
-// Main admin application entry point
+﻿// Main admin application entry point
 
 // Import required modules only
 import { jwtToken, setCurrentTab, allExternalObjects, setAllExternalObjects } from './core/config.js';
@@ -56,38 +56,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     /**
      * Handle backend delete operation and refresh content
      * @param {string} target - Item type to delete
-     * @param {string} uuid - Item UUID to delete
+     * @param {string} Index - Item Index to delete
      */
-    async function handleBackendDelete(target, uuid) {
+    async function handleBackendDelete(target, index) {
         try {
-            console.log('Deleting item:', { target, uuid });
+            console.log('Deleting item:', { target, index });
 
             // Handle special cases for delete endpoints
             if (target === 'footer') {
-                await apiFetch(`/footer/settings/${uuid}`, { method: 'DELETE' });
+                await apiFetch(`/footer/settings/${index}`, { method: 'DELETE' });
             } else if (target === 'wiki_platform') {
                 await apiFetch(`/delete/wiki_platform`, {
                     method: 'POST',
-                    body: JSON.stringify({ platform_key: uuid }),
+                    body: JSON.stringify({ platform_key: index }),
                 });
             } else {
                 // Standard delete endpoint
-                const uuidKeyMap = {
-                    work: 'work_uuid',
-                    creator: 'creator_uuid',
-                    media: 'media_uuid',
-                    asset: 'asset_uuid',
-                    tag: 'tag_uuid',
-                    category: 'category_uuid',
-                    external_source: 'uuid',
-                    external_object: 'uuid',
-                    relation: 'relation_uuid'
+                const indexKeyMap = {
+                    work: 'work_index',
+                    creator: 'creator_index',
+                    media: 'media_index',
+                    asset: 'asset_index',
+                    tag: 'tag_index',
+                    category: 'category_index',
+                    external_source: 'Index',
+                    external_object: 'Index',
+                    relation: 'relation_index'
                 };
 
-                const uuidKey = uuidKeyMap[target] || 'uuid';
+                const indexKey = indexKeyMap[target] || 'Index';
                 await apiFetch(`/delete/${target}`, {
                     method: 'POST',
-                    body: JSON.stringify({ [uuidKey]: uuid }),
+                    body: JSON.stringify({ [indexKey]: index }),
                 });
             }
 
@@ -216,8 +216,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     case 'edit-request':
                         console.log('Received edit request from content iframe:', event.data);
                         // 使用编辑器iframe处理编辑请求
-                        if (event.data.target && event.data.uuid) {
-                            loadEditorForEdit(editor, editorModal, event.data.target, event.data.uuid);
+                        if (event.data.target && event.data.index) {
+                            loadEditorForEdit(editor, editorModal, event.data.target, event.data.index);
                         } else {
                             console.error('Invalid edit request data:', event.data);
                         }
@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     case 'delete-request':
                         console.log('Received delete request from content iframe:', event.data);
                         // Handle delete operation directly and refresh iframe content
-                        handleBackendDelete(event.data.target, event.data.uuid);
+                        handleBackendDelete(event.data.target, event.data.index);
                         break;
 
                     case 'create-request':
@@ -290,9 +290,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     case 'load-editor':
                         // 从 editor iframe 内部请求加载另一个编辑器
                         console.log('Load editor request:', event.data.data);
-                        const { itemType, uuid } = event.data.data;
-                        if (itemType && uuid) {
-                            loadEditorForEdit(editor, editorModal, itemType, uuid);
+                        const { itemType, index } = event.data.data;
+                        if (itemType && index) {
+                            loadEditorForEdit(editor, editorModal, itemType, index);
                         }
                         break;
 
@@ -323,7 +323,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Get currently selected external objects
                 const selectedCheckboxes = document.querySelectorAll('input[name="external_objects"]:checked');
                 const currentSelectedObjects = Array.from(selectedCheckboxes).map(checkbox => ({
-                    uuid: checkbox.value
+                    Index: checkbox.value
                 }));
 
                 loadExternalObjects().then(() => {
@@ -336,8 +336,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            // Handle UUID copying
-            if (target.classList.contains('uuid') || target.id === 'generated-uuid-result') {
+            // Handle Index copying
+            if (target.classList.contains('index') || target.id === 'generated-index-result') {
                 let textToCopy = '';
                 if (target.tagName.toLowerCase() === 'input' || target.tagName.toLowerCase() === 'textarea') {
                     textToCopy = target.value;

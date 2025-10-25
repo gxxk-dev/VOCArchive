@@ -61,15 +61,15 @@ export const WorkList = (props: WorkListProps) => {
 
         let coverUrl = '';
         if (item.preview_asset) {
-            coverUrl = `/api/get/file/${item.preview_asset.uuid}`;
+            coverUrl = `/api/get/file/${item.preview_asset.index}`;
         } else if (item.non_preview_asset) {
-            coverUrl = `/api/get/file/${item.non_preview_asset.uuid}`;
+            coverUrl = `/api/get/file/${item.non_preview_asset.index}`;
         } else {
             coverUrl = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745';
         }
 
         return (
-            <div class="work-item" data-id={item.work_uuid}>
+            <div class="work-item" data-id={item.work_index}>
                 <img class="work-preview" src={coverUrl} alt={mainTitle} />
                 <div class="work-info">
                     <div class="work-title">{mainTitle}</div>

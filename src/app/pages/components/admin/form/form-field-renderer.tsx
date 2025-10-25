@@ -1,4 +1,4 @@
-// 表单字段渲染组件
+﻿// 表单字段渲染组件
 // Form Field Rendering Components
 
 import { jsx } from 'hono/jsx';
@@ -138,6 +138,41 @@ function renderUuidField(field: FormFieldConfig, data?: FormRenderData) {
     );
 }
 
+// Index字段渲染器
+function renderIndexField(field: FormFieldConfig, data?: FormRenderData) {
+    let value = getFieldValue(field, data);
+
+    // 如果没有值，生成新UUID作为index（不管是新建还是编辑模式）
+    if (!value || value === '' || value === 'undefined') {
+        value = generateUUID();
+    }
+
+    const readonlyAttr = field.type === 'index_readonly' ? true : undefined;
+
+    return (
+        <input
+            type="text"
+            id={field.id || field.name}
+            name={field.name}
+            value={value}
+            class="index"
+            required={true}
+            readonly={readonlyAttr}
+        />
+    );
+}
+
+// 信息显示字段渲染器
+function renderInfoDisplayField(field: FormFieldConfig, data?: FormRenderData) {
+    const value = (field.type === 'info-display' ? field.value : undefined) || getFieldValue(field, data);
+
+    return (
+        <div class="info-display">
+            <span class="info-value">{value}</span>
+        </div>
+    );
+}
+
 // 复选框字段渲染器
 function renderCheckboxField(field: FormFieldConfig, data?: FormRenderData) {
     const value = getFieldValue(field, data);
@@ -180,10 +215,10 @@ function renderSelectField(field: FormFieldConfig, data?: FormRenderData) {
     // 根据字段名称获取对应的选项
     if (field.name === 'copyright_basis') {
         options = copyrightBasisOptions;
-    } else if (field.name === 'type' && field.options?.includes('human')) {
+    } else if (field.name === 'type' && Array.isArray(field.options) && typeof field.options[0] === 'string' && (field.options as string[]).includes('human')) {
         // Creator type: human, virtual
         options = creatorTypeOptions;
-    } else if (field.name === 'type' && field.options?.includes('raw_url')) {
+    } else if (field.name === 'type' && Array.isArray(field.options) && typeof field.options[0] === 'string' && (field.options as string[]).includes('raw_url')) {
         // Storage type: raw_url, ipfs
         options = storageTypeOptions;
     } else if (field.name === 'is_music') {
@@ -236,22 +271,22 @@ function renderQuickSelectInput(field: FormFieldConfig, data?: FormRenderData, o
     if (field.dataSource && options) {
         if (field.dataSource === 'options.works' && options.works) {
             selectOptions = options.works.map(work => ({
-                value: work.work_uuid,
-                text: work.titles?.length > 0 ? work.titles[0].title : `Work ${work.work_uuid.substring(0, 8)}`
+                value: work.work_index,
+                text: work.titles?.length > 0 ? work.titles[0].title : `Work ${work.work_index.substring(0, 8)}`
             }));
         } else if (field.dataSource === 'options.creators' && options.creators) {
             selectOptions = options.creators.map(creator => ({
-                value: creator.uuid,
+                value: creator.index,
                 text: creator.name
             }));
         } else if (field.dataSource === 'options.categories' && options.categories) {
             selectOptions = options.categories.map(category => ({
-                value: category.uuid,
+                value: category.index,
                 text: category.name
             }));
         } else if (field.dataSource === 'allExternalSources' && options.allExternalSources) {
             selectOptions = options.allExternalSources.map(source => ({
-                value: source.uuid,
+                value: source.index,
                 text: source.name
             }));
         }
@@ -300,6 +335,13 @@ export function renderFormField(field: FormFieldConfig, data?: FormRenderData, o
         case 'uuid_readonly':
         case 'uuid_editable':
             fieldElement = renderUuidField(field, data);
+            break;
+        case 'index_readonly':
+        case 'index_editable':
+            fieldElement = renderIndexField(field, data);
+            break;
+        case 'info-display':
+            fieldElement = renderInfoDisplayField(field, data);
             break;
         case 'checkbox':
         case 'checkbox_inline':

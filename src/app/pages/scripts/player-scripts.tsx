@@ -47,7 +47,7 @@ function expandPlayerTags(expandButton) {
     
     const hiddenTags = workData.tags.slice(5);
     const tagsHtml = hiddenTags.map(tag => 
-        \`<span class="tag-chip clickable" data-tag="\${tag.uuid}">\${tag.name}</span>\`
+        \`<span class="tag-chip clickable" data-tag="\${tag.index}">\${tag.name}</span>\`
     ).join('');
     
     // Replace the expand button with the hidden tags

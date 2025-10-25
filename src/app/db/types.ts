@@ -51,7 +51,7 @@ export type MediaSourceInput = Omit<NewMediaSource, 'url'> & {
 
 // API-compatible input types (still accept UUID but convert to ID internally)
 export type MediaSourceApiInput = Omit<MediaSourceInput, 'work_id'> & {
-    work_uuid: string; // API still accepts UUID
+    work_index: string; // API still accepts UUID
 };
 
 export type MediaSourceForDatabase = Omit<NewMediaSource, 'url'> & {
@@ -66,8 +66,8 @@ export type NewAsset = InferInsertModel<typeof asset>;
 export type AssetForApplication = {
     id: number;
     work_id: number;
-    uuid: string;
-    work_uuid: string;
+    index: string;
+    work_index: string;
     asset_type: 'lyrics' | 'picture';
     file_name: string;
     is_previewpic?: boolean;
@@ -81,7 +81,7 @@ export type AssetInput = Omit<NewAsset, 'file_id'> & {
 
 // API-compatible input types
 export type AssetApiInput = Omit<AssetInput, 'work_id'> & {
-    work_uuid: string; // API still accepts UUID
+    work_index: string; // API still accepts UUID
 };
 
 export type WorkCreator = InferSelectModel<typeof workCreator>;
@@ -89,8 +89,8 @@ export type NewWorkCreator = InferInsertModel<typeof workCreator>;
 
 // API-compatible work creator input
 export type WorkCreatorApiInput = {
-    work_uuid: string;
-    creator_uuid: string;
+    work_index: string;
+    creator_index: string;
     role: string;
 };
 
@@ -99,8 +99,8 @@ export type NewAssetCreator = InferInsertModel<typeof assetCreator>;
 
 // API-compatible asset creator input
 export type AssetCreatorApiInput = {
-    asset_uuid: string;
-    creator_uuid: string;
+    asset_index: string;
+    creator_index: string;
     role: string;
 };
 
@@ -109,8 +109,8 @@ export type NewWorkRelation = InferInsertModel<typeof workRelation>;
 
 // API-compatible work relation input
 export type WorkRelationApiInput = Omit<WorkRelation, 'id' | 'from_work_id' | 'to_work_id'> & {
-    from_work_uuid: string;
-    to_work_uuid: string;
+    from_work_index: string;
+    to_work_index: string;
 };
 
 export type WorkWiki = InferSelectModel<typeof workWiki>;
@@ -136,7 +136,7 @@ export type NewExternalSource = InferInsertModel<typeof externalSource>;
 
 // API-compatible external source input (still accepts UUID)
 export type ExternalSourceApiInput = Omit<NewExternalSource, 'id'> & {
-    uuid: string;
+    index: string;
     type: 'raw_url' | 'ipfs';
     name: string;
     endpoint: string;
@@ -148,8 +148,8 @@ export type NewExternalObject = InferInsertModel<typeof externalObject>;
 
 // API-compatible external object input
 export type ExternalObjectApiInput = Omit<NewExternalObject, 'id' | 'external_source_id'> & {
-    uuid: string;
-    external_source_uuid: string; // API accepts UUID
+    index: string;
+    external_source_index: string; // API accepts UUID
     mime_type: string;
     file_id: string;
 };
@@ -189,7 +189,7 @@ export interface WikiRef {
 }
 
 export interface CreatorWithRole {
-    creator_uuid: string;
+    creator_index: string;
     creator_name?: string;
     creator_type: 'human' | 'virtual';
     role: string;
@@ -198,25 +198,25 @@ export interface CreatorWithRole {
 
 // API-layer types (for external interfaces) - use UUID references
 export interface CreatorApi {
-    uuid: string;
+    index: string;
     name: string;
     type: 'human' | 'virtual';
 }
 
 export interface TagApi {
-    uuid: string;
+    index: string;
     name: string;
 }
 
 export interface CategoryApi {
-    uuid: string;
+    index: string;
     name: string;
-    parent_uuid?: string | null;
+    parent_index?: string | null;
     children?: CategoryApi[];
 }
 
 export interface ExternalSourceApi {
-    uuid: string;
+    index: string;
     type: 'raw_url' | 'ipfs';
     name: string;
     endpoint: string;
@@ -224,15 +224,15 @@ export interface ExternalSourceApi {
 }
 
 export interface ExternalObjectApi {
-    uuid: string;
-    external_source_uuid: string;
+    index: string;
+    external_source_index: string;
     mime_type: string;
     file_id: string;
 }
 
 export interface WorkTitleApi {
-    uuid: string;
-    work_uuid: string;
+    index: string;
+    work_index: string;
     is_official: boolean;
     is_for_search: boolean;
     language: string;
@@ -240,8 +240,8 @@ export interface WorkTitleApi {
 }
 
 export interface AssetApi {
-    uuid: string;
-    work_uuid: string;
+    index: string;
+    work_index: string;
     asset_type: 'lyrics' | 'picture';
     file_name: string;
     is_previewpic?: boolean;
@@ -250,8 +250,8 @@ export interface AssetApi {
 }
 
 export interface MediaSourceApi {
-    uuid: string;
-    work_uuid: string;
+    index: string;
+    work_index: string;
     is_music: boolean;
     file_name: string;
     mime_type: string;
@@ -259,9 +259,9 @@ export interface MediaSourceApi {
 }
 
 export interface WorkRelationApi {
-    uuid: string;
-    from_work_uuid: string;
-    to_work_uuid: string;
+    index: string;
+    from_work_index: string;
+    to_work_index: string;
     relation_type: 'original' | 'remix' | 'cover' | 'remake' | 'picture' | 'lyrics';
     related_work_titles?: {
         from_work_titles: Array<{
@@ -299,7 +299,8 @@ export interface WorkInfo {
 }
 
 export interface WorkListItem {
-    work_uuid: string;
+    work_id: number;
+    work_index: string;
     titles: WorkTitleApi[];
     preview_asset?: AssetApi;
     non_preview_asset?: AssetApi;
@@ -353,7 +354,7 @@ export interface WikiReferenceWithUrl {
 
 // WorkTitle input/update types
 export interface WorkTitleInput {
-    work_uuid: string;
+    work_index: string;
     is_official: boolean;
     is_for_search?: boolean;
     language: string;

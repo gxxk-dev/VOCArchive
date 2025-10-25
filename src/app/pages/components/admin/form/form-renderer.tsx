@@ -28,17 +28,17 @@ function renderTitleRow(title?: any, index?: number) {
 
 // 渲染创作者列表项
 function renderCreatorRow(creator?: any, allCreators?: any[], index?: number) {
-    const creatorData = creator || { creator_uuid: '', role: '' };
-    const creator_uuid = creatorData.creator_uuid || creatorData.creator?.uuid || creatorData.uuid || '';
+    const creatorData = creator || { creator_index: '', role: '' };
+    const creator_index = creatorData.creator_index || creatorData.creator?.index || creatorData.index || '';
     const creatorRole = creatorData.role || '';
 
     return (
         <div class="dynamic-list-item" data-index={index}>
             <div class="md3-select-field">
-                <select name="creator_uuid[]" required>
+                <select name="creator_index[]" required>
                     <option value="">Select Creator</option>
                     {allCreators?.map(c => (
-                        <option value={c.uuid} selected={creator_uuid === c.uuid ? true : undefined}>
+                        <option value={c.index} selected={creator_index === c.index ? true : undefined}>
                             {c.name}
                         </option>
                     ))}
@@ -79,7 +79,7 @@ function renderMediaSourceRow(mediaSource?: any, index?: number) {
             <button
                 type="button"
                 class="edit-link-button"
-                onclick={`window.parent.postMessage({type: 'load-editor', data: {itemType: 'media', uuid: '${mediaSource.uuid}'}}, '*')`}
+                onclick={`window.parent.postMessage({type: 'load-editor', data: {itemType: 'media', index: '${mediaSource.index}'}}, '*')`}
             >
                 编辑
             </button>
@@ -105,7 +105,7 @@ function renderAssetRow(asset?: any, index?: number) {
             <button
                 type="button"
                 class="edit-link-button"
-                onclick={`window.parent.postMessage({type: 'load-editor', data: {itemType: 'asset', uuid: '${asset.uuid}'}}, '*')`}
+                onclick={`window.parent.postMessage({type: 'load-editor', data: {itemType: 'asset', index: '${asset.index}'}}, '*')`}
             >
                 编辑
             </button>
@@ -149,13 +149,13 @@ function renderWorkRelationRow(relation?: any, index?: number) {
                     <span class="work-title">{toTitle}</span>
                 </div>
                 <div class="relation-details">
-                    <small>From: {relation.from_work_uuid.substring(0, 8)}... → To: {relation.to_work_uuid.substring(0, 8)}...</small>
+                    <small>From: {relation.from_work_index.substring(0, 8)}... → To: {relation.to_work_index.substring(0, 8)}...</small>
                 </div>
             </div>
             <button
                 type="button"
                 class="edit-link-button"
-                onclick={`window.parent.postMessage({type: 'load-editor', data: {itemType: 'relation', uuid: '${relation.uuid}'}}, '*')`}
+                onclick={`window.parent.postMessage({type: 'load-editor', data: {itemType: 'relation', index: '${relation.index}'}}, '*')`}
             >
                 编辑
             </button>
@@ -169,7 +169,7 @@ function renderExternalObjectsSelector(externalSources?: any[], selectedObjects?
         return <p>No external objects available</p>;
     }
 
-    const selectedUuids = new Set(selectedObjects?.map(obj => obj.uuid) || []);
+    const selectedIndices = new Set(selectedObjects?.map(obj => obj.index) || []);
 
     return (
         <div class="external-objects-selector">
@@ -184,15 +184,15 @@ function renderExternalObjectsSelector(externalSources?: any[], selectedObjects?
             <div class="external-objects-list">
                 {allExternalObjects.map(obj => {
                     const sourceName = obj.source?.name ||
-                                     externalSources?.find(s => s.uuid === obj.external_source_uuid)?.name ||
+                                     externalSources?.find(s => s.index === obj.external_source_index)?.name ||
                                      '未知源';
-                    const isSelected = selectedUuids.has(obj.uuid);
+                    const isSelected = selectedIndices.has(obj.index);
                     const searchText = `${obj.file_id} ${sourceName} ${obj.mime_type}`.toLowerCase();
 
                     return (
                         <div class="external-object-item" data-name={searchText}>
                             <label>
-                                <input type="checkbox" name="external_objects" value={obj.uuid} checked={isSelected ? true : undefined} />
+                                <input type="checkbox" name="external_objects" value={obj.index} checked={isSelected ? true : undefined} />
                                 <div class="external-object-details">
                                     <div class="external-object-info">
                                         <strong>文件ID:</strong> {obj.file_id}<br/>
@@ -269,10 +269,10 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                                     <template id="creator-row-template">
                                         <div class="dynamic-list-item">
                                             <div class="md3-select-field">
-                                                <select name="creator_uuid[]" required>
+                                                <select name="creator_index[]" required>
                                                     <option value="">Select Creator</option>
                                                     {options?.creators?.map(c => (
-                                                        <option value={c.uuid}>{c.name}</option>
+                                                        <option value={c.index}>{c.name}</option>
                                                     ))}
                                                 </select>
                                                 <label class="md3-label">Creator</label>
@@ -308,10 +308,10 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                                     <template id="asset-creator-row-template">
                                         <div class="dynamic-list-item">
                                             <div class="md3-select-field">
-                                                <select name="creator_uuid[]" required>
+                                                <select name="creator_index[]" required>
                                                     <option value="">Select Creator</option>
                                                     {options?.creators?.map(c => (
-                                                        <option value={c.uuid}>{c.name}</option>
+                                                        <option value={c.index}>{c.name}</option>
                                                     ))}
                                                 </select>
                                                 <label class="md3-label">Creator</label>

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 选择器配置文件
  * 定义所有选择器的配置信息，包括API端点、显示字段、过滤规则等
  */
@@ -7,10 +7,10 @@
  * UUID选择器配置
  * 用于快速选择对象UUID的下拉框配置
  */
-export const UUID_SELECTOR_CONFIG = {
+export const INDEX_SELECTOR_CONFIG = {
     work: {
         apiEndpoint: '/api/list/work',
-        valueField: 'work_uuid',
+        valueField: 'work_index',
         displayField: 'titles',
         label: '作品',
         placeholder: '--选择作品--',
@@ -19,9 +19,9 @@ export const UUID_SELECTOR_CONFIG = {
                 return 'Invalid Item';
             }
 
-            // 优先使用 work_uuid，如果不存在则使用 uuid
-            const uuid = item.work_uuid || item.uuid;
-            if (!uuid) {
+            // 优先使用 work_index，如果不存在则使用 Index
+            const index = item.work_index || item.index;
+            if (!index) {
                 return 'Invalid Item';
             }
 
@@ -43,47 +43,47 @@ export const UUID_SELECTOR_CONFIG = {
                 title = item.name;
             }
 
-            return `${title} (${uuid.substring(0, 8)}...)`;
+            return `${title} (${index.substring(0, 8)}...)`;
         }
     },
     creator: {
         apiEndpoint: '/api/list/creators',
-        valueField: 'uuid',
+        valueField: 'index',
         displayField: 'name',
         label: '创作者',
         placeholder: '--选择创作者--',
         displayFormatter: (item) => {
-            if (!item || !item.uuid) {
+            if (!item || !item.index) {
                 return 'Invalid Item';
             }
-            return `${item.name} (${item.uuid.substring(0, 8)}...)`;
+            return `${item.name} (${item.index.substring(0, 8)}...)`;
         }
     },
     external_source: {
         apiEndpoint: '/api/list/external_sources',
-        valueField: 'uuid',
+        valueField: 'index',
         displayField: 'name',
         label: '存储源',
         placeholder: '--选择存储源--',
         displayFormatter: (item) => {
-            if (!item || !item.uuid) {
+            if (!item || !item.index) {
                 return 'Invalid Item';
             }
-            return `${item.name} (${item.uuid.substring(0, 8)}...)`;
+            return `${item.name} (${item.index.substring(0, 8)}...)`;
         }
     },
     category: {
         apiEndpoint: '/api/list/categories',
-        valueField: 'uuid',
+        valueField: 'index',
         displayField: 'name',
         label: '分类',
         placeholder: '--选择父分类--',
         displayFormatter: (item, level = 0) => {
-            if (!item || !item.uuid) {
+            if (!item || !item.index) {
                 return 'Invalid Item';
             }
             const indent = '　'.repeat(level);
-            return `${indent}${item.name} (${item.uuid.substring(0, 8)}...)`;
+            return `${indent}${item.name} (${item.index.substring(0, 8)}...)`;
         },
         hierarchical: true
     }
@@ -96,7 +96,7 @@ export const UUID_SELECTOR_CONFIG = {
 export const MULTI_SELECTOR_CONFIG = {
     tags: {
         apiEndpoint: '/api/list/tags',
-        valueField: 'uuid',
+        valueField: 'index',
         displayField: 'name',
         label: '标签',
         placeholder: '搜索标签...',
@@ -107,7 +107,7 @@ export const MULTI_SELECTOR_CONFIG = {
     },
     categories: {
         apiEndpoint: '/api/list/categories',
-        valueField: 'uuid',
+        valueField: 'index',
         displayField: 'name',
         label: '分类',
         placeholder: '搜索分类...',
@@ -119,7 +119,7 @@ export const MULTI_SELECTOR_CONFIG = {
     },
     external_objects: {
         apiEndpoint: '/api/list/external_objects',
-        valueField: 'uuid',
+        valueField: 'index',
         displayField: 'file_id',
         label: '外部对象',
         placeholder: '搜索外部对象...',
@@ -270,8 +270,8 @@ export const SELECTOR_CLASSES = {
  * @param {string} type - 选择器类型
  * @returns {object} 配置对象
  */
-export function getUuidSelectorConfig(type) {
-    return UUID_SELECTOR_CONFIG[type] || null;
+export function getIndexSelectorConfig(type) {
+    return INDEX_SELECTOR_CONFIG[type] || null;
 }
 
 /**

@@ -21,7 +21,7 @@ export const VersionCards = (props: VersionCardsProps) => {
                         <h3>音频版本</h3>
                         <p>{audioSources[0].info}</p>
                     </div>
-                    <a href={`/api/get/file/${audioSources[0].uuid}`} download={audioSources[0].file_name} class="download-btn">下载</a>
+                    <a href={`/api/get/file/${audioSources[0].index}`} download={audioSources[0].file_name} class="download-btn">下载</a>
                 </div>
             )}
             {videoSources.length > 0 && (
@@ -33,7 +33,7 @@ export const VersionCards = (props: VersionCardsProps) => {
                         <h3>视频版本</h3>
                         <p>{videoSources[0].info}</p>
                     </div>
-                    <a href={`/api/get/file/${videoSources[0].uuid}`} download={videoSources[0].file_name} class="download-btn">下载</a>
+                    <a href={`/api/get/file/${videoSources[0].index}`} download={videoSources[0].file_name} class="download-btn">下载</a>
                 </div>
             )}
         </div>

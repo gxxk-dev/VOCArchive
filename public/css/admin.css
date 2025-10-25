@@ -481,7 +481,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* 确保Category UUID显示正确 */
-[data-theme="dark"] .category-item .uuid {
+[data-theme="dark"] .category-item .index {
     color: #999;
     background-color: #333;
     border-color: #555;
@@ -741,7 +741,7 @@ h1, h2, h3, h4, h5, h6 {
     text-decoration: underline;
 }
 
-[data-theme="dark"] .uuid {
+[data-theme="dark"] .index {
     color: #ccc !important;
 }
 
@@ -749,7 +749,11 @@ h1, h2, h3, h4, h5, h6 {
     color: #f0f0f0 !important;
 }
 
-[data-theme="dark"] .work-card-uuid {
+[data-theme="dark"] .work-card-index {
+    color: #bbb !important;
+}
+
+[data-theme="dark"] .work-card-id-index {
     color: #bbb !important;
 }
 
@@ -1017,7 +1021,7 @@ h1, h2, h3, h4, h5, h6 {
     border-bottom-color: #555;
 }
 
-/* UUID 点击提示相关 */
+/* Index 点击提示相关 */
 [data-theme="dark"] .copied {
     background-color: #3d5afe !important;
 }
@@ -1069,7 +1073,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* UUID元素悬停效果 */
-[data-theme="dark"] .uuid:hover {
+[data-theme="dark"] .index:hover {
     background-color: #404040;
     color: #fff;
 }
@@ -1727,13 +1731,23 @@ td .string-value[title] {
     text-overflow: ellipsis;
 }
 
-.work-card-uuid {
+.work-card-index {
     font-size: 0.8em;
     color: #777;
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.work-card-id-index {
+    font-size: 0.75em;
+    color: #777;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: monospace;
 }
 
 .work-card-actions {
@@ -1832,13 +1846,13 @@ td .string-value[title] {
 }
 
 
-/* UUID Click-to-Copy Styles */
-.uuid {
+/* Index Click-to-Copy Styles */
+.index {
     cursor: pointer;
     position: relative;
 }
 
-.uuid:hover {
+.index:hover {
     text-decoration: underline;
     text-decoration-style: dotted;
 }

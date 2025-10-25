@@ -1,6 +1,6 @@
-import { jsx } from 'hono/jsx'
+﻿import { jsx } from 'hono/jsx'
 import { ExternalSourceApi } from '../../../db/types'
-import { AdminHeader, EmptyState, UuidTableCell, TableActionButtons } from './base'
+import { AdminHeader, EmptyState, IndexTableCell, TableActionButtons } from './base'
 
 export interface ExternalSourcesTableProps {
     sources: ExternalSourceApi[]
@@ -52,8 +52,8 @@ export const ExternalSourcesTable = (props: ExternalSourcesTableProps) => {
                     </thead>
                     <tbody>
                         {sources.map(source => (
-                            <tr data-uuid={source.uuid}>
-                                <UuidTableCell uuid={source.uuid} />
+                            <tr data-index={source.index}>
+                                <IndexTableCell index={source.index} />
                                 <td class="source-name">{source.name}</td>
                                 <td>
                                     <span class={`storage-type-badge ${source.type}`}>
@@ -63,7 +63,7 @@ export const ExternalSourcesTable = (props: ExternalSourcesTableProps) => {
                                 <td class="endpoint-template">{source.endpoint}</td>
                                 <TableActionButtons
                                     target="external_source"
-                                    uuid={source.uuid}
+                                    index={source.index}
                                     editText="编辑"
                                     deleteText="删除"
                                 />

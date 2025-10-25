@@ -1,9 +1,9 @@
-import { eq, inArray } from 'drizzle-orm';
+﻿import { eq, inArray } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { creator, creatorWiki, workCreator, work } from '../schema';
-import { creatorUuidToId } from '../utils/uuid-id-converter';
+import { creatorIndexToId } from '../utils/index-id-converter';
 import { enrichWikiReferences } from './wiki-platforms';
-import { validateUUID } from '../utils';
+import { validateIndex } from '../utils';
 
 import { Creator, CreatorApi, WikiRef } from '../types';
 
@@ -12,20 +12,20 @@ import { Creator, CreatorApi, WikiRef } from '../types';
  */
 function convertCreatorToApi(creator: Creator): CreatorApi {
     return {
-        uuid: creator.uuid,
+        index: creator.index,
         name: creator.name,
         type: creator.type,
     };
 }
 
 /**
- * Get creator by UUID with wiki references
+ * Get creator by index with wiki references
  */
-export async function getCreatorByUUID(
+export async function getCreatorByIndex(
     db: DrizzleDB,
-    creatorUuid: string
+    creatorIndex: string
 ): Promise<{ creator: CreatorApi, wikis: WikiRef[] } | null> {
-    if (!validateUUID(creatorUuid)) {
+    if (!validateIndex(creatorIndex)) {
         return null;
     }
 
@@ -33,7 +33,7 @@ export async function getCreatorByUUID(
     const creatorResult = await db
         .select()
         .from(creator)
-        .where(eq(creator.uuid, creatorUuid))
+        .where(eq(creator.index, creatorIndex))
         .limit(1);
 
     if (creatorResult.length === 0) {
@@ -48,7 +48,7 @@ export async function getCreatorByUUID(
         })
         .from(creatorWiki)
         .innerJoin(creator, eq(creatorWiki.creator_id, creator.id))
-        .where(eq(creator.uuid, creatorUuid));
+        .where(eq(creator.index, creatorIndex));
 
     // Enrich wiki references with complete URL information
     const wikis = await enrichWikiReferences(db, wikiRefs);
@@ -93,7 +93,7 @@ export async function inputCreator(
     // For D1 compatibility, execute operations sequentially without transactions
     // Insert creator
     await db.insert(creator).values({
-        uuid: creatorData.uuid,
+        index: creatorData.index,
         name: creatorData.name,
         type: creatorData.type,
     });
@@ -101,9 +101,9 @@ export async function inputCreator(
     // Insert wiki references
     if (wikis && wikis.length > 0) {
         // Get creator ID for foreign key operations
-        const creatorId = await creatorUuidToId(db, creatorData.uuid);
+        const creatorId = await creatorIndexToId(db, creatorData.index);
         if (!creatorId) {
-            throw new Error(`Creator not found after insert: ${creatorData.uuid}`);
+            throw new Error(`Creator not found after insert: ${creatorData.index}`);
         }
 
         await db.insert(creatorWiki).values(
@@ -121,43 +121,76 @@ export async function inputCreator(
  */
 export async function updateCreator(
     db: DrizzleDB,
-    creatorUuid: string,
+    creatorIndex: string,
     creatorData: CreatorApi,
     wikis?: WikiRef[]
 ): Promise<boolean> {
-    if (!validateUUID(creatorUuid)) return false;
+    if (!validateIndex(creatorIndex)) return false;
 
     try {
         // For D1 compatibility, execute operations sequentially without transactions
         // Get creator ID for foreign key operations
-        const creatorId = await creatorUuidToId(db, creatorUuid);
+        const creatorId = await creatorIndexToId(db, creatorIndex);
         if (!creatorId) {
-            throw new Error(`Creator not found: ${creatorUuid}`);
+            throw new Error(`Creator not found: ${creatorIndex}`);
         }
 
-        // Update creator
-        await db
-            .update(creator)
-            .set({
-                name: creatorData.name,
-                type: creatorData.type,
-            })
-            .where(eq(creator.uuid, creatorUuid));
+        // Check if index is being changed
+        const newIndex = creatorData.index;
+        if (newIndex && newIndex !== creatorIndex) {
+            // Validate new index
+            if (!validateIndex(newIndex)) {
+                throw new Error(`Invalid new index: ${newIndex}`);
+            }
 
-        // Delete old wiki entries
-        await db
-            .delete(creatorWiki)
-            .where(eq(creatorWiki.creator_id, creatorId));
+            // Check if new index already exists
+            const existingCreator = await db
+                .select({ id: creator.id })
+                .from(creator)
+                .where(eq(creator.index, newIndex))
+                .limit(1);
 
-        // Insert new wiki entries
-        if (wikis && wikis.length > 0) {
-            await db.insert(creatorWiki).values(
-                wikis.map(wiki => ({
-                    creator_id: creatorId,
-                    platform: wiki.platform,
-                    identifier: wiki.identifier,
-                }))
-            );
+            if (existingCreator.length > 0) {
+                throw new Error(`Index already exists: ${newIndex}`);
+            }
+
+            // Update creator with new index, name, and type
+            await db
+                .update(creator)
+                .set({
+                    index: newIndex,
+                    name: creatorData.name,
+                    type: creatorData.type,
+                })
+                .where(eq(creator.index, creatorIndex));
+        } else {
+            // Update creator without changing index
+            await db
+                .update(creator)
+                .set({
+                    name: creatorData.name,
+                    type: creatorData.type,
+                })
+                .where(eq(creator.index, creatorIndex));
+        }
+
+        // Update wiki entries (only if wikis parameter is provided)
+        if (wikis !== undefined) {
+            // Delete old wiki entries
+            await db
+                .delete(creatorWiki)
+                .where(eq(creatorWiki.creator_id, creatorId));
+
+            // Insert new wiki entries
+            if (wikis.length > 0) {
+                await db.insert(creatorWiki).values(
+                    wikis.map(wiki => ({
+                        creator_id: creatorId,
+                        platform: wiki.platform,
+                        identifier: wiki.identifier,
+                    }))
+                );
+            }
         }
 
         return true;
@@ -170,21 +203,21 @@ export async function updateCreator(
 /**
  * Delete a creator and all related data
  */
-export async function deleteCreator(db: DrizzleDB, creatorUuid: string): Promise<boolean> {
-    if (!validateUUID(creatorUuid)) return false;
+export async function deleteCreator(db: DrizzleDB, creatorIndex: string): Promise<boolean> {
+    if (!validateIndex(creatorIndex)) return false;
 
     try {
         // Check if creator exists
         const existingCreator = await db
-            .select({ uuid: creator.uuid })
+            .select({ index: creator.index })
             .from(creator)
-            .where(eq(creator.uuid, creatorUuid))
+            .where(eq(creator.index, creatorIndex))
             .limit(1);
 
         if (existingCreator.length === 0) return false;
 
         // Delete creator (cascade will handle related tables)
-        await db.delete(creator).where(eq(creator.uuid, creatorUuid));
+        await db.delete(creator).where(eq(creator.index, creatorIndex));
         
         return true;
     } catch (error) {
@@ -196,26 +229,26 @@ export async function deleteCreator(db: DrizzleDB, creatorUuid: string): Promise
 /**
  * Delete all works by a creator
  */
-export async function deleteWorksByCreator(db: DrizzleDB, creatorUuid: string): Promise<number> {
-    if (!validateUUID(creatorUuid)) return 0;
+export async function deleteWorksByCreator(db: DrizzleDB, creatorIndex: string): Promise<number> {
+    if (!validateIndex(creatorIndex)) return 0;
 
     try {
         // Get all work UUIDs for this creator
         const creatorWorks = await db
-            .select({ work_uuid: work.uuid })
+            .select({ work_index: work.index })
             .from(workCreator)
             .innerJoin(creator, eq(workCreator.creator_id, creator.id))
             .innerJoin(work, eq(workCreator.work_id, work.id))
-            .where(eq(creator.uuid, creatorUuid));
+            .where(eq(creator.index, creatorIndex));
 
         if (creatorWorks.length === 0) return 0;
 
-        const workUuids = creatorWorks.map(w => w.work_uuid);
+        const workIndexs = creatorWorks.map(w => w.work_index);
 
         // Delete all works (cascade will handle related data)
-        await db.delete(work).where(inArray(work.uuid, workUuids));
+        await db.delete(work).where(inArray(work.index, workIndexs));
 
-        return workUuids.length;
+        return workIndexs.length;
     } catch (error) {
         console.error('Error deleting works by creator:', error);
         return 0;

@@ -1,4 +1,4 @@
-export const IndexScripts = (props: { works: any[] }) => `
+﻿export const IndexScripts = (props: { works: any[] }) => `
 // MD3 Select Enhancement for Frontend
 class MD3SelectFrontend {
     constructor() {
@@ -69,7 +69,7 @@ function setupEventListeners() {
         const workItem = e.target.closest('.work-item');
         if (workItem) {
             const songId = workItem.dataset.id;
-            window.location.href = \`/player?uuid=\${songId}\`;
+            window.location.href = \`/player?index=\${songId}\`;
         }
         
         const playBtn = e.target.closest('.work-play-btn');
@@ -77,7 +77,7 @@ function setupEventListeners() {
             e.stopPropagation();
             const workItem = playBtn.closest('.work-item');
             const songId = workItem.dataset.id;
-            window.location.href = \`/player?uuid=\${songId}\`;
+            window.location.href = \`/player?index=\${songId}\`;
         }
     });
     

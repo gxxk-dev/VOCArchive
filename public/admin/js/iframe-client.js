@@ -1,4 +1,4 @@
-// iframe 内容事件处理脚本
+﻿// iframe 内容事件处理脚本
 // 用于处理管理后台 iframe 内的编辑、删除按钮点击事件
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -24,9 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (target.classList.contains('edit-button')) {
             e.preventDefault();
             const buttonTarget = target.dataset.target;
-            const uuid = target.dataset.uuid;
+            const index = target.dataset.index;
 
-            console.log('Edit button clicked:', { target: buttonTarget, uuid });
+            console.log('Edit button clicked:', { target: buttonTarget, index });
 
             // 发送编辑请求到父窗口
             console.log('Sending postMessage to parent window...');
@@ -36,8 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 window.parent.postMessage({
                     type: 'edit-request',
-                    target: buttonTarget,
-                    uuid: uuid
+                    target: buttonTarget, index: index
                 }, '*');
                 console.log('postMessage sent successfully');
             } catch (error) {
@@ -50,16 +49,15 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const buttonTarget = target.dataset.target;
             const row = target.closest('.work-card') || target.closest('tr') || target.closest('.category-node');
-            const uuid = row ? row.dataset.uuid : null;
+            const index = row ? row.dataset.index : null;
 
-            console.log('Delete button clicked:', { target: buttonTarget, uuid });
+            console.log('Delete button clicked:', { target: buttonTarget, index });
 
-            if (uuid) {
+            if (index) {
                 // 发送删除请求到父窗口
                 window.parent.postMessage({
                     type: 'delete-request',
-                    target: buttonTarget,
-                    uuid: uuid,
+                    target: buttonTarget, index: index,
                     element: row.outerHTML // 发送元素HTML以便父窗口可以移除它
                 }, '*');
             }
@@ -98,11 +96,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 case 'remove-row':
                     // 移除指定的行/卡片元素
-                    if (event.data.uuid) {
-                        const element = document.querySelector(`[data-uuid="${event.data.uuid}"]`);
+                    if (event.data.index) {
+                        const element = document.querySelector(`[data-index="${event.data.index}"]`);
                         if (element) {
                             element.remove();
-                            console.log('Row removed:', event.data.uuid);
+                            console.log('Row removed:', event.data.index);
                         }
                     }
                     break;

@@ -25,7 +25,7 @@ export const AssetSection = (props: AssetSectionProps) => {
                         : '';
                     const langInfo = asset.language ? ` · ${asset.language}` : '';
                     return (
-                        <a href={`/api/get/file/${asset.uuid}`} class="asset-card">
+                        <a href={`/api/get/file/${asset.index}`} class="asset-card">
                             <span class="material-symbols-outlined">{icon}</span>
                             <div class="asset-details">
                                 <h4>{asset.file_name}</h4>

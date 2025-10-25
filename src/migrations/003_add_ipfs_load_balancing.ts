@@ -76,7 +76,7 @@ export const down = async (db: DrizzleDB, params?: MigrationParameters): Promise
         await db.run(`
             CREATE TABLE external_source_temp (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                uuid TEXT NOT NULL UNIQUE,
+                "index" TEXT NOT NULL UNIQUE,
                 type TEXT NOT NULL CHECK (type IN ('raw_url', 'ipfs')),
                 name TEXT NOT NULL,
                 endpoint TEXT NOT NULL
@@ -85,8 +85,8 @@ export const down = async (db: DrizzleDB, params?: MigrationParameters): Promise
 
         // 复制数据（除isIPFS字段外）
         await db.run(`
-            INSERT INTO external_source_temp (id, uuid, type, name, endpoint)
-            SELECT id, uuid, type, name, endpoint
+            INSERT INTO external_source_temp (id, "index", type, name, endpoint)
+            SELECT id, "index", type, name, endpoint
             FROM external_source
         `);
 

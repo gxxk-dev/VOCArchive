@@ -5,14 +5,14 @@ import { relations } from 'drizzle-orm';
 
 export const creator = sqliteTable('creator', {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    uuid: text('uuid').notNull().unique(),
+    index: text('index').notNull().unique(),
     name: text('name').notNull(),
     type: text('type', { enum: ['human', 'virtual'] }).notNull(),
 });
 
 export const work = sqliteTable('work', {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    uuid: text('uuid').notNull().unique(),
+    index: text('index').notNull().unique(),
     copyright_basis: text('copyright_basis', {
         enum: ['none', 'accept', 'license', 'onlymetadata', 'arr']
     }).notNull(),
@@ -20,20 +20,20 @@ export const work = sqliteTable('work', {
 
 export const tag = sqliteTable('tag', {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    uuid: text('uuid').notNull().unique(),
+    index: text('index').notNull().unique(),
     name: text('name').notNull().unique(),
 });
 
 export const category = sqliteTable('category', {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    uuid: text('uuid').notNull().unique(),
+    index: text('index').notNull().unique(),
     name: text('name').notNull().unique(),
     parent_id: integer('parent_id').references((): any => category.id, { onDelete: 'cascade' }),
 });
 
 export const footerSettings = sqliteTable('footer_settings', {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    uuid: text('uuid').notNull().unique(),
+    index: text('index').notNull().unique(),
     item_type: text('item_type', {
         enum: ['link', 'social', 'copyright']
     }).notNull(),
@@ -44,7 +44,7 @@ export const footerSettings = sqliteTable('footer_settings', {
 
 export const externalSource = sqliteTable('external_source', {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    uuid: text('uuid').notNull().unique(),
+    index: text('index').notNull().unique(),
     type: text('type', { enum: ['raw_url', 'ipfs'] }).notNull(),
     name: text('name').notNull(),
     endpoint: text('endpoint').notNull(),
@@ -79,7 +79,7 @@ export const creatorWiki = sqliteTable('creator_wiki', {
 
 export const workTitle = sqliteTable('work_title', {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    uuid: text('uuid').notNull().unique(),
+    index: text('index').notNull().unique(),
     work_id: integer('work_id').notNull().references(() => work.id, {
         onDelete: 'cascade'
     }),
@@ -98,7 +98,7 @@ export const workLicense = sqliteTable('work_license', {
 
 export const mediaSource = sqliteTable('media_source', {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    uuid: text('uuid').notNull().unique(),
+    index: text('index').notNull().unique(),
     work_id: integer('work_id').notNull().references(() => work.id, {
         onDelete: 'cascade'
     }),
@@ -111,7 +111,7 @@ export const mediaSource = sqliteTable('media_source', {
 
 export const asset = sqliteTable('asset', {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    uuid: text('uuid').notNull().unique(),
+    index: text('index').notNull().unique(),
     file_id: text('file_id'), // Made nullable - now redundant with external_object
     work_id: integer('work_id').notNull().references(() => work.id, {
         onDelete: 'cascade'
@@ -148,7 +148,7 @@ export const assetCreator = sqliteTable('asset_creator', {
 
 export const workRelation = sqliteTable('work_relation', {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    uuid: text('uuid').notNull().unique(),
+    index: text('index').notNull().unique(),
     from_work_id: integer('from_work_id').notNull().references(() => work.id, {
         onDelete: 'cascade'
     }),
@@ -194,7 +194,7 @@ export const workCategory = sqliteTable('work_category', {
 
 export const externalObject = sqliteTable('external_object', {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    uuid: text('uuid').notNull().unique(),
+    index: text('index').notNull().unique(),
     external_source_id: integer('external_source_id').notNull().references(() => externalSource.id, {
         onDelete: 'cascade'
     }),

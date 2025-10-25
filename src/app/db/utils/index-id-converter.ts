@@ -3,121 +3,121 @@ import { eq } from 'drizzle-orm';
 import * as schema from '../schema';
 
 /**
- * UUID到ID转换工具
+ * Index到ID转换工具
  *
- * 这个模块提供从UUID到数字ID的转换功能，
- * 用于支持新的自增ID主键架构，同时保持UUID作为外部访问键
+ * 这个模块提供从Index到数字ID的转换功能，
+ * 用于支持新的自增ID主键架构，同时保持Index作为外部访问键
  */
 
-// UUID到ID的转换函数接口
-type UuidToIdConverter = (db: DrizzleDB, uuid: string) => Promise<number | null>;
+// Index到ID的转换函数接口
+type IndexToIdConverter = (db: DrizzleDB, index: string) => Promise<number | null>;
 
 /**
- * 具体表的UUID到ID转换函数
+ * 具体表的Index到ID转换函数
  */
-export const workUuidToId: UuidToIdConverter = async (db, uuid) => {
+export const workIndexToId: IndexToIdConverter = async (db, index) => {
     const result = await db.select({ id: schema.work.id })
         .from(schema.work)
-        .where(eq(schema.work.uuid, uuid))
+        .where(eq(schema.work.index, index))
         .limit(1);
     return result.length > 0 ? result[0].id : null;
 };
 
-export const creatorUuidToId: UuidToIdConverter = async (db, uuid) => {
+export const creatorIndexToId: IndexToIdConverter = async (db, index) => {
     const result = await db.select({ id: schema.creator.id })
         .from(schema.creator)
-        .where(eq(schema.creator.uuid, uuid))
+        .where(eq(schema.creator.index, index))
         .limit(1);
     return result.length > 0 ? result[0].id : null;
 };
 
-export const assetUuidToId: UuidToIdConverter = async (db, uuid) => {
+export const assetIndexToId: IndexToIdConverter = async (db, index) => {
     const result = await db.select({ id: schema.asset.id })
         .from(schema.asset)
-        .where(eq(schema.asset.uuid, uuid))
+        .where(eq(schema.asset.index, index))
         .limit(1);
     return result.length > 0 ? result[0].id : null;
 };
 
-export const mediaSourceUuidToId: UuidToIdConverter = async (db, uuid) => {
+export const mediaSourceIndexToId: IndexToIdConverter = async (db, index) => {
     const result = await db.select({ id: schema.mediaSource.id })
         .from(schema.mediaSource)
-        .where(eq(schema.mediaSource.uuid, uuid))
+        .where(eq(schema.mediaSource.index, index))
         .limit(1);
     return result.length > 0 ? result[0].id : null;
 };
 
-export const tagUuidToId: UuidToIdConverter = async (db, uuid) => {
+export const tagIndexToId: IndexToIdConverter = async (db, index) => {
     const result = await db.select({ id: schema.tag.id })
         .from(schema.tag)
-        .where(eq(schema.tag.uuid, uuid))
+        .where(eq(schema.tag.index, index))
         .limit(1);
     return result.length > 0 ? result[0].id : null;
 };
 
-export const categoryUuidToId: UuidToIdConverter = async (db, uuid) => {
+export const categoryIndexToId: IndexToIdConverter = async (db, index) => {
     const result = await db.select({ id: schema.category.id })
         .from(schema.category)
-        .where(eq(schema.category.uuid, uuid))
+        .where(eq(schema.category.index, index))
         .limit(1);
     return result.length > 0 ? result[0].id : null;
 };
 
-export const externalSourceUuidToId: UuidToIdConverter = async (db, uuid) => {
+export const externalSourceIndexToId: IndexToIdConverter = async (db, index) => {
     const result = await db.select({ id: schema.externalSource.id })
         .from(schema.externalSource)
-        .where(eq(schema.externalSource.uuid, uuid))
+        .where(eq(schema.externalSource.index, index))
         .limit(1);
     return result.length > 0 ? result[0].id : null;
 };
 
-export const externalObjectUuidToId: UuidToIdConverter = async (db, uuid) => {
+export const externalObjectIndexToId: IndexToIdConverter = async (db, index) => {
     const result = await db.select({ id: schema.externalObject.id })
         .from(schema.externalObject)
-        .where(eq(schema.externalObject.uuid, uuid))
+        .where(eq(schema.externalObject.index, index))
         .limit(1);
     return result.length > 0 ? result[0].id : null;
 };
 
-export const workTitleUuidToId: UuidToIdConverter = async (db, uuid) => {
+export const workTitleIndexToId: IndexToIdConverter = async (db, index) => {
     const result = await db.select({ id: schema.workTitle.id })
         .from(schema.workTitle)
-        .where(eq(schema.workTitle.uuid, uuid))
+        .where(eq(schema.workTitle.index, index))
         .limit(1);
     return result.length > 0 ? result[0].id : null;
 };
 
-export const workRelationUuidToId: UuidToIdConverter = async (db, uuid) => {
+export const workRelationIndexToId: IndexToIdConverter = async (db, index) => {
     const result = await db.select({ id: schema.workRelation.id })
         .from(schema.workRelation)
-        .where(eq(schema.workRelation.uuid, uuid))
+        .where(eq(schema.workRelation.index, index))
         .limit(1);
     return result.length > 0 ? result[0].id : null;
 };
 
-export const footerSettingsUuidToId: UuidToIdConverter = async (db, uuid) => {
+export const footerSettingsIndexToId: IndexToIdConverter = async (db, index) => {
     const result = await db.select({ id: schema.footerSettings.id })
         .from(schema.footerSettings)
-        .where(eq(schema.footerSettings.uuid, uuid))
+        .where(eq(schema.footerSettings.index, index))
         .limit(1);
     return result.length > 0 ? result[0].id : null;
 };
 
 /**
- * ID到UUID转换函数（反向查找）
+ * ID到Index转换函数（反向查找）
  */
-export const workIdToUuid = async (db: DrizzleDB, id: number): Promise<string | null> => {
-    const result = await db.select({ uuid: schema.work.uuid })
+export const workIdToIndex = async (db: DrizzleDB, id: number): Promise<string | null> => {
+    const result = await db.select({ index: schema.work.index })
         .from(schema.work)
         .where(eq(schema.work.id, id))
         .limit(1);
-    return result.length > 0 ? result[0].uuid : null;
+    return result.length > 0 ? result[0].index : null;
 };
 
-export const creatorIdToUuid = async (db: DrizzleDB, id: number): Promise<string | null> => {
-    const result = await db.select({ uuid: schema.creator.uuid })
+export const creatorIdToIndex = async (db: DrizzleDB, id: number): Promise<string | null> => {
+    const result = await db.select({ index: schema.creator.index })
         .from(schema.creator)
         .where(eq(schema.creator.id, id))
         .limit(1);
-    return result.length > 0 ? result[0].uuid : null;
+    return result.length > 0 ? result[0].index : null;
 };

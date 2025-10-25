@@ -1,6 +1,6 @@
-import { jsx } from 'hono/jsx'
+﻿import { jsx } from 'hono/jsx'
 import type { ExternalObjectWithSource } from '../../../db/operations/external_object'
-import { AdminHeader, EmptyState, UuidTableCell, TableActionButtons } from './base'
+import { AdminHeader, EmptyState, IndexTableCell, TableActionButtons } from './base'
 
 export interface ExternalObjectsTableProps {
     objects: ExternalObjectWithSource[]
@@ -38,11 +38,11 @@ export const ExternalObjectsTable = (props: ExternalObjectsTableProps) => {
         if (obj.source?.name) {
             return obj.source.name;
         }
-        const source = sources.find(s => s.uuid === obj.external_source_id);
+        const source = sources.find(s => s.index === obj.external_source_id);
         if (source?.name) {
             return source.name;
         }
-        return obj.uuid.substring(0, 8) + '...';
+        return obj.index.substring(0, 8) + '...';
     };
 
     return (
@@ -65,12 +65,12 @@ export const ExternalObjectsTable = (props: ExternalObjectsTableProps) => {
                     </thead>
                     <tbody>
                         {objects.map(obj => (
-                            <tr data-uuid={obj.uuid}>
-                                <UuidTableCell uuid={obj.uuid} />
+                            <tr data-index={obj.index}>
+                                <IndexTableCell index={obj.index} />
                                 <td>
                                     <span
                                         class="external-source-ref"
-                                        title={obj.source?.uuid || obj.uuid}
+                                        title={obj.source?.index || obj.index}
                                     >
                                         {getSourceName(obj)}
                                     </span>
@@ -79,7 +79,7 @@ export const ExternalObjectsTable = (props: ExternalObjectsTableProps) => {
                                 <td class="file-id">{obj.file_id}</td>
                                 <TableActionButtons
                                     target="external_object"
-                                    uuid={obj.uuid}
+                                    index={obj.index}
                                     editText="编辑"
                                     deleteText="删除"
                                 />

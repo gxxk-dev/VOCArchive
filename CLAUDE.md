@@ -47,11 +47,11 @@ npm run build:version:prod   # 生成生产环境版本信息
 - **路由结构**：
   - `/api/*` - REST API 端点
   - `/` - 作品列表主页（支持搜索、标签、分类过滤）
-  - `/player?uuid=xxx` - 作品播放页面
+  - `/player?index=xxx` - 作品播放页面（向后兼容`uuid`参数）
   - `/tags-categories` - 标签和分类浏览页面
   - `/admin` - 管理后台（需要认证）
   - `/admin/content/:type` - 管理后台内容列表（需要认证）
-  - `/admin/editor?type=xxx&uuid=xxx` - 管理后台编辑器（需要认证）
+  - `/admin/editor?type=xxx&index=xxx` - 管理后台编辑器（需要认证，向后兼容`uuid`参数）
   - `/init` - 数据库初始化页面
   - `/migration` - 数据库迁移管理页面
 
@@ -103,7 +103,7 @@ npm run build:version:prod   # 生成生产环境版本信息
 
 **重要说明**：
 - 所有主要实体使用 `id` (自增整数) 作为内部主键
-- 所有主要实体使用 `uuid` (文本) 作为外部唯一标识符
+- 所有主要实体使用 `index` (文本) 作为外部唯一标识符
 - 关联表使用复合主键
 - 外键均设置 `onDelete: 'cascade'` 确保级联删除
 
@@ -129,7 +129,7 @@ npm run build:version:prod   # 生成生产环境版本信息
 **操作模式**：
 - 使用 Drizzle ORM 进行类型安全的数据库查询
 - 复杂查询使用 `with` 进行关联加载
-- UUID 与 ID 的转换通过 `src/app/db/utils/uuid-id-converter.ts` 处理
+- Index 与 ID 的转换通过 `src/app/db/utils/index-id-converter.ts` 处理
 
 ### 5. 数据库迁移系统
 
@@ -189,7 +189,7 @@ npm run build:version:prod   # 生成生产环境版本信息
 
 ### 数据库相关
 - **不要直接使用 Drizzle Kit 的迁移**：项目使用自定义迁移系统
-- **UUID vs ID**：API 和 URL 使用 UUID，内部查询使用 ID（性能考虑）
+- **Index vs ID**：API 和 URL 使用 Index，内部查询使用 ID（性能考虑）
 - **外部存储**：media_source 和 asset 的 `url` 和 `file_id` 字段已废弃，改用 external_object 关联
 
 ### 认证相关
