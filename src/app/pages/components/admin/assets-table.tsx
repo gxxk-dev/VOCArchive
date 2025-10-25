@@ -67,9 +67,7 @@ export const AssetsTable = (props: AssetsTableProps) => {
                         {assets.map(asset => (
                             <tr data-index={asset.index}>
                                 <IndexTableCell index={asset.index} />
-                                <td>
-                                    <IndexTableCell index={asset.work_index || ''} />
-                                </td>
+                                <IndexTableCell index={asset.work_index} />
                                 <td class="file-name">{asset.file_name || ''}</td>
                                 <td class="asset-type">{asset.asset_type || ''}</td>
                                 <td class="preview-pic">

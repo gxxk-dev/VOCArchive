@@ -54,9 +54,7 @@ export const MediaSourcesTable = (props: MediaSourcesTableProps) => {
                         {media.map(mediaItem => (
                             <tr data-index={mediaItem.index}>
                                 <IndexTableCell index={mediaItem.index} />
-                                <td>
-                                    <IndexTableCell index={mediaItem.work_index || ''} />
-                                </td>
+                                <IndexTableCell index={mediaItem.work_index} />
                                 <td class="file-name">{mediaItem.file_name || ''}</td>
                                 <td class="mime-type">{mediaItem.mime_type || ''}</td>
                                 <td class="is-music">

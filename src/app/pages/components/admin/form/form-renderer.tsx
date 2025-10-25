@@ -226,10 +226,10 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                             {section.listType === 'work-titles' && (
                                 <div>
                                     <div id="titles-list" class="dynamic-list">
-                                        {data?.work?.titles?.map((title, index) =>
+                                        {data?.titles?.map((title, index) =>
                                             renderTitleRow(title, index)
                                         )}
-                                        {(!data?.work?.titles || data.work.titles.length === 0) &&
+                                        {(!data?.titles || data.titles.length === 0) &&
                                             renderTitleRow(undefined, 0)
                                         }
                                     </div>
@@ -258,10 +258,10 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                             {section.listType === 'work-creators' && (
                                 <div>
                                     <div id="creator-list" class="dynamic-list">
-                                        {data?.work?.creator?.map((creator, index) =>
+                                        {data?.creator?.map((creator, index) =>
                                             renderCreatorRow(creator, options?.creators, index)
                                         )}
-                                        {(!data?.work?.creator || data.work.creator.length === 0) &&
+                                        {(!data?.creator || data.creator.length === 0) &&
                                             renderCreatorRow(undefined, options?.creators, 0)
                                         }
                                     </div>
@@ -336,8 +336,8 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                             {section.listType === 'work-relations' && (
                                 <div>
                                     <div id="relations-list" class="relations-list">
-                                        {data?.work?.relation && data.work.relation.length > 0 ? (
-                                            data.work.relation.map((relation, index) =>
+                                        {data?.relation && data.relation.length > 0 ? (
+                                            data.relation.map((relation, index) =>
                                                 renderWorkRelationRow(relation, index)
                                             )
                                         ) : (
@@ -380,8 +380,8 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                             {section.listType === 'media-sources' && (
                                 <div>
                                     <div id="media-sources-list" class="media-sources-list">
-                                        {data?.work?.media_sources && data.work.media_sources.length > 0 ? (
-                                            data.work.media_sources.map((media, index) =>
+                                        {data?.media_sources && data.media_sources.length > 0 ? (
+                                            data.media_sources.map((media, index) =>
                                                 renderMediaSourceRow(media, index)
                                             )
                                         ) : (
@@ -394,8 +394,8 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                             {section.listType === 'assets' && (
                                 <div>
                                     <div id="assets-list" class="assets-list">
-                                        {data?.work?.asset && data.work.asset.length > 0 ? (
-                                            data.work.asset.map((asset, index) =>
+                                        {data?.asset && data.asset.length > 0 ? (
+                                            data.asset.map((asset, index) =>
                                                 renderAssetRow(asset, index)
                                             )
                                         ) : (
@@ -460,7 +460,7 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                                 <MultiSelector
                                     type="tags"
                                     data={options?.tags || []}
-                                    selectedItems={data?.work?.tags || []}
+                                    selectedItems={data?.tags || []}
                                     label="标签"
                                     placeholder="搜索标签..."
                                 />
@@ -470,7 +470,7 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                                 <MultiSelector
                                     type="categories"
                                     data={options?.categories || []}
-                                    selectedItems={data?.work?.categories || []}
+                                    selectedItems={data?.categories || []}
                                     label="分类"
                                     placeholder="搜索分类..."
                                 />

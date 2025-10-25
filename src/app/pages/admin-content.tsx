@@ -121,7 +121,7 @@ export const AdminContentPage = (props: AdminContentPageProps) => {
                                     window.parent.postMessage({
                                         type: 'edit-request',
                                         target: itemTarget,
-                                        index: uuid
+                                        index: index
                                     }, '*');
                                 }
                                 return;
@@ -139,7 +139,7 @@ export const AdminContentPage = (props: AdminContentPageProps) => {
                                         window.parent.postMessage({
                                             type: 'delete-request',
                                             target: itemTarget,
-                                            index: uuid
+                                            index: index
                                         }, '*');
                                     }
                                 }
