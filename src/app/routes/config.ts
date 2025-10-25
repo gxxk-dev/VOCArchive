@@ -15,12 +15,12 @@ import { VerifyTOTPCode } from '../auth';
 
 const app = new Hono<{ Bindings: CloudflareBindings }>()
 
-// 检查配置状态（公开，无需认证）
+// 检查配置状态（公开，无需认证�?
 app.get('/status', async (c) => {
     try {
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         
-        // 检查表是否存在和配置数量
+        // 检查表是否存在和配置数�?
         let tableExists = false;
         let configs: SiteConfig[] = [];
         
@@ -28,7 +28,7 @@ app.get('/status', async (c) => {
             configs = await getAllSiteConfig(db);
             tableExists = true;
         } catch (error) {
-            // 表不存在或查询失败
+            // 表不存在或查询失�?
             tableExists = false;
         }
         
@@ -52,7 +52,7 @@ app.get('/status', async (c) => {
 // 公开端点：获取公开配置（不需要认证）
 app.get('/public', async (c) => {
     try {
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         const publicConfig = await getPublicSiteConfig(db);
         return c.json(publicConfig);
     } catch (e: any) {
@@ -60,7 +60,7 @@ app.get('/public', async (c) => {
     }
 });
 
-// 获取单个配置项
+// 获取单个配置�?
 app.get('/:key', async (c) => {
     try {
         const key = c.req.param('key');
@@ -69,7 +69,7 @@ app.get('/:key', async (c) => {
             return c.json({ error: 'Invalid config key' }, 400);
         }
 
-        // 敏感配置需要认证
+        // 敏感配置需要认�?
         if (isSensitiveConfigKey(key)) {
             const authHeader = c.req.header('Authorization');
             if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -78,14 +78,14 @@ app.get('/:key', async (c) => {
             // 这里应该验证 JWT token，但为了简化先跳过
         }
 
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         const config = await getSiteConfig(db, key);
         
         if (!config) {
             return c.json({ error: 'Config not found' }, 404);
         }
 
-        // 敏感配置返回时进行脱敏处理
+        // 敏感配置返回时进行脱敏处�?
         let responseValue = config.value;
         if (isSensitiveConfigKey(key)) {
             responseValue = config.value.substring(0, 8) + '***';
@@ -110,10 +110,10 @@ app.get('/', async (c) => {
         }
         // 这里应该验证 JWT token
 
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         const configs = await getAllSiteConfig(db);
         
-        // 对敏感配置进行脱敏处理
+        // 对敏感配置进行脱敏处�?
         const safeConfigs = configs.map(config => ({
             ...config,
             value: isSensitiveConfigKey(config.key) 
@@ -145,7 +145,7 @@ app.put('/:key', async (c) => {
             return c.json({ error: 'Value is required' }, 400);
         }
 
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         await upsertSiteConfig(db, key, body.value, body.description);
 
         return c.json({ success: true, message: 'Config updated successfully' });
@@ -174,7 +174,7 @@ app.post('/', async (c) => {
             }
         }
 
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         await updateMultipleSiteConfig(db, body.configs);
 
         return c.json({ success: true, message: 'Configs updated successfully' });
@@ -183,7 +183,7 @@ app.post('/', async (c) => {
     }
 });
 
-// 重置密钥（需要认证和 TOTP 验证）
+// 重置密钥（需要认证和 TOTP 验证�?
 app.post('/reset-secrets', async (c) => {
     try {
         const authHeader = c.req.header('Authorization');
@@ -202,7 +202,7 @@ app.post('/reset-secrets', async (c) => {
             return c.json({ error: 'Invalid TOTP code' }, 401);
         }
 
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         const newSecrets = await resetSecrets(db);
 
         return c.json({ 

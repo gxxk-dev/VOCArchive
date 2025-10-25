@@ -13,18 +13,18 @@ import type { MigrationExecuteOptions, MigrationParameters } from '../db/types';
 /**
  * 迁移管理 API 路由
  *
- * 提供完整的数据库迁移管理接口：
- * - GET /status - 获取迁移系统状态
- * - GET /current-version - 获取当前数据库版本
- * - GET /parameter-requirements - 获取参数需求
+ * 提供完整的数据库迁移管理接口�?
+ * - GET /status - 获取迁移系统状�?
+ * - GET /current-version - 获取当前数据库版�?
+ * - GET /parameter-requirements - 获取参数需�?
  * - POST /execute - 执行迁移
- * - POST /rollback - 回滚到指定版本
- * - POST /validate - 验证迁移系统完整性
+ * - POST /rollback - 回滚到指定版�?
+ * - POST /validate - 验证迁移系统完整�?
  *
- * 所有路由都需要 JWT 认证
+ * 所有路由都需�?JWT 认证
  */
 
-// 请求体接口定义
+// 请求体接口定�?
 interface ExecuteMigrationRequest {
     targetVersion?: number;
     dryRun?: boolean;
@@ -44,11 +44,11 @@ export const migration = new Hono<{ Bindings: Cloudflare.Env }>();
 
 /**
  * GET /api/migration/status
- * 获取迁移系统状态
+ * 获取迁移系统状�?
  */
 migration.get('/status', async (c) => {
     try {
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         const status = await checkPendingMigrations(db);
 
         return c.json({
@@ -66,11 +66,11 @@ migration.get('/status', async (c) => {
 
 /**
  * GET /api/migration/current-version
- * 获取当前数据库版本
+ * 获取当前数据库版�?
  */
 migration.get('/current-version', async (c) => {
     try {
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         const currentVersion = await getCurrentDbVersion(db);
 
         return c.json({
@@ -90,11 +90,11 @@ migration.get('/current-version', async (c) => {
 
 /**
  * GET /api/migration/parameter-requirements
- * 获取迁移参数需求
+ * 获取迁移参数需�?
  */
 migration.get('/parameter-requirements', async (c) => {
     try {
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         const targetVersion = c.req.query('targetVersion');
 
         const requirements = await getParameterRequirements(
@@ -120,12 +120,12 @@ migration.get('/parameter-requirements', async (c) => {
 
 /**
  * POST /api/migration/execute
- * 执行数据库迁移
+ * 执行数据库迁�?
  */
 migration.post('/execute', async (c) => {
     try {
         const body: ExecuteMigrationRequest = await c.req.json();
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
 
         // 构建执行选项
         const options: MigrationExecuteOptions = {
@@ -145,7 +145,7 @@ migration.post('/execute', async (c) => {
                 data: result,
                 message: options.dryRun
                     ? 'Dry run completed successfully'
-                    : `Migration completed: ${result.fromVersion} → ${result.toVersion}`
+                    : `Migration completed: ${result.fromVersion} �?${result.toVersion}`
             });
         } else {
             return c.json({
@@ -165,7 +165,7 @@ migration.post('/execute', async (c) => {
 
 /**
  * POST /api/migration/rollback
- * 回滚到指定版本
+ * 回滚到指定版�?
  */
 migration.post('/rollback', async (c) => {
     try {
@@ -178,7 +178,7 @@ migration.post('/rollback', async (c) => {
             }, 400);
         }
 
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
 
         // 构建执行选项
         const options: MigrationExecuteOptions = {
@@ -196,7 +196,7 @@ migration.post('/rollback', async (c) => {
                 data: result,
                 message: options.dryRun
                     ? 'Dry run rollback completed successfully'
-                    : `Rollback completed: ${result.fromVersion} → ${result.toVersion}`
+                    : `Rollback completed: ${result.fromVersion} �?${result.toVersion}`
             });
         } else {
             return c.json({
@@ -216,11 +216,11 @@ migration.post('/rollback', async (c) => {
 
 /**
  * POST /api/migration/validate
- * 验证迁移系统完整性
+ * 验证迁移系统完整�?
  */
 migration.post('/validate', async (c) => {
     try {
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         const validation = await validateMigrationSystem(db);
 
         return c.json({
@@ -245,7 +245,7 @@ migration.post('/validate', async (c) => {
 });
 
 /**
- * 错误处理中间件
+ * 错误处理中间�?
  */
 migration.onError((err, c) => {
     console.error('Migration API error:', err);

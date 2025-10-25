@@ -6,8 +6,8 @@ export const searchInfo = new Hono();
 
 searchInfo.get('/:query', async (c: any) => {
   const query = c.req.param('query');
-  const search_type = c.req.query('type') || 'all';  // 默认搜索全部，支持 'title', 'creator', 'all'
-  const db = createDrizzleClient(c.env.DB);
+  const search_type = c.req.query('type') || 'all';  // 默认搜索全部，支�?'title', 'creator', 'all'
+  const db = c.get('db');
   const results = await searchWorks(db, query, search_type as 'title' | 'creator' | 'all');
   return c.json(results);
 });

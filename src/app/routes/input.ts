@@ -20,7 +20,7 @@ import {
     type MigrationStatus
 } from '../db/operations/admin';
 import type { Work, WorkTitle, CreatorWithRole, WikiRef, Asset, MediaSource, WorkRelation, Tag, Category, WorkTitleInput, MediaSourceForDatabase, MediaSourceApiInput, ExternalSourceApiInput, ExternalObjectApiInput, WikiPlatformApiInput } from '../db/types';
-import { workUuidToId, externalSourceUuidToId } from '../db/utils/uuid-id-converter';
+import { workIndexToId, externalSourceIndexToId } from '../db/utils/index-id-converter';
 import { validateStorageSource } from '../db/utils/storage-handlers';
 import { Hono } from "hono";
 
@@ -34,7 +34,7 @@ interface InputWorkRequestBody {
 }
 
 interface InputCreatorRequestBody {
-    creator: { uuid: string; name: string; type: 'human' | 'virtual' };
+    creator: { index: string; name: string; type: 'human' | 'virtual' };
     wikis?: WikiRef[];
 }
 
@@ -45,8 +45,8 @@ interface InputAssetRequestBody {
 }
 
 interface InputMediaRequestBody {
-    uuid: string;
-    work_uuid: string;
+    index: string;
+    work_index: string;
     is_music: boolean;
     file_name: string;
     url: string;
@@ -56,19 +56,19 @@ interface InputMediaRequestBody {
 }
 
 interface InputRelationRequestBody {
-    uuid: string;
-    from_work_uuid: string;
-    to_work_uuid: string;
+    index: string;
+    from_work_index: string;
+    to_work_index: string;
     relation_type: 'original' | 'remix' | 'cover' | 'remake' | 'picture' | 'lyrics';
 }
 
 export const inputInfo = new Hono();
 
-// 添加作品
+// �����Ʒ
 inputInfo.post('/work', async (c: any) => {
     try {
         const body: InputWorkRequestBody = await c.req.json();
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         await inputWork(db, body.work, body.titles || [], body.license || null, body.creator || [], body.wikis || []);
         return c.json({ message: "Work added successfully." }, 200);
     } catch (error) {
@@ -76,11 +76,11 @@ inputInfo.post('/work', async (c: any) => {
     }
 });
 
-// 添加创作者
+// ��Ӵ�����
 inputInfo.post('/creator', async (c: any) => {
     try {
         const body: InputCreatorRequestBody = await c.req.json();
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         await inputCreator(db, body.creator, body.wikis || []);
         return c.json({ message: "Creator added successfully." }, 200);
     } catch (error) {
@@ -88,11 +88,11 @@ inputInfo.post('/creator', async (c: any) => {
     }
 });
 
-// 添加资产
+// ����ʲ�
 inputInfo.post('/asset', async (c: any) => {
     try {
         const body: InputAssetRequestBody = await c.req.json();
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         const assetForDb = {
             ...body.asset,
             language: body.asset.language || null,
@@ -105,11 +105,11 @@ inputInfo.post('/asset', async (c: any) => {
     }
 });
 
-// 添加关系
+// ��ӹ�ϵ
 inputInfo.post('/relation', async (c: any) => {
     try {
         const body: InputRelationRequestBody = await c.req.json();
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         await inputRelation(db, body);
         return c.json({ message: "Work relation added successfully." }, 200);
     } catch (error) {
@@ -117,16 +117,16 @@ inputInfo.post('/relation', async (c: any) => {
     }
 });
 
-// 添加媒体
+// ���ý��
 inputInfo.post('/media', async (c: any) => {
     try {
         const body: InputMediaRequestBody = await c.req.json();
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         
-        // 构建 MediaSource 对象
+        // ���� MediaSource ����
         const mediaData: MediaSourceApiInput = {
-            uuid: body.uuid,
-            work_uuid: body.work_uuid, // Use work_uuid for API input
+            index: body.index,
+            work_index: body.work_index, // Use work_index for API input
             is_music: body.is_music,
             file_name: body.file_name,
             url: body.url,
@@ -141,28 +141,28 @@ inputInfo.post('/media', async (c: any) => {
     }
 });
 
-// 添加作品标题
+// �����Ʒ����
 inputInfo.post('/work-title', async (c: any) => {
     try {
         const body: WorkTitleInput = await c.req.json();
-        const db = createDrizzleClient(c.env.DB);
-        const title_uuid = await inputWorkTitle(db, body);
+        const db = c.get('db');
+        const title_index = await inputWorkTitle(db, body);
         
-        if (!title_uuid) {
+        if (!title_index) {
             return c.json({ error: 'Failed to create work title. Check if work exists.' }, 400);
         }
         
-        return c.json({ message: "Work title added successfully.", uuid: title_uuid }, 200);
+        return c.json({ message: "Work title added successfully.", index: title_index }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);
     }
 });
 
-// 添加标签
+// ��ӱ�ǩ
 inputInfo.post('/tag', async (c: any) => {
     try {
-        const body: { uuid: string; name: string } = await c.req.json();
-        const db = createDrizzleClient(c.env.DB);
+        const body: { index: string; name: string } = await c.req.json();
+        const db = c.get('db');
         await inputTag(db, body);
         return c.json({ message: "Tag added successfully." }, 200);
     } catch (error) {
@@ -170,11 +170,11 @@ inputInfo.post('/tag', async (c: any) => {
     }
 });
 
-// 添加分类
+// ��ӷ���
 inputInfo.post('/category', async (c: any) => {
     try {
-        const body: { uuid: string; name: string; parent_uuid?: string } = await c.req.json();
-        const db = createDrizzleClient(c.env.DB);
+        const body: { index: string; name: string; parent_index?: string } = await c.req.json();
+        const db = c.get('db');
         await inputCategory(db, body);
         return c.json({ message: "Category added successfully." }, 200);
     } catch (error) {
@@ -182,17 +182,17 @@ inputInfo.post('/category', async (c: any) => {
     }
 });
 
-// 批量添加作品标签
+// ���������Ʒ��ǩ
 inputInfo.post('/work-tags', async (c: any) => {
     try {
-        const { work_uuid, tag_uuids } = await c.req.json();
+        const { work_index, tag_indexs } = await c.req.json();
         
-        if (!work_uuid || !Array.isArray(tag_uuids)) {
+        if (!work_index || !Array.isArray(tag_indexs)) {
             return c.json({ error: 'Invalid request body' }, 400);
         }
         
-        const db = createDrizzleClient(c.env.DB);
-        const success = await addWorkTags(db, work_uuid, tag_uuids);
+        const db = c.get('db');
+        const success = await addWorkTags(db, work_index, tag_indexs);
         if (success) {
             return c.json({ message: 'Work tags added successfully.' });
         } else {
@@ -203,17 +203,17 @@ inputInfo.post('/work-tags', async (c: any) => {
     }
 });
 
-// 批量添加作品分类
+// ���������Ʒ����
 inputInfo.post('/work-categories', async (c: any) => {
     try {
-        const { work_uuid, category_uuids } = await c.req.json();
+        const { work_index, category_indexs } = await c.req.json();
         
-        if (!work_uuid || !Array.isArray(category_uuids)) {
+        if (!work_index || !Array.isArray(category_indexs)) {
             return c.json({ error: 'Invalid request body' }, 400);
         }
         
-        const db = createDrizzleClient(c.env.DB);
-        const success = await addWorkCategories(db, work_uuid, category_uuids);
+        const db = c.get('db');
+        const success = await addWorkCategories(db, work_index, category_indexs);
         if (success) {
             return c.json({ message: 'Work categories added successfully.' });
         } else {
@@ -224,10 +224,10 @@ inputInfo.post('/work-categories', async (c: any) => {
     }
 });
 
-// 数据库初始化
+// ���ݿ��ʼ��
 inputInfo.post('/dbinit', async (c: any) => {
     try {
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         await initializeDatabaseWithMigrations(db);
         return c.json({ message: 'Database initialized successfully with Drizzle migrations' });
     } catch (error) {
@@ -236,18 +236,18 @@ inputInfo.post('/dbinit', async (c: any) => {
     }
 });
 
-// 添加外部存储源
+// ����ⲿ�洢Դ
 inputInfo.post('/external_source', async (c: any) => {
     try {
         const body: ExternalSourceApiInput = await c.req.json();
         
-        // 验证存储源配置
+        // ��֤�洢Դ����
         const validation = validateStorageSource(body);
         if (!validation.valid) {
             return c.json({ error: validation.error }, 400);
         }
         
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         await inputExternalSource(db, body);
         return c.json({ message: "External source added successfully." }, 200);
     } catch (error) {
@@ -255,21 +255,21 @@ inputInfo.post('/external_source', async (c: any) => {
     }
 });
 
-// 添加外部对象
+// ����ⲿ����
 inputInfo.post('/external_object', async (c: any) => {
     try {
         const body: ExternalObjectApiInput = await c.req.json();
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
 
-        // 转换external_source_uuid为external_source_id
-        const external_source_id = await externalSourceUuidToId(db, body.external_source_uuid);
+        // ת��external_source_indexΪexternal_source_id
+        const external_source_id = await externalSourceIndexToId(db, body.external_source_index);
         if (!external_source_id) {
             return c.json({ error: 'External source not found' }, 400);
         }
 
-        // 构建数据库对象
+        // �������ݿ����
         const objectData = {
-            uuid: body.uuid,
+            index: body.index,
             external_source_id: external_source_id,
             mime_type: body.mime_type,
             file_id: body.file_id
@@ -282,7 +282,7 @@ inputInfo.post('/external_object', async (c: any) => {
     }
 });
 
-// 执行外部存储迁移
+// ִ���ⲿ�洢Ǩ��
 inputInfo.post('/migrate/external-storage', async (c: any) => {
     try {
         const body: { asset_url: string; batch_size?: number } = await c.req.json();
@@ -291,7 +291,7 @@ inputInfo.post('/migrate/external-storage', async (c: any) => {
             return c.json({ error: 'asset_url is required' }, 400);
         }
         
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         const batchSize = body.batch_size || 50;
         
         console.log(`Starting migration with ASSET_URL: ${body.asset_url}, batch size: ${batchSize}`);
@@ -315,10 +315,10 @@ inputInfo.post('/migrate/external-storage', async (c: any) => {
     }
 });
 
-// 获取迁移状态
+// ��ȡǨ��״̬
 inputInfo.get('/migrate/status', async (c: any) => {
     try {
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         const status: MigrationStatus = await getMigrationStatus(db);
         
         return c.json({
@@ -335,10 +335,10 @@ inputInfo.get('/migrate/status', async (c: any) => {
     }
 });
 
-// 验证迁移完整性
+// ��֤Ǩ��������
 inputInfo.post('/migrate/validate', async (c: any) => {
     try {
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         const status: MigrationStatus = await validateMigration(db);
         
         return c.json({
@@ -354,7 +354,7 @@ inputInfo.post('/migrate/validate', async (c: any) => {
     }
 });
 
-// 修复损坏的外部对象文件ID
+// �޸��𻵵��ⲿ�����ļ�ID
 inputInfo.post('/migrate/repair', async (c: any) => {
     try {
         const body = await c.req.json();
@@ -362,7 +362,7 @@ inputInfo.post('/migrate/repair', async (c: any) => {
             return c.json({ error: 'asset_url is required' }, 400);
         }
 
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         const result = await repairCorruptedExternalObjects(db, body.asset_url);
         
         return c.json({
@@ -379,18 +379,18 @@ inputInfo.post('/migrate/repair', async (c: any) => {
     }
 });
 
-// 手动初始化站点配置
+// �ֶ���ʼ��վ������
 inputInfo.post('/config-init', async (c: any) => {
     try {
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         
-        // 动态导入配置操作
+        // ��̬�������ò���
         const { initializeDefaultConfig, initializeSecrets } = await import('../db/operations/config');
         
-        // 初始化默认配置
+        // ��ʼ��Ĭ������
         await initializeDefaultConfig(db);
         
-        // 初始化密钥（从环境变量迁移）
+        // ��ʼ����Կ���ӻ�������Ǩ�ƣ�
         await initializeSecrets(db, c.env.TOTP_SECRET, c.env.JWT_SECRET);
         
         return c.json({ 
@@ -406,19 +406,19 @@ inputInfo.post('/config-init', async (c: any) => {
     }
 });
 
-// 创建Wiki平台
+// ����Wikiƽ̨
 inputInfo.post('/wiki_platform', async (c: any) => {
     try {
         const body: WikiPlatformApiInput = await c.req.json();
 
-        // 验证必需字段
+        // ��֤�����ֶ�
         if (!body.platform_key || !body.platform_name || !body.url_template) {
             return c.json({
                 error: 'Missing required fields: platform_key, platform_name, url_template'
             }, 400);
         }
 
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         await insertWikiPlatform(db, body);
 
         return c.json({

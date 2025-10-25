@@ -4,10 +4,10 @@ import { isDatabaseInitialized, initializeDatabaseWithConfig } from '../db/opera
 
 export const initRoutes = new Hono<{ Bindings: CloudflareBindings }>()
 
-// 检查初始化状态
+// 检查初始化状�?
 initRoutes.get('/status', async (c) => {
     try {
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         const isInitialized = await isDatabaseInitialized(db);
         
         return c.json({
@@ -23,10 +23,10 @@ initRoutes.get('/status', async (c) => {
     }
 });
 
-// 执行初始化
+// 执行初始�?
 initRoutes.post('/setup', async (c) => {
     try {
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         
         // 检查是否已经初始化，防止重复初始化
         const isInitialized = await isDatabaseInitialized(db);
@@ -37,11 +37,11 @@ initRoutes.post('/setup', async (c) => {
             }, 400);
         }
         
-        // 获取初始化配置
+        // 获取初始化配�?
         const body = await c.req.json();
         const { siteTitle, totpSecret, jwtSecret, assetUrl } = body;
         
-        // 执行初始化
+        // 执行初始�?
         const secrets = await initializeDatabaseWithConfig(db, {
             siteTitle,
             totpSecret,
