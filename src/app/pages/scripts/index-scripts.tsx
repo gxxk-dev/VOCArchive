@@ -1,4 +1,4 @@
-﻿export const IndexScripts = (props: { works: any[] }) => `
+export const IndexScripts = (props: { works: any[] }) => `
 // MD3 Select Enhancement for Frontend
 class MD3SelectFrontend {
     constructor() {

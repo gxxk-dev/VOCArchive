@@ -1,4 +1,4 @@
-﻿import { eq, like, inArray, and } from 'drizzle-orm';
+import { eq, like, inArray, and } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import {
     work,

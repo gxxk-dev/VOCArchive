@@ -1,4 +1,4 @@
-﻿import { jsx } from 'hono/jsx'
+import { jsx } from 'hono/jsx'
 import { getFormConfig } from './components/admin/form/form-config'
 import { FormRenderer } from './components/admin/form/form-renderer'
 import type { FormRenderData, FormOptions } from './components/admin/form/form-field-types'

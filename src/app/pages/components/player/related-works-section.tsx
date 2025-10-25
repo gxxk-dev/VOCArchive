@@ -1,4 +1,4 @@
-﻿import { jsx } from 'hono/jsx'
+import { jsx } from 'hono/jsx'
 
 export interface RelatedWorksSectionProps {
     workInfo: any

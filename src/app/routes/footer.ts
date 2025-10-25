@@ -1,4 +1,4 @@
-﻿import { Hono } from 'hono';
+import { Hono } from 'hono';
 import { createDrizzleClient } from '../db/client';
 import { getFooterSettings, insertFooterSetting, updateFooterSetting, deleteFooterSetting } from '../db/operations/admin';
 import { generateIndex } from '../db/utils/index-utils';
@@ -16,7 +16,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 // Public endpoint to get footer settings
 app.get('/', async (c) => {
     try {
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         const settings = await getFooterSettings(db);
         return c.json(settings);
     } catch (e: any) {
@@ -31,7 +31,7 @@ app.post('/settings', async (c) => {
             ...body,
             index: generateIndex()
         };
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         await insertFooterSetting(db, newSetting);
         return c.json({ success: true, index: newSetting.index });
     } catch (e: any) {
@@ -47,7 +47,7 @@ app.put('/settings/:index', async (c) => {
             ...body,
             index 
         };
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         await updateFooterSetting(db, setting);
         return c.json({ success: true });
     } catch (e: any) {
@@ -58,7 +58,7 @@ app.put('/settings/:index', async (c) => {
 app.delete('/settings/:index', async (c) => {
     try {
         const index = c.req.param('index');
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         await deleteFooterSetting(db, index);
         return c.json({ success: true });
     } catch (e: any) {

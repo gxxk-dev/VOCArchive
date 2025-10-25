@@ -1,4 +1,4 @@
-﻿import { eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { mediaSource, asset, mediaSourceExternalObject, assetExternalObject, externalObject, externalSource, work } from '../schema';
 import type { MediaSource, MediaSourceForApplication, MediaSourceWithExternalObjects, ExternalObject, MediaSourceApiInput } from '../types';

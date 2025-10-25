@@ -1,4 +1,4 @@
-﻿// 表单配置定义
+// 表单配置定义
 // Form Configuration Definitions
 
 import type { FormConfig } from './form-field-types';

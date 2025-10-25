@@ -1,4 +1,4 @@
-﻿import { eq, count, inArray, and, isNull } from 'drizzle-orm';
+import { eq, count, inArray, and, isNull } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { 
     category, 

@@ -1,4 +1,4 @@
-﻿import { Hono } from 'hono';
+import { Hono } from 'hono';
 import { createDrizzleClient } from '../db/client';
 import {
     getWorkByIndex,
@@ -16,10 +16,10 @@ import { getWikiPlatformByKey } from '../db/operations/wiki-platforms';
 
 export const getInfo = new Hono();
 
-// 获取文件重定向
+// ��ȡ�ļ��ض���
 getInfo.get('/file/:index', async (c: any) => {
     const file_index = c.req.param('index');
-    const db = createDrizzleClient(c.env.DB);
+    const db = c.get('db');
     
     // Use external storage architecture only
     const file_url = await getFileURLByIndexWithExternalStorage(db, file_index);
@@ -35,72 +35,72 @@ getInfo.get('/file/:index', async (c: any) => {
     return c.redirect(file_url, 302);
 });
 
-// 获取作品详情
+// ��ȡ��Ʒ����
 getInfo.get('/work/:index', async (c: any) => {
-    const db = createDrizzleClient(c.env.DB);
+    const db = c.get('db');
     const result = await getWorkByIndex(db, c.req.param('index'));
     return c.json(result);
 });
 
-// 获取创作者详情
+// ��ȡ����������
 getInfo.get('/creator/:index', async (c: any) => {
-    const db = createDrizzleClient(c.env.DB);
+    const db = c.get('db');
     const result = await getCreatorByIndex(db, c.req.param('index'));
     return c.json(result);
 });
 
-// 获取媒体详情
+// ��ȡý������
 getInfo.get('/media/:index', async (c: any) => {
-    const db = createDrizzleClient(c.env.DB);
+    const db = c.get('db');
     const result = await getMediaByIndex(db, c.req.param('index'));
     return c.json(result);
 });
 
-// 获取资产详情
+// ��ȡ�ʲ�����
 getInfo.get('/asset/:index', async (c: any) => {
-    const db = createDrizzleClient(c.env.DB);
+    const db = c.get('db');
     const result = await getAssetByIndex(db, c.req.param('index'));
     return c.json(result);
 });
 
-// 获取标签详情
+// ��ȡ��ǩ����
 getInfo.get('/tag/:index', async (c: any) => {
-    const db = createDrizzleClient(c.env.DB);
+    const db = c.get('db');
     const result = await getTagByIndex(db, c.req.param('index'));
     return c.json(result);
 });
 
-// 获取分类详情
+// ��ȡ��������
 getInfo.get('/category/:index', async (c: any) => {
-    const db = createDrizzleClient(c.env.DB);
+    const db = c.get('db');
     const result = await getCategoryByIndex(db, c.req.param('index'));
     return c.json(result);
 });
 
-// 获取作品标题详情
+// ��ȡ��Ʒ��������
 getInfo.get('/work-title/:index', async (c: any) => {
-    const db = createDrizzleClient(c.env.DB);
+    const db = c.get('db');
     const result = await getWorkTitleByIndex(db, c.req.param('index'));
     return c.json(result);
 });
 
-// 获取外部存储源详情
+// ��ȡ�ⲿ�洢Դ����
 getInfo.get('/external_source/:index', async (c: any) => {
-    const db = createDrizzleClient(c.env.DB);
+    const db = c.get('db');
     const result = await getExternalSourceByIndex(db, c.req.param('index'));
     return c.json(result);
 });
 
-// 获取外部对象详情
+// ��ȡ�ⲿ��������
 getInfo.get('/external_object/:index', async (c: any) => {
-    const db = createDrizzleClient(c.env.DB);
+    const db = c.get('db');
     const result = await getExternalObjectByIndex(db, c.req.param('index'));
     return c.json(result);
 });
 
-// 获取Wiki平台详情
+// ��ȡWikiƽ̨����
 getInfo.get('/wiki_platform/:platform_key', async (c: any) => {
-    const db = createDrizzleClient(c.env.DB);
+    const db = c.get('db');
     const result = await getWikiPlatformByKey(db, c.req.param('platform_key'));
     return c.json(result);
 });

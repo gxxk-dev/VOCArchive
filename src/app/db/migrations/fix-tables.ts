@@ -1,4 +1,4 @@
-﻿// 数据库表结构修复脚本
+// 数据库表结构修复脚本
 // 用于修复数据库表结构不匹配问题
 
 import type { DrizzleDB } from '../client';

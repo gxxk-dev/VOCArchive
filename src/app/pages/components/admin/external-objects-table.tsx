@@ -1,4 +1,4 @@
-﻿import { jsx } from 'hono/jsx'
+import { jsx } from 'hono/jsx'
 import type { ExternalObjectWithSource } from '../../../db/operations/external_object'
 import { AdminHeader, EmptyState, IndexTableCell, TableActionButtons } from './base'
 

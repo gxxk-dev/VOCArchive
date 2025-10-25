@@ -1,4 +1,4 @@
-﻿import { jsx } from 'hono/jsx'
+import { jsx } from 'hono/jsx'
 import { WorkListItem } from '../../../db/types'
 import { AdminHeader, EmptyState, ActionButtons } from './base'
 

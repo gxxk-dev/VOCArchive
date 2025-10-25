@@ -1,4 +1,4 @@
-﻿import { jsx } from 'hono/jsx'
+import { jsx } from 'hono/jsx'
 import { AdminContentData } from '../admin/data-loader'
 import {
     WorkCard,

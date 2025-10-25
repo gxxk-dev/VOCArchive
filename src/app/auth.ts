@@ -7,7 +7,7 @@ import { getSiteConfig } from './db/operations/config';
 // TOTP验证
 export async function VerifyTOTPCode(c: Context, code: string): Promise<boolean> {
     try {
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         const config = await getSiteConfig(db, 'totp_secret');
         const secretKey = config?.value || c.env.TOTP_SECRET as string;
         if (!secretKey) return false;
@@ -25,7 +25,7 @@ export const JWT_ALGORITHM = 'HS256';
 export const JWT_EXPIRATION = 1000 * 60 * 60 * 8;
 export async function GenerateJWTToken(c: Context): Promise<string> {
     try {
-        const db = createDrizzleClient(c.env.DB);
+        const db = c.get('db');
         const config = await getSiteConfig(db, 'jwt_secret');
         const secretKey = config?.value || c.env.JWT_SECRET as string;
         return sign({exp: Date.now() + JWT_EXPIRATION}, secretKey, JWT_ALGORITHM);

@@ -1,4 +1,4 @@
-﻿// Base admin UI components
+// Base admin UI components
 export { AdminHeader } from './admin-header'
 export { EmptyState } from './empty-state'
 export { ActionButtons, TableActionButtons } from './action-buttons'

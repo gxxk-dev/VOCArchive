@@ -1,4 +1,4 @@
-﻿// Admin components for Server-Side Rendering
+// Admin components for Server-Side Rendering
 export { WorkCard } from './work-card'
 export { DataTable } from './data-table'
 export { TagsTable, CategoriesTable } from './tags-categories'

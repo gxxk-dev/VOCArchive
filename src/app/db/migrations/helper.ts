@@ -1,4 +1,4 @@
-﻿import type { DrizzleDB } from '../client';
+import type { DrizzleDB } from '../client';
 import { sql } from 'drizzle-orm';
 import * as schema from '../schema';
 

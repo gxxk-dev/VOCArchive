@@ -1,4 +1,4 @@
-﻿import { eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { asset, assetCreator, creator, assetExternalObject, externalObject, externalSource, work } from '../schema';
 import { convertAssetData, validateIndex } from '../utils';

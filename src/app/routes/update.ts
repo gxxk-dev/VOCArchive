@@ -1,4 +1,4 @@
-﻿import { createDrizzleClient } from '../db/client';
+import { createDrizzleClient } from '../db/client';
 import { updateWork } from '../db/operations/work';
 import { updateAsset } from '../db/operations/asset';
 import { updateCreator } from '../db/operations/creator';
@@ -67,15 +67,15 @@ const updateHandlers = {
     creator: async (DB: any, body: any) => {
         const db = createDrizzleClient(DB);
 
-        // 支持扁平化表单数据
+        // ֧�ֱ�ƽ���������
         const originalIndex = body.original_index || body.creator_index || body.index;
         const full_creator = {
-            index: body.index, // 新 index（可能已修改）
+            index: body.index, // �� index���������޸ģ�
             name: body.name || body.creator?.name,
             type: body.type || body.creator?.type
         };
 
-        // 转换 wikis 数组
+        // ת�� wikis ����
         const wikis = [];
         if (body.wiki_platform && Array.isArray(body.wiki_platform)) {
             for (let i = 0; i < body.wiki_platform.length; i++) {
@@ -93,16 +93,16 @@ const updateHandlers = {
     work: async (DB: any, body: any) => {
         const db = createDrizzleClient(DB);
 
-        // 获取原始 index（用于查找记录）
+        // ��ȡԭʼ index�����ڲ��Ҽ�¼��
         const originalIndex = body.original_index || body.index;
 
-        // 转换扁平化表单数据为 API 格式
+        // ת����ƽ���������Ϊ API ��ʽ
         const work = {
-            index: body.index, // 新 index（可能已修改）
+            index: body.index, // �� index���������޸ģ�
             copyright_basis: body.copyright_basis || 'unknown'
         } as Work;
 
-        // 转换 titles 数组（只有提供了 title_text 时才处理）
+        // ת�� titles ���飨ֻ���ṩ�� title_text ʱ�Ŵ����
         let titles: WorkTitle[] | undefined = undefined;
         if (body.title_text && Array.isArray(body.title_text)) {
             titles = [];
@@ -117,12 +117,12 @@ const updateHandlers = {
                 }
             }
         }
-        // 如果处理后的数组为空，将其设为 undefined 以避免误删除现有数据
+        // �������������Ϊ�գ�������Ϊ undefined �Ա�����ɾ����������
         if (titles !== undefined && titles.length === 0) {
             titles = undefined;
         }
 
-        // 转换 creators 数组（只有提供了 creator_index 时才处理）
+        // ת�� creators ���飨ֻ���ṩ�� creator_index ʱ�Ŵ����
         let creators: CreatorWithRole[] | undefined = undefined;
         if (body.creator_index && Array.isArray(body.creator_index)) {
             creators = [];
@@ -135,12 +135,12 @@ const updateHandlers = {
                 }
             }
         }
-        // 如果处理后的数组为空，将其设为 undefined 以避免误删除现有数据
+        // �������������Ϊ�գ�������Ϊ undefined �Ա�����ɾ����������
         if (creators !== undefined && creators.length === 0) {
             creators = undefined;
         }
 
-        // 转换 wikis 数组（只有提供了 wiki_platform 时才处理）
+        // ת�� wikis ���飨ֻ���ṩ�� wiki_platform ʱ�Ŵ����
         let wikis: WikiRef[] | undefined = undefined;
         if (body.wiki_platform && Array.isArray(body.wiki_platform)) {
             wikis = [];
@@ -153,12 +153,12 @@ const updateHandlers = {
                 }
             }
         }
-        // 如果处理后的数组为空，将其设为 undefined 以避免误删除现有数据
+        // �������������Ϊ�գ�������Ϊ undefined �Ա�����ɾ����������
         if (wikis !== undefined && wikis.length === 0) {
             wikis = undefined;
         }
 
-        // 只有明确提供了 license 字段时才传递
+        // ֻ����ȷ�ṩ�� license �ֶ�ʱ�Ŵ���
         const license = 'license' in body ? (body.license || null) : undefined;
 
         return await updateWork(
@@ -174,10 +174,10 @@ const updateHandlers = {
     asset: async (DB: any, body: any) => {
         const db = createDrizzleClient(DB);
 
-        // 支持扁平化表单数据
+        // ֧�ֱ�ƽ���������
         const originalIndex = body.original_index || body.asset_index || body.index;
         const assetForDb = {
-            index: body.index, // 新 index（可能已修改）
+            index: body.index, // �� index���������޸ģ�
             asset_type: body.asset_type || body.asset?.asset_type,
             work_index: body.work_index || body.asset?.work_index,
             language: body.language || body.asset?.language || null,
@@ -185,7 +185,7 @@ const updateHandlers = {
             content: body.content || body.asset?.content || ''
         };
 
-        // 转换 creators 数组
+        // ת�� creators ����
         let creators = body.creator;
         if (Array.isArray(body.creator_index)) {
             creators = [];
@@ -199,7 +199,7 @@ const updateHandlers = {
             }
         }
 
-        // 转换 external_objects 数组（过滤空值）
+        // ת�� external_objects ���飨���˿�ֵ��
         let externalObjects = body.external_objects;
         if (Array.isArray(body.external_object_index)) {
             externalObjects = body.external_object_index.filter((index: string) => index && index.trim() !== '');
@@ -214,10 +214,10 @@ const updateHandlers = {
     relation: async (DB: any, body: any) => {
         const db = createDrizzleClient(DB);
 
-        // 支持扁平化表单数据
+        // ֧�ֱ�ƽ���������
         const originalIndex = body.original_index || body.relation_index || body.index;
         const relationData = {
-            index: body.index, // 新 index（可能已修改）
+            index: body.index, // �� index���������޸ģ�
             from_work_index: body.from_work_index,
             to_work_index: body.to_work_index,
             relation_type: body.relation_type
@@ -228,10 +228,10 @@ const updateHandlers = {
     media: async (DB: any, body: any) => {
         const db = createDrizzleClient(DB);
 
-        // 支持扁平化表单数据
+        // ֧�ֱ�ƽ���������
         const originalIndex = body.original_index || body.media_index || body.index;
         const full_media_source: MediaSourceApiInput = {
-            index: body.index, // 新 index（可能已修改）
+            index: body.index, // �� index���������޸ģ�
             work_index: body.work_index,
             is_music: body.is_music === 'on' || body.is_music === true || body.is_music === 'true',
             file_name: body.file_name || '',
@@ -240,7 +240,7 @@ const updateHandlers = {
             info: body.info || ''
         };
 
-        // 转换 external_objects 数组（过滤空值）
+        // ת�� external_objects ���飨���˿�ֵ��
         let externalObjects = body.external_objects;
         if (Array.isArray(body.external_object_index)) {
             externalObjects = body.external_object_index.filter((index: string) => index && index.trim() !== '');
@@ -256,7 +256,7 @@ const updateHandlers = {
         const db = createDrizzleClient(DB);
         const originalIndex = body.original_index || body.tag_index || body.index;
         const tagData = {
-            index: body.index, // 新 index（可能已修改）
+            index: body.index, // �� index���������޸ģ�
             name: body.name
         };
         return await updateTag(db, originalIndex, tagData);
@@ -265,7 +265,7 @@ const updateHandlers = {
         const db = createDrizzleClient(DB);
         const originalIndex = body.original_index || body.category_index || body.index;
         const categoryData = {
-            index: body.index, // 新 index（可能已修改）
+            index: body.index, // �� index���������޸ģ�
             name: body.name,
             parent_index: body.parent_index
         };
@@ -278,7 +278,7 @@ const updateHandlers = {
     'external_source': async (DB: any, body: any) => {
         console.log('Received external_source update body:', JSON.stringify(body, null, 2));
 
-        // 验证存储源配置
+        // ��֤�洢Դ����
         const validation = validateStorageSource(body);
 
         if (!validation.valid) {
@@ -290,7 +290,7 @@ const updateHandlers = {
         const db = createDrizzleClient(DB);
         const originalIndex = body.original_index || body.index;
         const sourceData = {
-            index: body.index, // 新 index（可能已修改）
+            index: body.index, // �� index���������޸ģ�
             type: body.type,
             name: body.name,
             endpoint: body.endpoint,
@@ -303,7 +303,7 @@ const updateHandlers = {
 
         const originalIndex = body.original_index || body.index;
         const objectData = {
-            index: body.index, // 新 index（可能已修改）
+            index: body.index, // �� index���������޸ģ�
             external_source_index: body.external_source_index,
             mime_type: body.mime_type,
             file_id: body.file_id

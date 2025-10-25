@@ -1,4 +1,4 @@
-﻿import { jsx } from 'hono/jsx'
+import { jsx } from 'hono/jsx'
 import { BaseLayout } from './layouts/base-layout'
 import { FooterSetting } from '../db/operations/admin'
 

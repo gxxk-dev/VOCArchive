@@ -1,4 +1,4 @@
-﻿import { eq, inArray, count, and, or } from 'drizzle-orm';
+import { eq, inArray, count, and, or } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import {
     work,
@@ -33,6 +33,7 @@ import {
     CreatorWithRole,
     WikiRef,
     Tag,
+    TagApi,
     Category,
     CategoryApi,
     Asset,
@@ -143,109 +144,160 @@ export async function getWorkListWithPagination(
         });
     });
     
-    // Get all titles, assets, tags, and categories for each work
-    const workListPromises = works.map(async (workItem) => {
-        const { id: work_id, index: work_index } = workItem;
+    // Batch load all titles for these works
+    const workIds = works.map(w => w.id);
+    const allTitles = await db
+        .select({
+            work_index: work.index,
+            index: workTitle.index,
+            is_official: workTitle.is_official,
+            is_for_search: workTitle.is_for_search,
+            language: workTitle.language,
+            title: workTitle.title,
+        })
+        .from(workTitle)
+        .innerJoin(work, eq(workTitle.work_id, work.id))
+        .where(inArray(workTitle.work_id, workIds));
 
-        // Get titles
-        const titles = await getWorkTitlesApi(db, work_index);
-        
-        // Get preview assets
-        const previewAssets = await db
-            .select({
-                index: asset.index,
-                work_index: work.index,
-                asset_type: asset.asset_type,
-                file_name: asset.file_name,
-                is_previewpic: asset.is_previewpic,
-                language: asset.language,
-            })
-            .from(asset)
-            .innerJoin(work, eq(asset.work_id, work.id))
-            .where(
-                and(
-                    eq(work.index, work_index),
-                    eq(asset.asset_type, 'picture'),
-                    eq(asset.is_previewpic, true)
-                )
+    // Group titles by work_index
+    const titlesMap = new Map<string, WorkTitleApi[]>();
+    allTitles.forEach(row => {
+        if (!titlesMap.has(row.work_index)) {
+            titlesMap.set(row.work_index, []);
+        }
+        titlesMap.get(row.work_index)!.push({
+            index: row.index,
+            work_index: row.work_index,
+            is_official: row.is_official,
+            is_for_search: row.is_for_search,
+            language: row.language,
+            title: row.title,
+        });
+    });
+
+    // Batch load all assets for these works
+    const allAssets = await db
+        .select({
+            work_index: work.index,
+            index: asset.index,
+            asset_type: asset.asset_type,
+            file_name: asset.file_name,
+            is_previewpic: asset.is_previewpic,
+            language: asset.language,
+        })
+        .from(asset)
+        .innerJoin(work, eq(asset.work_id, work.id))
+        .where(
+            and(
+                inArray(asset.work_id, workIds),
+                eq(asset.asset_type, 'picture')
             )
-            .limit(1);
-        
-        const nonPreviewAssets = await db
+        );
+
+    // Group assets by work_index and preview status
+    const previewAssetsMap = new Map<string, AssetApi>();
+    const nonPreviewAssetsMap = new Map<string, AssetApi>();
+    allAssets.forEach(row => {
+        const assetData = convertAssetData(row);
+        if (row.is_previewpic) {
+            if (!previewAssetsMap.has(row.work_index)) {
+                previewAssetsMap.set(row.work_index, assetData);
+            }
+        } else {
+            if (!nonPreviewAssetsMap.has(row.work_index)) {
+                nonPreviewAssetsMap.set(row.work_index, assetData);
+            }
+        }
+    });
+
+    // Batch load all tags for these works
+    const allWorkTags = await db
+        .select({
+            work_index: work.index,
+            tag_index: tag.index,
+            tag_name: tag.name,
+        })
+        .from(tag)
+        .innerJoin(workTag, eq(tag.id, workTag.tag_id))
+        .innerJoin(work, eq(workTag.work_id, work.id))
+        .where(inArray(workTag.work_id, workIds));
+
+    // Group tags by work_index
+    const tagsMap = new Map<string, TagApi[]>();
+    allWorkTags.forEach(row => {
+        if (!tagsMap.has(row.work_index)) {
+            tagsMap.set(row.work_index, []);
+        }
+        tagsMap.get(row.work_index)!.push({
+            index: row.tag_index,
+            name: row.tag_name,
+        });
+    });
+
+    // Batch load all categories for these works
+    const allWorkCategories = await db
+        .select({
+            work_index: work.index,
+            category_index: category.index,
+            category_name: category.name,
+            parent_id: category.parent_id,
+        })
+        .from(category)
+        .innerJoin(workCategory, eq(category.id, workCategory.category_id))
+        .innerJoin(work, eq(workCategory.work_id, work.id))
+        .where(inArray(workCategory.work_id, workIds));
+
+    // Collect all unique parent_ids
+    const parentIds = [...new Set(
+        allWorkCategories
+            .map(row => row.parent_id)
+            .filter(id => id !== null)
+    )] as number[];
+
+    // Batch load parent category indexes
+    const parentIndexMap = new Map<number, string>();
+    if (parentIds.length > 0) {
+        const parentCategories = await db
             .select({
-                index: asset.index,
-                work_index: work.index,
-                asset_type: asset.asset_type,
-                file_name: asset.file_name,
-                is_previewpic: asset.is_previewpic,
-                language: asset.language,
-            })
-            .from(asset)
-            .innerJoin(work, eq(asset.work_id, work.id))
-            .where(
-                and(
-                    eq(work.index, work_index),
-                    eq(asset.asset_type, 'picture')
-                    // For non-preview, we'll need to handle null/false separately
-                )
-            )
-            .limit(1);
-        
-        // Get tags
-        const workTags = await db
-            .select({
-                index: tag.index,
-                name: tag.name,
-            })
-            .from(tag)
-            .innerJoin(workTag, eq(tag.id, workTag.tag_id))
-            .innerJoin(work, eq(workTag.work_id, work.id))
-            .where(eq(work.index, work_index));
-        
-        // Get categories
-        const workCategories = await db
-            .select({
+                id: category.id,
                 index: category.index,
-                name: category.name,
-                parent_id: category.parent_id,
             })
             .from(category)
-            .innerJoin(workCategory, eq(category.id, workCategory.category_id))
-            .innerJoin(work, eq(workCategory.work_id, work.id))
-            .where(eq(work.index, work_index));
+            .where(inArray(category.id, parentIds));
 
-        // Convert to CategoryApi format
-        const categoriesApi = await Promise.all(
-            workCategories.map(async (cat) => {
-                let parent_index: string | null = null;
-                if (cat.parent_id !== null) {
-                    const parentResult = await db.select({ index: category.index })
-                        .from(category)
-                        .where(eq(category.id, cat.parent_id))
-                        .limit(1);
-                    parent_index = parentResult[0]?.index || null;
-                }
-                return {
-                    index: cat.index,
-                    name: cat.name,
-                    parent_index: parent_index,
-                };
-            })
-        );
-        
+        parentCategories.forEach(row => {
+            parentIndexMap.set(row.id, row.index);
+        });
+    }
+
+    // Group categories by work_index
+    const categoriesMap = new Map<string, CategoryApi[]>();
+    allWorkCategories.forEach(row => {
+        if (!categoriesMap.has(row.work_index)) {
+            categoriesMap.set(row.work_index, []);
+        }
+        categoriesMap.get(row.work_index)!.push({
+            index: row.category_index,
+            name: row.category_name,
+            parent_index: row.parent_id !== null ? (parentIndexMap.get(row.parent_id) || null) : null,
+        });
+    });
+
+    // Assemble work list
+    return works.map(workItem => {
+        const { id: work_id, index: work_index } = workItem;
+
         return {
             work_id,
             work_index,
-            titles,
-            preview_asset: previewAssets[0] ? convertAssetData(previewAssets[0]) : undefined,
-            non_preview_asset: nonPreviewAssets[0] ? convertAssetData(nonPreviewAssets[0]) : undefined,
+            titles: titlesMap.get(work_index) || [],
+            preview_asset: previewAssetsMap.get(work_index),
+            non_preview_asset: nonPreviewAssetsMap.get(work_index),
             creator: creatorMap.get(work_index) || [],
-            tags: workTags,
-            categories: categoriesApi,
+            tags: tagsMap.get(work_index) || [],
+            categories: categoriesMap.get(work_index) || [],
         };
     });
-    
-    return await Promise.all(workListPromises);
 }
 
 /**

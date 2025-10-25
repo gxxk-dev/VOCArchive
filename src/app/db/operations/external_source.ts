@@ -1,4 +1,4 @@
-﻿import { eq, and } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { externalSource } from '../schema';
 import type { ExternalSource, NewExternalSource, ExternalSourceApiInput } from '../types';

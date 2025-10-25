@@ -1,4 +1,4 @@
-﻿import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { creator, creatorWiki, workCreator, work } from '../schema';
 import { creatorIndexToId } from '../utils/index-id-converter';

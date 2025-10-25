@@ -1,4 +1,4 @@
-﻿import { jsx } from 'hono/jsx'
+import { jsx } from 'hono/jsx'
 import { AdminHeader } from './admin-header'
 import { EmptyState } from './empty-state'
 import { TableCell } from './table-cell'

@@ -1,4 +1,4 @@
-﻿import { eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { externalObject, externalSource } from '../schema';
 import type { ExternalObject, NewExternalObject, ExternalSource as ExternalSourceType, ExternalObjectApiInput } from '../types';

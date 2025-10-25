@@ -226,7 +226,7 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                             {section.listType === 'work-titles' && (
                                 <div>
                                     <div id="titles-list" class="dynamic-list">
-                                        {data?.titles?.map((title, index) =>
+                                        {data?.titles?.map((title: any, index: number) =>
                                             renderTitleRow(title, index)
                                         )}
                                         {(!data?.titles || data.titles.length === 0) &&
@@ -258,10 +258,10 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                             {section.listType === 'work-creators' && (
                                 <div>
                                     <div id="creator-list" class="dynamic-list">
-                                        {data?.creator?.map((creator, index) =>
+                                        {(data?.creator as unknown as any[])?.map((creator: any, index: number) =>
                                             renderCreatorRow(creator, options?.creators, index)
                                         )}
-                                        {(!data?.creator || data.creator.length === 0) &&
+                                        {(!data?.creator || (data.creator as any).length === 0) &&
                                             renderCreatorRow(undefined, options?.creators, 0)
                                         }
                                     </div>
@@ -337,7 +337,7 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                                 <div>
                                     <div id="relations-list" class="relations-list">
                                         {data?.relation && data.relation.length > 0 ? (
-                                            data.relation.map((relation, index) =>
+                                            data.relation.map((relation: any, index: number) =>
                                                 renderWorkRelationRow(relation, index)
                                             )
                                         ) : (
@@ -350,7 +350,7 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                             {section.listType === 'creator-wikis' && (
                                 <div>
                                     <div id="wikis-list" class="dynamic-list">
-                                        {data?.creator?.wikis?.map((wiki, index) =>
+                                        {(data?.creator as any)?.wikis?.map((wiki: any, index: number) =>
                                             renderWikiRow(wiki, index)
                                         )}
                                         {(!data?.creator?.wikis || data.creator.wikis.length === 0) &&
@@ -381,7 +381,7 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                                 <div>
                                     <div id="media-sources-list" class="media-sources-list">
                                         {data?.media_sources && data.media_sources.length > 0 ? (
-                                            data.media_sources.map((media, index) =>
+                                            data.media_sources.map((media: any, index: number) =>
                                                 renderMediaSourceRow(media, index)
                                             )
                                         ) : (
@@ -394,8 +394,8 @@ export function FormRenderer({ config, data, options }: FormRendererProps) {
                             {section.listType === 'assets' && (
                                 <div>
                                     <div id="assets-list" class="assets-list">
-                                        {data?.asset && data.asset.length > 0 ? (
-                                            data.asset.map((asset, index) =>
+                                        {(data?.asset as any) && (data?.asset as any).length > 0 ? (
+                                            (data?.asset as any).map((asset: any, index: number) =>
                                                 renderAssetRow(asset, index)
                                             )
                                         ) : (

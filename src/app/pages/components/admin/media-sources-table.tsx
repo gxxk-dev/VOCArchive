@@ -1,4 +1,4 @@
-﻿import { jsx } from 'hono/jsx'
+import { jsx } from 'hono/jsx'
 import { MediaSourceApi } from '../../../db/types'
 import { AdminHeader, EmptyState, IndexTableCell, TableActionButtons } from './base'
 
