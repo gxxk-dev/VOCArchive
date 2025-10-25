@@ -3,6 +3,7 @@
 
 import { jsx } from 'hono/jsx';
 import type { FormFieldConfig, FormRenderData, FormOptions } from './form-field-types';
+import { nanoid } from 'nanoid';
 
 // 选项组定义
 const copyrightBasisOptions = [
@@ -76,11 +77,6 @@ function getFieldValue(field: FormFieldConfig, data?: FormRenderData): string {
     return result;
 }
 
-// 生成新UUID的辅助函数
-function generateUUID(): string {
-    return crypto.randomUUID();
-}
-
 // 文本字段渲染器
 function renderTextField(field: FormFieldConfig, data?: FormRenderData) {
     const value = getFieldValue(field, data);
@@ -120,7 +116,7 @@ function renderUuidField(field: FormFieldConfig, data?: FormRenderData) {
 
     // 如果没有值，生成新UUID（不管是新建还是编辑模式）
     if (!value || value === '' || value === 'undefined') {
-        value = generateUUID();
+        value = nanoid(8);
     }
 
     const readonlyAttr = field.type === 'uuid_readonly' ? true : undefined;
@@ -142,9 +138,9 @@ function renderUuidField(field: FormFieldConfig, data?: FormRenderData) {
 function renderIndexField(field: FormFieldConfig, data?: FormRenderData) {
     let value = getFieldValue(field, data);
 
-    // 如果没有值，生成新UUID作为index（不管是新建还是编辑模式）
+    // 如果没有值，生成新index（不管是新建还是编辑模式）
     if (!value || value === '' || value === 'undefined') {
-        value = generateUUID();
+        value = nanoid(8);
     }
 
     const readonlyAttr = field.type === 'index_readonly' ? true : undefined;

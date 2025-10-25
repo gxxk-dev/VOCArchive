@@ -1,3 +1,4 @@
+import { generateIndex } from '../utils/index-utils';
 ﻿import { eq, isNull, and, sql } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import {
@@ -76,7 +77,7 @@ export async function migrateToExternalStorage(
             console.log('Using existing default storage source:', defaultExternalSourceIndex);
         } else {
             // Create default external source based on ASSET_URL
-            defaultExternalSourceIndex = crypto.randomUUID();
+            defaultExternalSourceIndex = generateIndex();
             
             // Ensure assetUrl doesn't end with slash
             const cleanAssetUrl = assetUrl.replace(/\/$/, '');
@@ -104,7 +105,7 @@ export async function migrateToExternalStorage(
             console.log('Using existing direct URL storage source:', directUrlSourceindex);
         } else {
             // Create direct URL source for media sources with complete URLs
-            directUrlSourceindex = crypto.randomUUID();
+            directUrlSourceindex = generateIndex();
             
             await db.insert(externalSource).values({
                 index: directUrlSourceindex,
@@ -172,7 +173,7 @@ export async function migrateToExternalStorage(
                     }
 
                     // Create external object for each asset
-                    const externalObjectIndex = crypto.randomUUID();
+                    const externalObjectIndex = generateIndex();
                     await db.insert(externalObject).values({
                         index: externalObjectIndex,
                         external_source_id: defaultExternalSourceId,
@@ -288,7 +289,7 @@ export async function migrateToExternalStorage(
                     }
 
                     // Create external object for each media source
-                    const externalObjectIndex = crypto.randomUUID();
+                    const externalObjectIndex = generateIndex();
                     await db.insert(externalObject).values({
                         index: externalObjectIndex,
                         external_source_id: externalSourceId,
@@ -360,7 +361,7 @@ export async function migrateToExternalStorage(
 export async function migrateToExternalStorageLegacy(db: DrizzleDB): Promise<boolean> {
     try {
         // Create default external source for legacy content
-        const defaultExternalSourceIndex = crypto.randomUUID();
+        const defaultExternalSourceIndex = generateIndex();
         await db.insert(externalSource).values({
             index: defaultExternalSourceIndex,
             type: 'raw_url',
@@ -394,7 +395,7 @@ export async function migrateToExternalStorageLegacy(db: DrizzleDB): Promise<boo
             }
 
             // Create external object for each asset
-            const externalObjectIndex = crypto.randomUUID();
+            const externalObjectIndex = generateIndex();
             await db.insert(externalObject).values({
                 index: externalObjectIndex,
                 external_source_id: defaultExternalSourceId,
@@ -442,7 +443,7 @@ export async function migrateToExternalStorageLegacy(db: DrizzleDB): Promise<boo
             }
 
             // Create external object for each media source
-            const externalObjectIndex = crypto.randomUUID();
+            const externalObjectIndex = generateIndex();
             await db.insert(externalObject).values({
                 index: externalObjectIndex,
                 external_source_id: defaultExternalSourceId,
@@ -889,7 +890,7 @@ export async function initializeDatabaseWithConfig(
         // Initialize default external storage source if asset URL provided
         if (config.assetUrl) {
             const cleanAssetUrl = config.assetUrl.replace(/\/$/, '');
-            const defaultSourceIndex = crypto.randomUUID();
+            const defaultSourceIndex = generateIndex();
             
             await db.insert(externalSource).values({
                 index: defaultSourceIndex,

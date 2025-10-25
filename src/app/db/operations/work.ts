@@ -18,6 +18,7 @@ import {
     category
 } from '../schema';
 import { convertAssetData, convertCategoryData, validateIndex } from '../utils';
+import { generateIndex } from '../utils/index-utils';
 import {
     workIndexToId,
     creatorIndexToId,
@@ -602,7 +603,7 @@ export async function inputWork(
     if (titles.length > 0) {
         await db.insert(workTitle).values(
             titles.map(title => ({
-                index: crypto.randomUUID(),
+                index: generateIndex(),
                 work_id: workId,
                 is_official: title.is_official,
                 is_for_search: title.is_for_search || false,
@@ -719,7 +720,7 @@ export async function updateWork(
             if (titles.length > 0) {
                 await db.insert(workTitle).values(
                     titles.map(title => ({
-                        index: crypto.randomUUID(),
+                        index: generateIndex(),
                         work_id: workId,
                         is_official: title.is_official,
                         is_for_search: title.is_for_search || false,

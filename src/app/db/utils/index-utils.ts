@@ -16,10 +16,10 @@ const RESERVED_KEYWORDS = new Set([
 
 /**
  * 生成新的 index（使用 Nano ID）
- * @param length - index 长度，默认 21 字符
+ * @param length - index 长度，默认 8 字符
  * @returns 生成的 index
  */
-export function generateIndex(length: number = 21): string {
+export function generateIndex(length: number = 8): string {
     return nanoid(length);
 }
 

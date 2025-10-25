@@ -1,3 +1,4 @@
+import { generateIndex } from '../utils/index-utils';
 ﻿import { eq, and } from 'drizzle-orm';
 import type { DrizzleDB } from '../client';
 import { workTitle, work } from '../schema';
@@ -113,7 +114,7 @@ export async function inputWorkTitle(db: DrizzleDB, titleData: WorkTitleInput): 
             return null;
         }
 
-        const titleindex = crypto.randomUUID();
+        const titleindex = generateIndex();
 
         await db.insert(workTitle).values({
             index: titleindex,

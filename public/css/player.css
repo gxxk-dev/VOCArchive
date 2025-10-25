@@ -508,7 +508,8 @@ a {
 .site-footer {
     text-align: center;
     padding: 24px 16px;
-    margin-top: 32px;
+    margin-top: auto;
+    flex-shrink: 0;
     color: var(--md-sys-color-on-surface-variant);
     font-size: 0.9rem;
     width: 100%;

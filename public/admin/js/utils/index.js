@@ -2,6 +2,7 @@
 
 import { adminTitleTemplate, tabNames, allExternalSources, allExternalObjects } from '../core/config.js';
 import { apiFetch } from '../api/index.js';
+import { nanoid } from 'https://unpkg.com/nanoid/nanoid.js';
 
 let generateIndexButton, generatedIndexResult;
 
@@ -16,7 +17,7 @@ export function initializeToolElements() {
 export function setupIndexGeneration() {
     if (generateIndexButton && generatedIndexResult) {
         generateIndexButton.addEventListener('click', () => {
-            generatedIndexResult.value = crypto.randomUUID();
+            generatedIndexResult.value = nanoid(8);
         });
     }
 }
