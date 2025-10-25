@@ -24,6 +24,7 @@ export const PlayerPage = (props: { workInfo: any, footerSettings: FooterSetting
     );
 
     const cssFiles = ['/css/common.css', '/css/player.css'];
+    const jsFiles = ['/js/ipfs-gateway-manager.js', '/js/ipfs-settings-ui.js'];
     const additionalScripts = PlayerScripts(props);
 
     const pageContent = (
@@ -41,6 +42,7 @@ export const PlayerPage = (props: { workInfo: any, footerSettings: FooterSetting
         title: pageTitle,
         footerSettings: footerSettings,
         cssFiles: cssFiles,
+        jsFiles: jsFiles,
         additionalScripts: additionalScripts,
         children: pageContent
     });

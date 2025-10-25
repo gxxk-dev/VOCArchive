@@ -56,5 +56,14 @@ function expandPlayerTags(expandButton) {
 
 document.addEventListener('DOMContentLoaded', () => {
     setupPlayerEventListeners();
+
+    // Initialize IPFS settings UI
+    const ipfsSettingsUI = new window.IPFSSettingsUI();
+    const ipfsSettingsBtn = document.getElementById('ipfs-settings-btn');
+    if (ipfsSettingsBtn) {
+        ipfsSettingsBtn.addEventListener('click', () => {
+            ipfsSettingsUI.toggle();
+        });
+    }
 });
 `
