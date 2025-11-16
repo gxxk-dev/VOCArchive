@@ -12,10 +12,10 @@ import type {
 
 import { getFooterSettings } from '../db/operations/admin'
 import { getPublicSiteConfig } from '../db/operations/config'
-import { getWorkByIndex, getWorkListWithPagination, getTotalWorkCount } from '../db/operations/work'
+import { getWorkByUUID, getWorkListWithPagination, getTotalWorkCount } from '../db/operations/work'
 import { searchWorks, getAvailableLanguages } from '../db/operations/search'
-import { getWorksByTag, getWorkCountByTag, getTagByIndex, listTagsWithCounts } from '../db/operations/tag'
-import { getWorksByCategory, getWorkCountByCategory, getCategoryByIndex, listCategoriesWithCounts } from '../db/operations/category'
+import { getWorksByTag, getWorkCountByTag, getTagByUUID, listTagsWithCounts } from '../db/operations/tag'
+import { getWorksByCategory, getWorkCountByCategory, getCategoryByUUID, listCategoriesWithCounts } from '../db/operations/category'
 
 /**
  * 加载首页数据
@@ -52,23 +52,23 @@ export async function loadIndexPageData(
     } else if (tag) {
         works = await getWorksByTag(db, tag, currentPage, pageSize);
         totalCount = await getWorkCountByTag(db, tag);
-        const tagInfo = await getTagByIndex(db, tag);
+        const tagInfo = await getTagByUUID(db, tag);
         if (tagInfo) {
             filterInfo = {
                 type: 'tag' as const,
                 name: tagInfo.name,
-                index: tag
+                uuid: tag
             };
         }
     } else if (category) {
         works = await getWorksByCategory(db, category, currentPage, pageSize);
         totalCount = await getWorkCountByCategory(db, category);
-        const categoryInfo = await getCategoryByIndex(db, category);
+        const categoryInfo = await getCategoryByUUID(db, category);
         if (categoryInfo) {
             filterInfo = {
                 type: 'category' as const,
                 name: categoryInfo.name,
-                index: category
+                uuid: category
             };
         }
     } else {
@@ -101,16 +101,16 @@ export async function loadIndexPageData(
  * 加载播放器页面数据
  *
  * @param db - 数据库客户端
- * @param workIndex - 作品索引(支持 index 或 uuid)
+ * @param workUuid - 作品UUID
  * @returns 播放器页面数据,如果作品不存在则返回 null
  */
 export async function loadPlayerPageData(
     db: DrizzleDB,
-    workIndex: string
+    workUuid: string
 ): Promise<PlayerPageData | null> {
     // 并行加载作品信息和公共数据
     const [workInfo, footerSettings, siteConfig] = await Promise.all([
-        getWorkByIndex(db, workIndex),
+        getWorkByUUID(db, workUuid),
         getFooterSettings(db),
         getPublicSiteConfig(db)
     ]);

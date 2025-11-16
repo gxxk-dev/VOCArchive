@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
 import { createDrizzleClient } from '../db/client';
 import { getFooterSettings, insertFooterSetting, updateFooterSetting, deleteFooterSetting } from '../db/operations/admin';
-import { generateIndex } from '../db/utils/index-utils';
+import { nanoid } from 'nanoid';
 
 interface FooterSetting {
-    index: string;
+    uuid: string;
     item_type: 'link' | 'social' | 'copyright';
     text: string;
     url?: string;
@@ -26,26 +26,26 @@ app.get('/', async (c) => {
 
 app.post('/settings', async (c) => {
     try {
-        const body = await c.req.json<Omit<FooterSetting, 'index'>>();
+        const body = await c.req.json<Omit<FooterSetting, 'uuid'>>();
         const newSetting: FooterSetting = {
             ...body,
-            index: generateIndex()
+            uuid: nanoid()
         };
         const db = c.get('db');
         await insertFooterSetting(db, newSetting);
-        return c.json({ success: true, index: newSetting.index });
+        return c.json({ success: true, uuid: newSetting.uuid });
     } catch (e: any) {
         return c.json({ error: e.message }, 500);
     }
 })
 
-app.put('/settings/:index', async (c) => {
+app.put('/settings/:uuid', async (c) => {
     try {
-        const index = c.req.param('index');
-        const body = await c.req.json<Omit<FooterSetting, 'index'>>();
+        const uuid = c.req.param('uuid');
+        const body = await c.req.json<Omit<FooterSetting, 'uuid'>>();
         const setting: FooterSetting = {
             ...body,
-            index 
+            uuid
         };
         const db = c.get('db');
         await updateFooterSetting(db, setting);
@@ -55,11 +55,11 @@ app.put('/settings/:index', async (c) => {
     }
 })
 
-app.delete('/settings/:index', async (c) => {
+app.delete('/settings/:uuid', async (c) => {
     try {
-        const index = c.req.param('index');
+        const uuid = c.req.param('uuid');
         const db = c.get('db');
-        await deleteFooterSetting(db, index);
+        await deleteFooterSetting(db, uuid);
         return c.json({ success: true });
     } catch (e: any) {
         return c.json({ error: e.message }, 500);

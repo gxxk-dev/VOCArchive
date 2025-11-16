@@ -112,15 +112,15 @@ export function createPageRoutes() {
 
     // ========== 管理后台编辑器(需要认证) ==========
     pageApp.get('/admin/editor', adminContentMiddleware, async (c) => {
-        const { type, index } = c.req.query()
+        const { type, uuid } = c.req.query()
         const db = c.get('db');
 
         // 使用服务层加载编辑器数据和选项
-        const { data, options } = await loadEditorFullData(db, type, index);
+        const { data, options } = await loadEditorFullData(db, type, uuid);
 
         return c.html(<AdminEditorPage
             type={type}
-            index={index}
+            uuid={uuid}
             data={data ?? undefined as any}
             options={options as any}
         />)

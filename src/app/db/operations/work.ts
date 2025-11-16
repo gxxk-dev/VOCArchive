@@ -655,13 +655,13 @@ export async function updateWork(
     db: DrizzleDB,
     workUuid: string,
     workData: Work,
-    titles: WorkTitle[],
-    license: string | null,
+    titles?: WorkTitle[],
+    license?: string | null | undefined,
     creators?: CreatorWithRole[],
     wikis?: WikiRef[]
 ): Promise<boolean> {
     if (!validateUUID(workUuid)) return false;
-    
+
     try {
         // For D1 compatibility, execute operations sequentially without transactions
         // Get work ID for foreign key operations
@@ -676,19 +676,21 @@ export async function updateWork(
             .set({ copyright_basis: workData.copyright_basis })
             .where(eq(work.uuid, workUuid));
 
-        // Delete and re-insert titles
-        await db.delete(workTitle).where(eq(workTitle.work_id, workId));
-        if (titles.length > 0) {
-            await db.insert(workTitle).values(
-                titles.map(title => ({
-                    uuid: crypto.randomUUID(),
-                    work_id: workId,
-                    is_official: title.is_official,
-                    is_for_search: title.is_for_search || false,
-                    language: title.language,
-                    title: title.title,
-                }))
-            );
+        // Handle titles - only modify if provided
+        if (titles !== undefined) {
+            await db.delete(workTitle).where(eq(workTitle.work_id, workId));
+            if (titles.length > 0) {
+                await db.insert(workTitle).values(
+                    titles.map(title => ({
+                        uuid: crypto.randomUUID(),
+                        work_id: workId,
+                        is_official: title.is_official,
+                        is_for_search: title.is_for_search || false,
+                        language: title.language,
+                        title: title.title,
+                    }))
+                );
+            }
         }
         
         // Handle license

@@ -83,8 +83,8 @@ listInfo.get('/categories-with-counts', async (c: any) => {
 });
 
 // 获取标签下的作品列表（带分页）
-listInfo.get('/works-by-tag/:tag_index/:page/:size?', async (c: any) => {
-    const tag_index = c.req.param('tag_index');
+listInfo.get('/works-by-tag/:tag_uuid/:page/:size?', async (c: any) => {
+    const tag_uuid = c.req.param('tag_uuid');
     const page = parseInt(c.req.param('page'));
     const size = c.req.param('size') ? parseInt(c.req.param('size')) : 20;
 
@@ -93,13 +93,13 @@ listInfo.get('/works-by-tag/:tag_index/:page/:size?', async (c: any) => {
     }
 
     const db = c.get('db');
-    const results = await getWorksByTag(db, tag_index, page, size);
+    const results = await getWorksByTag(db, tag_uuid, page, size);
     return c.json(results);
 });
 
 // 获取分类下的作品列表（带分页）
-listInfo.get('/works-by-category/:category_index/:page/:size?', async (c: any) => {
-    const category_index = c.req.param('category_index');
+listInfo.get('/works-by-category/:category_uuid/:page/:size?', async (c: any) => {
+    const category_uuid = c.req.param('category_uuid');
     const page = parseInt(c.req.param('page'));
     const size = c.req.param('size') ? parseInt(c.req.param('size')) : 20;
 
@@ -108,17 +108,17 @@ listInfo.get('/works-by-category/:category_index/:page/:size?', async (c: any) =
     }
 
     const db = c.get('db');
-    const results = await getWorksByCategory(db, category_index, page, size);
+    const results = await getWorksByCategory(db, category_uuid, page, size);
     return c.json(results);
 });
 
 // 获取作品标题列表
-listInfo.get('/work-titles/:work_index', async (c: any) => {
-    const work_index = c.req.param('work_index');
+listInfo.get('/work-titles/:work_uuid', async (c: any) => {
+    const work_uuid = c.req.param('work_uuid');
     const include_for_search = c.req.query('include_for_search') === 'true';
 
     const db = c.get('db');
-    const results = await listWorkTitles(db, work_index, include_for_search);
+    const results = await listWorkTitles(db, work_uuid, include_for_search);
     return c.json(results);
 });
 

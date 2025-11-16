@@ -6,7 +6,7 @@
  */
 export interface WorkInfo {
     id: number
-    index: string
+    uuid: string
     copyright_basis: string | null
     issue_date: string | null
     created_at: string
@@ -44,7 +44,7 @@ export interface WorkCreator {
  */
 export interface CreatorInfo {
     id: number
-    index: string
+    uuid: string
     name: string
     type: 'human' | 'virtual'
     created_at: string
@@ -56,7 +56,7 @@ export interface CreatorInfo {
  */
 export interface TagInfo {
     id: number
-    index: string
+    uuid: string
     name: string
     created_at: string
     updated_at: string
@@ -74,7 +74,7 @@ export interface TagWithCount extends TagInfo {
  */
 export interface CategoryInfo {
     id: number
-    index: string
+    uuid: string
     name: string
     parent_id: number | null
     created_at: string
@@ -93,8 +93,8 @@ export interface CategoryWithCount extends CategoryInfo {
  */
 export interface MediaSource {
     id: number
-    index: string
-    work_index: string
+    uuid: string
+    work_uuid: string
     is_music: boolean
     duration: number | null
     created_at: string
@@ -106,8 +106,8 @@ export interface MediaSource {
  */
 export interface Asset {
     id: number
-    index: string
-    work_index: string
+    uuid: string
+    work_uuid: string
     asset_type: 'lyrics' | 'picture'
     is_previewpic: boolean
     created_at: string
@@ -119,7 +119,7 @@ export interface Asset {
  */
 export interface FooterSettings {
     id: number
-    index: string
+    uuid: string
     enabled: boolean
     content: string | null
     created_at: string
@@ -149,7 +149,7 @@ export interface LanguageInfo {
 export interface FilterInfo {
     type: 'tag' | 'category'
     name: string
-    index: string
+    uuid: string
 }
 
 /**

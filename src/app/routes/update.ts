@@ -14,12 +14,12 @@ import { updateFooterSetting } from '../db/operations/admin';
 import { upsertSiteConfig } from '../db/operations/config';
 import { validateStorageSource } from '../db/utils/storage-handlers';
 import type { Work, WorkTitle, CreatorWithRole, WikiRef, Asset, WorkTitleUpdate, MediaSourceForDatabase, MediaSourceApiInput, ExternalSourceApiInput, ExternalObjectApiInput, WikiPlatformApiInput } from '../db/types';
-import { workIndexToId, externalSourceIndexToId } from '../db/utils/index-id-converter';
+import { workUuidToId, externalSourceUuidToId } from '../db/utils/uuid-id-converter';
 import { Hono } from 'hono'
 
 // Request body interfaces
 interface UpdateWorkRequestBody {
-    work_index: string;
+    work_uuid: string;
     work: Work;
     titles: WorkTitle[];
     license?: string;
@@ -28,21 +28,21 @@ interface UpdateWorkRequestBody {
 }
 
 interface UpdateCreatorRequestBody {
-    creator_index: string;
+    creator_uuid: string;
     creator: { name: string; type: 'human' | 'virtual' };
     wikis?: WikiRef[];
 }
 
 interface UpdateAssetRequestBody {
-    asset_index: string;
+    asset_uuid: string;
     asset: Asset;
     creator?: CreatorWithRole[];
     external_objects?: string[];
 }
 
 interface UpdateMediaRequestBody {
-    media_index: string;
-    work_index: string;
+    media_uuid: string;
+    work_uuid: string;
     is_music: boolean;
     file_name: string;
     url: string;
@@ -52,14 +52,14 @@ interface UpdateMediaRequestBody {
 }
 
 interface UpdateRelationRequestBody {
-    relation_index: string;
-    from_work_index: string;
-    to_work_index: string;
+    relation_uuid: string;
+    from_work_uuid: string;
+    to_work_uuid: string;
     relation_type: 'original' | 'remix' | 'cover' | 'remake' | 'picture' | 'lyrics';
 }
 
 interface UpdateWorkTitleRequestBody {
-    title_index: string;
+    title_uuid: string;
     updates: WorkTitleUpdate;
 }
 
@@ -68,9 +68,9 @@ const updateHandlers = {
         const db = createDrizzleClient(DB);
 
         // ֧�ֱ�ƽ���������
-        const originalIndex = body.original_index || body.creator_index || body.index;
+        const originalUuid = body.original_uuid || body.creator_uuid || body.uuid;
         const full_creator = {
-            index: body.index, // �� index���������޸ģ�
+            uuid: body.uuid, // �� uuid���������޸ģ�
             name: body.name || body.creator?.name,
             type: body.type || body.creator?.type
         };
@@ -88,17 +88,17 @@ const updateHandlers = {
             }
         }
 
-        return await updateCreator(db, originalIndex, full_creator, wikis.length > 0 ? wikis : body.wikis);
+        return await updateCreator(db, originalUuid, full_creator, wikis.length > 0 ? wikis : body.wikis);
     },
     work: async (DB: any, body: any) => {
         const db = createDrizzleClient(DB);
 
-        // ��ȡԭʼ index�����ڲ��Ҽ�¼��
-        const originalIndex = body.original_index || body.index;
+        // ��ȡԭʼ uuid�����ڲ��Ҽ�¼��
+        const originalUuid = body.original_uuid || body.uuid;
 
         // ת����ƽ���������Ϊ API ��ʽ
         const work = {
-            index: body.index, // �� index���������޸ģ�
+            uuid: body.uuid, // �� uuid���������޸ģ�
             copyright_basis: body.copyright_basis || 'unknown'
         } as Work;
 
@@ -122,14 +122,14 @@ const updateHandlers = {
             titles = undefined;
         }
 
-        // ת�� creators ���飨ֻ���ṩ�� creator_index ʱ�Ŵ����
+        // ת�� creators ���飨ֻ���ṩ�� creator_uuid ʱ�Ŵ����
         let creators: CreatorWithRole[] | undefined = undefined;
-        if (body.creator_index && Array.isArray(body.creator_index)) {
+        if (body.creator_uuid && Array.isArray(body.creator_uuid)) {
             creators = [];
-            for (let i = 0; i < body.creator_index.length; i++) {
-                if (body.creator_index[i]) {
+            for (let i = 0; i < body.creator_uuid.length; i++) {
+                if (body.creator_uuid[i]) {
                     creators.push({
-                        creator_index: body.creator_index[i],
+                        creator_uuid: body.creator_uuid[i],
                         role: body.creator_role?.[i] || ''
                     } as CreatorWithRole);
                 }
@@ -163,7 +163,7 @@ const updateHandlers = {
 
         return await updateWork(
             db,
-            originalIndex,
+            originalUuid,
             work,
             titles,
             license,
@@ -175,11 +175,11 @@ const updateHandlers = {
         const db = createDrizzleClient(DB);
 
         // ֧�ֱ�ƽ���������
-        const originalIndex = body.original_index || body.asset_index || body.index;
+        const originalUuid = body.original_uuid || body.asset_uuid || body.uuid;
         const assetForDb = {
-            index: body.index, // �� index���������޸ģ�
+            uuid: body.uuid, // �� uuid���������޸ģ�
             asset_type: body.asset_type || body.asset?.asset_type,
-            work_index: body.work_index || body.asset?.work_index,
+            work_uuid: body.work_uuid || body.asset?.work_uuid,
             language: body.language || body.asset?.language || null,
             is_previewpic: body.is_previewpic === 'on' || body.is_previewpic === true || body.asset?.is_previewpic || null,
             content: body.content || body.asset?.content || ''
@@ -187,12 +187,12 @@ const updateHandlers = {
 
         // ת�� creators ����
         let creators = body.creator;
-        if (Array.isArray(body.creator_index)) {
+        if (Array.isArray(body.creator_uuid)) {
             creators = [];
-            for (let i = 0; i < body.creator_index.length; i++) {
-                if (body.creator_index[i]) {
+            for (let i = 0; i < body.creator_uuid.length; i++) {
+                if (body.creator_uuid[i]) {
                     creators.push({
-                        creator_index: body.creator_index[i],
+                        creator_uuid: body.creator_uuid[i],
                         role: body.creator_role?.[i] || ''
                     });
                 }
@@ -201,38 +201,38 @@ const updateHandlers = {
 
         // ת�� external_objects ���飨���˿�ֵ��
         let externalObjects = body.external_objects;
-        if (Array.isArray(body.external_object_index)) {
-            externalObjects = body.external_object_index.filter((index: string) => index && index.trim() !== '');
+        if (Array.isArray(body.external_object_uuid)) {
+            externalObjects = body.external_object_uuid.filter((uuid: string) => uuid && uuid.trim() !== '');
         } else if (Array.isArray(externalObjects)) {
-            externalObjects = externalObjects.filter((index: string) => index && index.trim() !== '');
+            externalObjects = externalObjects.filter((uuid: string) => uuid && uuid.trim() !== '');
         } else {
             externalObjects = undefined;
         }
 
-        return await updateAsset(db, originalIndex, assetForDb as any, creators, externalObjects);
+        return await updateAsset(db, originalUuid, assetForDb as any, creators, externalObjects);
     },
     relation: async (DB: any, body: any) => {
         const db = createDrizzleClient(DB);
 
         // ֧�ֱ�ƽ���������
-        const originalIndex = body.original_index || body.relation_index || body.index;
+        const originalUuid = body.original_uuid || body.relation_uuid || body.uuid;
         const relationData = {
-            index: body.index, // �� index���������޸ģ�
-            from_work_index: body.from_work_index,
-            to_work_index: body.to_work_index,
+            uuid: body.uuid, // �� uuid���������޸ģ�
+            from_work_uuid: body.from_work_uuid,
+            to_work_uuid: body.to_work_uuid,
             relation_type: body.relation_type
         };
 
-        return await updateRelation(db, originalIndex, relationData);
+        return await updateRelation(db, originalUuid, relationData);
     },
     media: async (DB: any, body: any) => {
         const db = createDrizzleClient(DB);
 
         // ֧�ֱ�ƽ���������
-        const originalIndex = body.original_index || body.media_index || body.index;
+        const originalUuid = body.original_uuid || body.media_uuid || body.uuid;
         const full_media_source: MediaSourceApiInput = {
-            index: body.index, // �� index���������޸ģ�
-            work_index: body.work_index,
+            uuid: body.uuid, // �� uuid���������޸ģ�
+            work_uuid: body.work_uuid,
             is_music: body.is_music === 'on' || body.is_music === true || body.is_music === 'true',
             file_name: body.file_name || '',
             url: body.url || '',
@@ -242,38 +242,29 @@ const updateHandlers = {
 
         // ת�� external_objects ���飨���˿�ֵ��
         let externalObjects = body.external_objects;
-        if (Array.isArray(body.external_object_index)) {
-            externalObjects = body.external_object_index.filter((index: string) => index && index.trim() !== '');
+        if (Array.isArray(body.external_object_uuid)) {
+            externalObjects = body.external_object_uuid.filter((uuid: string) => uuid && uuid.trim() !== '');
         } else if (Array.isArray(externalObjects)) {
-            externalObjects = externalObjects.filter((index: string) => index && index.trim() !== '');
+            externalObjects = externalObjects.filter((uuid: string) => uuid && uuid.trim() !== '');
         } else {
             externalObjects = undefined;
         }
 
-        return await updateMedia(db, originalIndex, full_media_source, externalObjects);
+        return await updateMedia(db, originalUuid, full_media_source, externalObjects);
     },
     tag: async (DB: any, body: any) => {
         const db = createDrizzleClient(DB);
-        const originalIndex = body.original_index || body.tag_index || body.index;
-        const tagData = {
-            index: body.index, // �� index���������޸ģ�
-            name: body.name
-        };
-        return await updateTag(db, originalIndex, tagData);
+        const originalUuid = body.original_uuid || body.tag_uuid || body.uuid;
+        return await updateTag(db, originalUuid, body.name);
     },
     category: async (DB: any, body: any) => {
         const db = createDrizzleClient(DB);
-        const originalIndex = body.original_index || body.category_index || body.index;
-        const categoryData = {
-            index: body.index, // �� index���������޸ģ�
-            name: body.name,
-            parent_index: body.parent_index
-        };
-        return await updateCategory(db, originalIndex, categoryData);
+        const originalUuid = body.original_uuid || body.category_uuid || body.uuid;
+        return await updateCategory(db, originalUuid, body.name, body.parent_uuid);
     },
     'work-title': async (DB: any, body: UpdateWorkTitleRequestBody) => {
         const db = createDrizzleClient(DB);
-        return await updateWorkTitle(db, body.title_index, body.updates);
+        return await updateWorkTitle(db, body.title_uuid, body.updates);
     },
     'external_source': async (DB: any, body: any) => {
         console.log('Received external_source update body:', JSON.stringify(body, null, 2));
@@ -288,36 +279,36 @@ const updateHandlers = {
         }
 
         const db = createDrizzleClient(DB);
-        const originalIndex = body.original_index || body.index;
+        const originalUuid = body.original_uuid || body.uuid;
         const sourceData = {
-            index: body.index, // �� index���������޸ģ�
+            uuid: body.uuid, // �� uuid���������޸ģ�
             type: body.type,
             name: body.name,
             endpoint: body.endpoint,
             isIPFS: body.isIPFS
         };
-        return await updateExternalSource(db, originalIndex, sourceData);
+        return await updateExternalSource(db, originalUuid, sourceData);
     },
     'external_object': async (DB: any, body: any) => {
         const db = createDrizzleClient(DB);
 
-        const originalIndex = body.original_index || body.index;
+        const originalUuid = body.original_uuid || body.uuid;
         const objectData = {
-            index: body.index, // �� index���������޸ģ�
-            external_source_index: body.external_source_index,
+            uuid: body.uuid, // �� uuid���������޸ģ�
+            external_source_uuid: body.external_source_uuid,
             mime_type: body.mime_type,
             file_id: body.file_id
         };
-        return await updateExternalObject(db, originalIndex, objectData);
+        return await updateExternalObject(db, originalUuid, objectData);
     },
     wiki_platform: async (DB: any, body: WikiPlatformApiInput & { platform_key: string }) => {
         const db = createDrizzleClient(DB);
         return await updateWikiPlatform(db, body.platform_key, body);
     },
-    footer: async (DB: any, body: { index: string; item_type: 'link' | 'social' | 'copyright'; text: string; url?: string; icon_class?: string }) => {
+    footer: async (DB: any, body: { uuid: string; item_type: 'link' | 'social' | 'copyright'; text: string; url?: string; icon_class?: string }) => {
         const db = createDrizzleClient(DB);
         return await updateFooterSetting(db, {
-            index: body.index,
+            uuid: body.uuid,
             item_type: body.item_type,
             text: body.text,
             url: body.url,

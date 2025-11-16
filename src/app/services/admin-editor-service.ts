@@ -4,85 +4,85 @@
 import type { DrizzleDB } from '../db/client'
 import type { FormOptions, EditorData, EditorFullData } from '../types/admin-data'
 
-import { getWorkByIndex, getWorkListWithPagination } from '../db/operations/work'
-import { getTagByIndex, listTagsWithCounts } from '../db/operations/tag'
-import { getCategoryByIndex, listCategoriesWithCounts } from '../db/operations/category'
-import { getFooterByIndex } from '../db/operations/admin'
+import { getWorkByUUID, getWorkListWithPagination } from '../db/operations/work'
+import { getTagByUUID, listTagsWithCounts } from '../db/operations/tag'
+import { getCategoryByUUID, listCategoriesWithCounts } from '../db/operations/category'
+import { getFooterByUUID } from '../db/operations/admin'
 import { getSiteConfig } from '../db/operations/config'
 import { listExternalSources } from '../db/operations/external_source'
 import { eq } from 'drizzle-orm'
 import { tag, workTag, category, workCategory, work } from '../db/schema'
 
 /**
- * 加载编辑器数据(根据类型和索引)
+ * 加载编辑器数据(根据类型和UUID)
  *
  * @param db - 数据库客户端
  * @param type - 数据类型
- * @param index - 数据索引
+ * @param uuid - 数据UUID
  * @returns 加载的数据,如果不存在则返回 undefined
  */
 export async function loadEditorData(
     db: DrizzleDB,
     type: string,
-    index?: string
+    uuid?: string
 ): Promise<EditorData> {
-    if (!index || !type) {
+    if (!uuid || !type) {
         console.log(`New item creation for type: ${type}`);
         return undefined as any;
     }
 
-    console.log(`Loading data for ${type} with index: ${index}`);
+    console.log(`Loading data for ${type} with uuid: ${uuid}`);
 
     try {
         switch (type) {
             case 'work':
-                const workData = await getWorkByIndex(db, index);
+                const workData = await getWorkByUUID(db, uuid);
                 console.log('Loaded work data:', workData);
                 return workData as any;
 
             case 'creator': {
-                const { getCreatorByIndex } = await import('../db/operations/creator');
-                const creatorData = await getCreatorByIndex(db, index);
+                const { getCreatorByUUID } = await import('../db/operations/creator');
+                const creatorData = await getCreatorByUUID(db, uuid);
                 console.log('Loaded creator data:', creatorData);
                 return creatorData as any;
             }
 
             case 'tag':
-                const tagData = await getTagByIndex(db, index);
+                const tagData = await getTagByUUID(db, uuid);
                 console.log('Loaded tag data:', tagData);
                 return tagData as any;
 
             case 'category':
-                const categoryData = await getCategoryByIndex(db, index);
+                const categoryData = await getCategoryByUUID(db, uuid);
                 console.log('Loaded category data:', categoryData);
                 return categoryData as any;
 
             case 'asset': {
-                const { getAssetByIndex } = await import('../db/operations/asset');
-                const assetData = await getAssetByIndex(db, index);
+                const { getAssetByUUID } = await import('../db/operations/asset');
+                const assetData = await getAssetByUUID(db, uuid);
                 console.log('Loaded asset data:', assetData);
 
                 // 加载作品的标签和分类
-                if (assetData && assetData.work_index) {
+                if (assetData && assetData.work_uuid) {
                     const workTags = await db
                         .select({
-                            index: tag.index,
+                            uuid: tag.uuid,
                             name: tag.name,
                         })
                         .from(tag)
                         .innerJoin(workTag, eq(tag.id, workTag.tag_id))
                         .innerJoin(work, eq(workTag.work_id, work.id))
-                        .where(eq(work.index, assetData.work_index));
+                        .where(eq(work.uuid, assetData.work_uuid));
 
                     const workCategories = await db
                         .select({
-                            index: category.index,
+                            uuid: category.uuid,
                             name: category.name,
                         })
                         .from(category)
                         .innerJoin(workCategory, eq(category.id, workCategory.category_id))
                         .innerJoin(work, eq(workCategory.work_id, work.id))
-                        .where(eq(work.index, assetData.work_index));
+                        .where(eq(work.uuid, assetData.work_uuid));
 
                     return {
                         asset: assetData as any,
@@ -94,31 +94,31 @@ export async function loadEditorData(
             }
 
             case 'media': {
-                const { getMediaByIndex } = await import('../db/operations/media');
-                const mediaData = await getMediaByIndex(db, index);
+                const { getMediaByUUID } = await import('../db/operations/media');
+                const mediaData = await getMediaByUUID(db, uuid);
                 console.log('Loaded media data:', mediaData);
 
                 // 加载作品的标签和分类
-                if (mediaData && mediaData.work_index) {
+                if (mediaData && mediaData.work_uuid) {
                     const workTags = await db
                         .select({
-                            index: tag.index,
+                            uuid: tag.uuid,
                             name: tag.name,
                         })
                         .from(tag)
                         .innerJoin(workTag, eq(tag.id, workTag.tag_id))
                         .innerJoin(work, eq(workTag.work_id, work.id))
-                        .where(eq(work.index, mediaData.work_index));
+                        .where(eq(work.uuid, mediaData.work_uuid));
 
                     const workCategories = await db
                         .select({
-                            index: category.index,
+                            uuid: category.uuid,
                             name: category.name,
                         })
                         .from(category)
                         .innerJoin(workCategory, eq(category.id, workCategory.category_id))
                         .innerJoin(work, eq(workCategory.work_id, work.id))
-                        .where(eq(work.index, mediaData.work_index));
+                        .where(eq(work.uuid, mediaData.work_uuid));
 
                     return {
                         media: mediaData as any,
@@ -130,30 +130,30 @@ export async function loadEditorData(
             }
 
             case 'relation': {
-                const { getRelationByIndex } = await import('../db/operations/relation');
-                const relationData = await getRelationByIndex(db, index);
+                const { getRelationByUUID } = await import('../db/operations/relation');
+                const relationData = await getRelationByUUID(db, uuid);
                 console.log('Loaded relation data:', relationData);
                 return relationData as any;
             }
 
             case 'external_source': {
-                const { getExternalSourceByIndex } = await import('../db/operations/external_source');
-                const sourceData = await getExternalSourceByIndex(db, index);
+                const { getExternalSourceByUUID } = await import('../db/operations/external_source');
+                const sourceData = await getExternalSourceByUUID(db, uuid);
                 console.log('Loaded external_source data:', sourceData);
                 return sourceData as any;
             }
 
             case 'external_object': {
-                const { getExternalObjectByIndex } = await import('../db/operations/external_object');
-                const objectData = await getExternalObjectByIndex(db, index);
+                const { getExternalObjectByUUID } = await import('../db/operations/external_object');
+                const objectData = await getExternalObjectByUUID(db, uuid);
                 console.log('Loaded external_object data:', objectData);
                 return objectData as any;
             }
 
             case 'site_config':
-                // Site config 使用 key 而不是 index
+                // Site config 使用 key 而不是 uuid
                 try {
-                    const configData = await getSiteConfig(db, index);
+                    const configData = await getSiteConfig(db, uuid);
                     console.log('Loaded site_config data:', configData);
                     return configData as any;
                 } catch (error) {
@@ -162,10 +162,10 @@ export async function loadEditorData(
                 }
 
             case 'wiki_platform':
-                // Wiki platform 使用 platform_key 而不是 index
+                // Wiki platform 使用 platform_key 而不是 uuid
                 try {
                     const { getWikiPlatformByKey } = await import('../db/operations/wiki-platforms');
-                    const platformData = await getWikiPlatformByKey(db, index);
+                    const platformData = await getWikiPlatformByKey(db, uuid);
                     console.log('Loaded wiki_platform data:', platformData);
                     return platformData as any;
                 } catch (error) {
@@ -174,7 +174,7 @@ export async function loadEditorData(
                 }
 
             case 'footer':
-                const footerData = await getFooterByIndex(db, index);
+                const footerData = await getFooterByUUID(db, uuid);
                 console.log('Loaded footer data:', footerData);
                 return footerData as any;
 
@@ -300,22 +300,22 @@ export async function loadFormOptions(
  *
  * @param db - 数据库客户端
  * @param type - 数据类型
- * @param index - 数据索引(可选,用于编辑已有数据)
+ * @param uuid - 数据UUID(可选,用于编辑已有数据)
  * @returns 包含数据和选项的对象
  */
 export async function loadEditorFullData(
     db: DrizzleDB,
     type: string,
-    index?: string
+    uuid?: string
 ): Promise<EditorFullData> {
     const [data, options] = await Promise.all([
-        loadEditorData(db, type, index),
+        loadEditorData(db, type, uuid),
         loadFormOptions(db, type)
     ]);
 
     console.log(`Final data being passed to AdminEditorPage:`, {
         type,
-        index,
+        uuid,
         hasData: !!data,
         dataKeys: data ? Object.keys(data) : [],
         data: data ? JSON.stringify(data, null, 2) : 'undefined'

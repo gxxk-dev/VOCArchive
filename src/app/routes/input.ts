@@ -20,7 +20,7 @@ import {
     type MigrationStatus
 } from '../db/operations/admin';
 import type { Work, WorkTitle, CreatorWithRole, WikiRef, Asset, MediaSource, WorkRelation, Tag, Category, WorkTitleInput, MediaSourceForDatabase, MediaSourceApiInput, ExternalSourceApiInput, ExternalObjectApiInput, WikiPlatformApiInput } from '../db/types';
-import { workIndexToId, externalSourceIndexToId } from '../db/utils/index-id-converter';
+import { workUuidToId, externalSourceUuidToId } from '../db/utils/uuid-id-converter';
 import { validateStorageSource } from '../db/utils/storage-handlers';
 import { Hono } from "hono";
 
@@ -34,7 +34,7 @@ interface InputWorkRequestBody {
 }
 
 interface InputCreatorRequestBody {
-    creator: { index: string; name: string; type: 'human' | 'virtual' };
+    creator: { uuid: string; name: string; type: 'human' | 'virtual' };
     wikis?: WikiRef[];
 }
 
@@ -45,8 +45,8 @@ interface InputAssetRequestBody {
 }
 
 interface InputMediaRequestBody {
-    index: string;
-    work_index: string;
+    uuid: string;
+    work_uuid: string;
     is_music: boolean;
     file_name: string;
     url: string;
@@ -56,9 +56,9 @@ interface InputMediaRequestBody {
 }
 
 interface InputRelationRequestBody {
-    index: string;
-    from_work_index: string;
-    to_work_index: string;
+    uuid: string;
+    from_work_uuid: string;
+    to_work_uuid: string;
     relation_type: 'original' | 'remix' | 'cover' | 'remake' | 'picture' | 'lyrics';
 }
 
@@ -125,8 +125,8 @@ inputInfo.post('/media', async (c: any) => {
         
         // ���� MediaSource ����
         const mediaData: MediaSourceApiInput = {
-            index: body.index,
-            work_index: body.work_index, // Use work_index for API input
+            uuid: body.uuid,
+            work_uuid: body.work_uuid, // Use work_uuid for API input
             is_music: body.is_music,
             file_name: body.file_name,
             url: body.url,
@@ -146,13 +146,13 @@ inputInfo.post('/work-title', async (c: any) => {
     try {
         const body: WorkTitleInput = await c.req.json();
         const db = c.get('db');
-        const title_index = await inputWorkTitle(db, body);
-        
-        if (!title_index) {
+        const title_uuid = await inputWorkTitle(db, body);
+
+        if (!title_uuid) {
             return c.json({ error: 'Failed to create work title. Check if work exists.' }, 400);
         }
-        
-        return c.json({ message: "Work title added successfully.", index: title_index }, 200);
+
+        return c.json({ message: "Work title added successfully.", uuid: title_uuid }, 200);
     } catch (error) {
         return c.json({ error: 'Internal server error' }, 500);
     }
@@ -161,7 +161,7 @@ inputInfo.post('/work-title', async (c: any) => {
 // ��ӱ�ǩ
 inputInfo.post('/tag', async (c: any) => {
     try {
-        const body: { index: string; name: string } = await c.req.json();
+        const body: { uuid: string; name: string } = await c.req.json();
         const db = c.get('db');
         await inputTag(db, body);
         return c.json({ message: "Tag added successfully." }, 200);
@@ -173,7 +173,7 @@ inputInfo.post('/tag', async (c: any) => {
 // ��ӷ���
 inputInfo.post('/category', async (c: any) => {
     try {
-        const body: { index: string; name: string; parent_index?: string } = await c.req.json();
+        const body: { uuid: string; name: string; parent_uuid?: string } = await c.req.json();
         const db = c.get('db');
         await inputCategory(db, body);
         return c.json({ message: "Category added successfully." }, 200);
@@ -185,14 +185,14 @@ inputInfo.post('/category', async (c: any) => {
 // ���������Ʒ��ǩ
 inputInfo.post('/work-tags', async (c: any) => {
     try {
-        const { work_index, tag_indexs } = await c.req.json();
-        
-        if (!work_index || !Array.isArray(tag_indexs)) {
+        const { work_uuid, tag_uuids } = await c.req.json();
+
+        if (!work_uuid || !Array.isArray(tag_uuids)) {
             return c.json({ error: 'Invalid request body' }, 400);
         }
-        
+
         const db = c.get('db');
-        const success = await addWorkTags(db, work_index, tag_indexs);
+        const success = await addWorkTags(db, work_uuid, tag_uuids);
         if (success) {
             return c.json({ message: 'Work tags added successfully.' });
         } else {
@@ -206,14 +206,14 @@ inputInfo.post('/work-tags', async (c: any) => {
 // ���������Ʒ����
 inputInfo.post('/work-categories', async (c: any) => {
     try {
-        const { work_index, category_indexs } = await c.req.json();
-        
-        if (!work_index || !Array.isArray(category_indexs)) {
+        const { work_uuid, category_uuids } = await c.req.json();
+
+        if (!work_uuid || !Array.isArray(category_uuids)) {
             return c.json({ error: 'Invalid request body' }, 400);
         }
-        
+
         const db = c.get('db');
-        const success = await addWorkCategories(db, work_index, category_indexs);
+        const success = await addWorkCategories(db, work_uuid, category_uuids);
         if (success) {
             return c.json({ message: 'Work categories added successfully.' });
         } else {
@@ -261,15 +261,15 @@ inputInfo.post('/external_object', async (c: any) => {
         const body: ExternalObjectApiInput = await c.req.json();
         const db = c.get('db');
 
-        // ת��external_source_indexΪexternal_source_id
-        const external_source_id = await externalSourceIndexToId(db, body.external_source_index);
+        // ת��external_source_uuidΪexternal_source_id
+        const external_source_id = await externalSourceUuidToId(db, body.external_source_uuid);
         if (!external_source_id) {
             return c.json({ error: 'External source not found' }, 400);
         }
 
         // �������ݿ����
         const objectData = {
-            index: body.index,
+            uuid: body.uuid,
             external_source_id: external_source_id,
             mime_type: body.mime_type,
             file_id: body.file_id

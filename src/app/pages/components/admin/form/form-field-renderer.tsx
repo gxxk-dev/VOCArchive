@@ -180,10 +180,10 @@ function renderSelectField(field: FormFieldConfig, data?: FormRenderData) {
     // 根据字段名称获取对应的选项
     if (field.name === 'copyright_basis') {
         options = copyrightBasisOptions;
-    } else if (field.name === 'type' && field.options?.includes('human')) {
+    } else if (field.name === 'type' && Array.isArray(field.options) && field.options.some(opt => typeof opt === 'string' && opt === 'human')) {
         // Creator type: human, virtual
         options = creatorTypeOptions;
-    } else if (field.name === 'type' && field.options?.includes('raw_url')) {
+    } else if (field.name === 'type' && Array.isArray(field.options) && field.options.some(opt => typeof opt === 'string' && opt === 'raw_url')) {
         // Storage type: raw_url, ipfs
         options = storageTypeOptions;
     } else if (field.name === 'is_music') {

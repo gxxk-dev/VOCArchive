@@ -58,7 +58,7 @@ export interface FormSectionConfig {
     name: string;
     title?: string;
     fields?: FormFieldConfig[];
-    type?: 'dynamic-list' | 'selector';
+    type?: 'dynamic-list' | 'selector' | 'info-display';
     listType?: string;
     selectorType?: string;
     dataSource?: string;

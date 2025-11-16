@@ -29,7 +29,7 @@ export interface FormOptions {
  */
 export interface ExternalSource {
     id: number
-    index: string
+    uuid: string
     name: string
     endpoint: string | null
     storage_type: 'raw_url' | 'ipfs'
@@ -42,8 +42,8 @@ export interface ExternalSource {
  */
 export interface ExternalObject {
     id: number
-    index: string
-    external_source_index: string
+    uuid: string
+    external_source_uuid: string
     object_key: string
     created_at: string
     updated_at: string
@@ -54,9 +54,9 @@ export interface ExternalObject {
  */
 export interface WorkRelation {
     id: number
-    index: string
-    from_work_index: string
-    to_work_index: string
+    uuid: string
+    from_work_uuid: string
+    to_work_uuid: string
     relation_type: 'original' | 'remix' | 'cover' | 'remake' | 'picture' | 'lyrics'
     created_at: string
     updated_at: string
@@ -88,7 +88,7 @@ export interface WikiPlatform {
  */
 export interface FooterSettingsItem {
     id: number
-    index: string
+    uuid: string
     enabled: boolean
     content: string | null
     created_at: string
@@ -100,8 +100,8 @@ export interface FooterSettingsItem {
  */
 export interface AssetWithWorkInfo {
     asset: Asset
-    work_tags: { index: string; name: string }[]
-    work_categories: { index: string; name: string }[]
+    work_tags: { uuid: string; name: string }[]
+    work_categories: { uuid: string; name: string }[]
 }
 
 /**
@@ -109,8 +109,8 @@ export interface AssetWithWorkInfo {
  */
 export interface MediaWithWorkInfo {
     media: MediaSource
-    work_tags: { index: string; name: string }[]
-    work_categories: { index: string; name: string }[]
+    work_tags: { uuid: string; name: string }[]
+    work_categories: { uuid: string; name: string }[]
 }
 
 /**
