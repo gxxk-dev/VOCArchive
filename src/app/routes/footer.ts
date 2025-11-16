@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { createDrizzleClient } from '../db/client';
 import { getFooterSettings, insertFooterSetting, updateFooterSetting, deleteFooterSetting } from '../db/operations/admin';
-import { nanoid } from 'nanoid';
 
 interface FooterSetting {
     uuid: string;
@@ -29,7 +28,7 @@ app.post('/settings', async (c) => {
         const body = await c.req.json<Omit<FooterSetting, 'uuid'>>();
         const newSetting: FooterSetting = {
             ...body,
-            uuid: nanoid()
+            uuid: crypto.randomUUID()
         };
         const db = c.get('db');
         await insertFooterSetting(db, newSetting);
