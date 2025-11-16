@@ -20,7 +20,7 @@
 		"@types/node": "^24.2.0",
 		"@types/uuid": "^10.0.0",
 		"cross-env": "^7.0.3",
-		"drizzle-kit": "^0.31.4",
+		"drizzle-kit": "^0.31.7",
 		"typescript": "^5.5.2",
 		"wrangler": "^4.25.1"
 	},
